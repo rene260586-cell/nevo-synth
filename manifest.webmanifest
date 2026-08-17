@@ -1,17 +1,17 @@
 {
-  "name": "NÉVO Synth Lab",
-  "short_name": "NÉVO Synth",
-  "description": "Touch-optimierter Synthesizer, Sequencer, Hat-Groove, Loop-Recorder und WAV-Export.",
-  "id": "./",
-  "start_url": "./index.html",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#060912",
-  "theme_color": "#0b1120",
-  "orientation": "any",
-  "categories": ["music", "entertainment", "productivity"],
-  "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  "name":"NÉVO Studio",
+  "short_name":"NÉVO Studio",
+  "description":"Einfache Techno-DAW mit Arranger, Loop-Clips, Synth, Groove Editor, Audio-Import und WAV-Export.",
+  "id":"./",
+  "start_url":"./index.html",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#05080d",
+  "theme_color":"#071019",
+  "orientation":"any",
+  "categories":["music","productivity","entertainment"],
+  "icons":[
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
 }

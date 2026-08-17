@@ -3,92 +3,130 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#0b1120" />
+  <meta name="theme-color" content="#071019" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="NÉVO Synth" />
+  <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Synth Lab v1.3 Neon Control</title>
+  <title>NÉVO Studio v2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="bg-orb orb-a"></div>
-  <div class="bg-orb orb-b"></div>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
   <div class="app-shell">
-    <header class="topbar panel-glass">
-      <div class="brand-wrap">
+    <header class="topbar glass">
+      <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">SYNTH LAB <span>v1.3</span></div>
+        <div class="brand-sub">STUDIO <span>v2</span></div>
       </div>
 
-      <div class="transport-grid">
+      <div class="transport">
         <button id="audioBtn" class="btn primary">AUDIO START</button>
-        <button id="installBtn" class="btn install-btn">APP INSTALL</button>
         <button id="playBtn" class="btn">▶ PLAY</button>
         <button id="stopBtn" class="btn">■ STOP</button>
         <button id="recBtn" class="btn danger">● REC</button>
-        <label class="mini-box bpm-box">BPM <input id="bpm" type="number" min="60" max="220" value="150"></label>
+        <label class="mini-control">BPM <input id="bpm" type="number" min="60" max="220" value="150"></label>
         <button id="saveBtn" class="btn">SAVE</button>
         <button id="loadBtn" class="btn">LOAD</button>
-        <button id="exportBtn" class="btn wide">EXPORT WAV</button>
+        <button id="exportBtn" class="btn">EXPORT WAV</button>
+        <button id="helpBtn" class="btn help-btn">? HELP</button>
       </div>
     </header>
 
-    <main class="layout-grid">
-      <section class="panel hero-panel panel-glass">
-        <div class="hero-copy">
-          <div class="section-kicker cyan">LIVE FEEL</div>
-          <h1>Mehr Schwung. Mehr Farbe. Bessere Kontrolle.</h1>
+    <main class="main-grid">
+      <section class="hero glass panel">
+        <div>
+          <div class="eyebrow cyan">TECHNO WORKFLOW</div>
+          <h1>Song aus Blöcken bauen. Ziehen. Loopen. Verlängern.</h1>
           <p>
-            Neon-Look, leuchtende Regler, Swing für mehr Groove, neue Hat-Spur,
-            Performance-Macros und ein Master-Meter für schnelle Kontrolle.
+            Der Arranger ist jetzt das Zentrum. Clips lassen sich verschieben, verlängern und loopen.
+            Lange drücken erklärt dir, was ein Element macht.
           </p>
           <div class="chip-row">
-            <span class="chip chip-green">Große Touch-Regler</span>
-            <span class="chip chip-cyan">Swing + Groove</span>
-            <span class="chip chip-purple">Glow FX</span>
+            <span class="chip cyan">Dark</span>
+            <span class="chip amber">Hypnotic</span>
+            <span class="chip cyan">Minimal</span>
+            <span class="chip amber">Acid</span>
+            <span class="chip cyan">Raw</span>
           </div>
         </div>
-
-        <div class="hero-side">
-          <div class="status-card">
-            <div class="status-line">
-              <div id="statusDot" class="status-dot"></div>
-              <div>
-                <strong id="statusText">Audio noch nicht gestartet</strong>
-                <small id="statusSub">Tippe auf AUDIO START</small>
-              </div>
-            </div>
-            <div class="meter-panel">
-              <div class="meter-head">
-                <span>MASTER</span>
-                <strong id="meterLabel">-∞ dB</strong>
-              </div>
-              <div class="meter-bar"><div id="masterMeterFill" class="meter-fill"></div></div>
-            </div>
+        <div class="status-card">
+          <div class="status-line">
+            <div id="statusDot" class="status-dot"></div>
+            <div><strong id="statusText">Audio noch nicht gestartet</strong><small id="statusSub">Tippe auf AUDIO START</small></div>
+          </div>
+          <div class="meter-wrap">
+            <div class="meter-head"><span>MASTER</span><strong id="meterLabel">-∞ dB</strong></div>
+            <div class="meter"><div id="masterMeterFill" class="meter-fill"></div></div>
           </div>
         </div>
       </section>
 
-      <section class="panel panel-glass">
+      <section class="panel glass techno-panel">
         <div class="section-head">
-          <div>
-            <div class="section-kicker orange">PERFORMANCE</div>
-            <h2>Quick Macros</h2>
+          <div><div class="eyebrow amber">NÉVO TECHNO DNA</div><h2>Sound-Richtung</h2></div>
+          <div class="right-controls">
+            <label class="select-wrap">KEY
+              <select id="keySelect">
+                <option value="D3" selected>D MINOR</option>
+                <option value="F3">F MINOR</option>
+                <option value="C#3">C# MINOR</option>
+                <option value="A2">A MINOR</option>
+              </select>
+            </label>
+            <button id="safeNotesBtn" class="btn toggle on">SAFE NOTES ON</button>
           </div>
-          <div class="hint">Ein Zug = sofort mehr Druck, Raum und Breite.</div>
+        </div>
+        <div class="preset-grid">
+          <button class="preset-card active" data-preset="driving"><strong>DRIVING 150</strong><span>Trockene Kick · dunkler Bass</span></button>
+          <button class="preset-card" data-preset="hypnotic"><strong>HYPNOTIC 147</strong><span>Monotoner Sog · subtile Bewegung</span></button>
+          <button class="preset-card" data-preset="acid"><strong>ACID 154</strong><span>Resonanz · Filter · Slide-Feeling</span></button>
+          <button class="preset-card" data-preset="minimal"><strong>MINIMAL 146</strong><span>Wenig Melodie · viel Groove</span></button>
+          <button class="preset-card" data-preset="raw"><strong>RAW PEAK 152</strong><span>Härter · direkter · dichter</span></button>
+        </div>
+      </section>
+
+      <section class="panel glass arranger-panel">
+        <div class="section-head arranger-head">
+          <div><div class="eyebrow cyan">ARRANGER</div><h2>Song-Ansicht</h2></div>
+          <div class="arranger-actions">
+            <label class="loop-control">LOOP
+              <select id="loopStart"><option>1</option><option>5</option><option>9</option></select>
+              <span>→</span>
+              <select id="loopEnd"><option>8</option><option selected>16</option></select>
+            </label>
+            <button id="addTrackBtn" class="btn small">+ TRACK</button>
+            <label class="btn small file-btn">+ AUDIO<input id="audioImport" type="file" accept="audio/*"></label>
+          </div>
+        </div>
+
+        <div class="arranger-help">Tipp auf eine freie Stelle = Clip hinzufügen · Clip ziehen = verschieben · rechten Griff ziehen = verlängern · lange drücken = Hilfe/Aktionen</div>
+
+        <div class="arranger-scroll">
+          <div class="timeline-row">
+            <div class="track-label timeline-label">TAKT</div>
+            <div id="timeline" class="timeline"></div>
+          </div>
+          <div id="trackList" class="track-list"></div>
+          <div id="playhead" class="playhead"></div>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="section-head">
+          <div><div class="eyebrow amber">QUICK MACROS</div><h2>Schnell formen</h2></div>
+          <div class="hint">Große Regler für Druck, Helligkeit, Raum und Breite.</div>
         </div>
         <div id="macroGrid" class="macro-grid"></div>
       </section>
 
-      <section class="panel panel-glass">
+      <section class="panel glass">
         <div class="section-head">
-          <div>
-            <div class="section-kicker cyan">SYNTH ENGINE</div>
-            <h2>Sound</h2>
-          </div>
+          <div><div class="eyebrow cyan">SYNTH</div><h2>Instrument</h2></div>
           <label class="select-wrap">WAVE
             <select id="waveform">
               <option value="sawtooth" selected>Saw</option>
@@ -101,58 +139,49 @@
         <div id="knobGrid" class="knob-grid"></div>
       </section>
 
-      <section class="panel panel-glass">
+      <section class="panel glass">
         <div class="section-head">
-          <div>
-            <div class="section-kicker purple">KEYBOARD</div>
-            <h2>Spielen</h2>
-          </div>
-          <div class="hint">PC: A W S E D F T G Y H U J K</div>
+          <div><div class="eyebrow amber">KEYBOARD</div><h2>Spielen</h2></div>
+          <div class="hint">Safe Notes markiert passende Töne zur gewählten Tonart.</div>
         </div>
         <div id="keyboard" class="keyboard"></div>
       </section>
 
-      <section class="panel panel-glass panel-seq">
-        <div class="section-head seq-header">
-          <div>
-            <div class="section-kicker green">16 STEP GROOVE</div>
-            <h2>Loop Sequencer</h2>
-          </div>
+      <section class="panel glass groove-panel">
+        <div class="section-head">
+          <div><div class="eyebrow cyan">16 STEP</div><h2>Groove Editor</h2></div>
           <div class="seq-controls">
-            <label>ROOT
-              <select id="rootNote">
-                <option>C2</option><option>C#2</option><option>D2</option><option>D#2</option><option>E2</option><option>F2</option><option>F#2</option><option>G2</option><option>G#2</option><option>A2</option><option>A#2</option><option>B2</option>
-                <option selected>C3</option><option>C#3</option><option>D3</option><option>D#3</option><option>E3</option><option>F3</option><option>F#3</option><option>G3</option><option>G#3</option><option>A3</option><option>A#3</option><option>B3</option>
-              </select>
-            </label>
-            <label class="swing-box">SWING
-              <input id="swing" type="range" min="0" max="75" value="18">
-              <span id="swingValue">18%</span>
-            </label>
+            <label>ROOT <select id="rootNote"><option>C2</option><option>D2</option><option>E2</option><option>F2</option><option>G2</option><option>A2</option><option>B2</option><option selected>D3</option><option>F3</option><option>A3</option></select></label>
+            <label class="swing-box">SWING <input id="swing" type="range" min="0" max="75" value="20"><span id="swingValue">20%</span></label>
             <button id="clearSeq" class="btn small">CLEAR</button>
             <button id="fillSeq" class="btn small">DEMO</button>
           </div>
         </div>
-
         <div class="seq-table">
-          <div class="track-row"><div class="track-name synth">SYNTH</div><div id="synthSteps" class="steps"></div></div>
-          <div class="track-row"><div class="track-name kick">KICK</div><div id="kickSteps" class="steps"></div></div>
-          <div class="track-row"><div class="track-name hat">HAT</div><div id="hatSteps" class="steps"></div></div>
+          <div class="seq-row"><div class="seq-name synth">SYNTH</div><div id="synthSteps" class="steps"></div></div>
+          <div class="seq-row"><div class="seq-name kick">KICK</div><div id="kickSteps" class="steps"></div></div>
+          <div class="seq-row"><div class="seq-name hat">HAT</div><div id="hatSteps" class="steps"></div></div>
         </div>
       </section>
 
-      <section class="panel panel-glass footer-panel">
-        <div>
-          <div class="section-kicker orange">PROJECT</div>
-          <h2>Speichern & Teilen</h2>
-          <p>Projekt als Browser-Save oder als JSON sichern. Import funktioniert weiter direkt in der App.</p>
-        </div>
+      <section class="panel glass footer-panel">
+        <div><div class="eyebrow amber">PROJECT</div><h2>Projekt sichern</h2><p>Autosave im Browser, JSON für Projekte und WAV für deinen fertigen Export.</p></div>
         <div class="project-actions">
           <button id="downloadProjectBtn" class="btn">PROJECT JSON</button>
           <label class="btn file-btn">IMPORT JSON<input id="importProject" type="file" accept="application/json"></label>
         </div>
       </section>
     </main>
+  </div>
+
+  <div id="helpModal" class="modal hidden">
+    <div class="modal-card glass">
+      <button id="helpClose" class="modal-close">×</button>
+      <div id="helpTitle" class="eyebrow cyan">HILFE</div>
+      <h3 id="helpHeading">Element</h3>
+      <p id="helpText"></p>
+      <div id="helpActions" class="help-actions"></div>
+    </div>
   </div>
 
   <script src="app.js"></script>
