@@ -789,4 +789,130 @@ function bindDjPlayer(){
   $('#djCrossfader').oninput=updateCrossfaderGains;longPress($('.dj-panel'),()=>showHelp('djPlayer'));renderDjLibrary();refreshAllDeckUi();startDjTicker()
 }
 
+
+// ===== v2.8: DJ PRO VIEW / BPM ANALYSIS / BEATGRID / HOT CUES / PERSISTENT LIBRARY =====
+const DJ_DB_NAME='nevo-studio-dj-library';
+const DJ_DB_STORE='songs';
+let djDbPromise=null;
+let djAnalysisQueue=Promise.resolve();
+
+function openDjDb(){
+  if(!('indexedDB' in window))return Promise.resolve(null);
+  if(djDbPromise)return djDbPromise;
+  djDbPromise=new Promise(resolve=>{
+    try{
+      const req=indexedDB.open(DJ_DB_NAME,1);
+      req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(DJ_DB_STORE))db.createObjectStore(DJ_DB_STORE,{keyPath:'id'})};
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(null);
+    }catch{resolve(null)}
+  });
+  return djDbPromise;
+}
+async function saveDjItem(item){
+  const db=await openDjDb();if(!db||!item)return;
+  const blob=item.blob||item.file;if(!blob)return;
+  const row={id:item.id,name:item.name,title:item.title||cleanDjTitle(item.name),bpm:Number(item.bpm)||0,duration:Number(item.duration)||0,beatOffset:Number(item.beatOffset)||0,confidence:Number(item.confidence)||0,hotCues:Array.isArray(item.hotCues)?item.hotCues:[null,null,null,null],cue:Number(item.cue)||0,blob,type:blob.type||'audio/*',addedAt:item.addedAt||Date.now()};
+  try{await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readwrite');tx.objectStore(DJ_DB_STORE).put(row);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch(e){console.warn('DJ library save failed',e)}
+}
+async function deleteDjItemPersisted(id){const db=await openDjDb();if(!db)return;try{await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readwrite');tx.objectStore(DJ_DB_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
+async function clearDjDb(){const db=await openDjDb();if(!db)return;try{await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readwrite');tx.objectStore(DJ_DB_STORE).clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
+async function loadPersistedDjLibrary(){
+  const db=await openDjDb();if(!db)return;
+  let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),r=tx.objectStore(DJ_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return}
+  for(const row of rows){if(djLibrary.some(x=>x.id===row.id))continue;const blob=row.blob,url=URL.createObjectURL(blob);djLibrary.push({id:row.id,file:blob,blob,name:row.name,title:row.title||cleanDjTitle(row.name),url,buffer:null,duration:row.duration||0,bpm:row.bpm||0,beatOffset:row.beatOffset||0,confidence:row.confidence||0,hotCues:Array.isArray(row.hotCues)?row.hotCues:[null,null,null,null],cue:row.cue||0,addedAt:row.addedAt||Date.now()})}
+  renderDjLibrary();
+}
+function cleanDjTitle(name=''){return String(name).replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim()||'Unbenannter Song'}
+function makeDjDeck(letter){
+  const audio=new Audio();audio.preload='auto';audio.preservesPitch=true;audio.mozPreservesPitch=true;audio.webkitPreservesPitch=true;
+  return {letter,audio,item:null,source:null,gainNode:null,cue:0,keyLock:true,loopBeats:0,loopStart:0,buffer:null,hotCues:[null,null,null,null],beatOffset:0,detectedBpm:0,confidence:0,lastZoomDraw:-1,tapTimes:[]}
+}
+function djDeckBpm(letter){return clamp(Number($(`#deck${letter}Bpm`)?.value)||djDecks[letter].detectedBpm||150,60,220)}
+function djBeatPeriod(letter){return 60/djDeckBpm(letter)}
+function djNormalizeOffset(offset,period){if(!Number.isFinite(period)||period<=0)return 0;return ((offset%period)+period)%period}
+
+function djColumnStats(data,i0,i1){
+  if(i1<=i0)return {peak:0,mean:0,z:0};
+  const stride=Math.max(1,Math.floor((i1-i0)/18));let peak=0,sum=0,n=0,zc=0,last=0,have=false;
+  for(let i=i0;i<i1;i+=stride){const v=data[i]||0,a=Math.abs(v);peak=Math.max(peak,a);sum+=a;n++;if(have&&((v>=0)!==(last>=0)))zc++;last=v;have=true}
+  return {peak,mean:n?sum/n:0,z:n>1?zc/(n-1):0};
+}
+function djWaveColor(stats,alpha=1){
+  const hi=clamp(stats.z*4.5,0,1),body=clamp(stats.mean*3.2,0,1),r=Math.round(50+205*hi),g=Math.round(150+85*body),b=Math.round(245-115*hi+10*body);return `rgba(${r},${g},${clamp(b,70,255)},${alpha})`;
+}
+function drawDjWaveRange(buffer,canvas,startSec=0,endSec=null,letter='A',showGrid=true){
+  if(!buffer||!canvas)return;
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),rect=canvas.getBoundingClientRect(),w=Math.max(220,Math.round(rect.width||900)),h=Math.max(70,Math.round(rect.height||130));canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  const dur=buffer.duration,end=clamp(endSec==null?dur:endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001)),data=buffer.getChannelData(0),sr=buffer.sampleRate;
+  const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#020609');bg.addColorStop(.5,'#07141d');bg.addColorStop(1,'#020609');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  c.fillStyle='rgba(255,255,255,.025)';c.fillRect(0,h/2-1,w,2);
+  if(showGrid){
+    const bpm=djDeckBpm(letter),period=60/bpm,off=djNormalizeOffset(djDecks[letter].beatOffset||0,period);if(period>0){let n=Math.ceil((start-off)/period);for(let tt=off+n*period;tt<=end;tt+=period,n++){const x=(tt-start)/(end-start)*w,strong=((n%4)+4)%4===0;c.strokeStyle=strong?'rgba(255,181,94,.30)':'rgba(255,255,255,.10)';c.lineWidth=strong?1.5:1;c.beginPath();c.moveTo(x+.5,0);c.lineTo(x+.5,h);c.stroke();if(strong&&w/(Math.max(1,(end-start)/period))>16){c.fillStyle='rgba(255,205,145,.45)';c.font='8px system-ui';c.fillText(String(Math.floor(n/4)+1),x+3,10)}}}
+  }
+  const mid=h/2;for(let x=0;x<w;x++){const t0=start+(x/w)*(end-start),t1=start+((x+1)/w)*(end-start),i0=clamp(Math.floor(t0*sr),0,data.length-1),i1=clamp(Math.ceil(t1*sr),i0+1,data.length),st=djColumnStats(data,i0,i1),amp=Math.max(1.5,st.peak*(h*.47));c.strokeStyle=djWaveColor(st,.94);c.lineWidth=1;c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke()}
+  const glow=c.createLinearGradient(0,0,w,0);glow.addColorStop(0,letter==='A'?'rgba(84,216,255,.10)':'rgba(255,181,94,.10)');glow.addColorStop(.5,'rgba(177,107,255,.05)');glow.addColorStop(1,letter==='A'?'rgba(255,181,94,.06)':'rgba(84,216,255,.06)');c.fillStyle=glow;c.fillRect(0,0,w,h);
+}
+function deckZoomRange(letter){const d=djDecks[letter],dur=d.audio.duration||d.buffer?.duration||0,bpm=djDeckBpm(letter),period=60/bpm,span=period*16,cur=clamp(d.audio.currentTime||0,0,dur);let start=cur-span/2,end=cur+span/2;if(start<0){end-=start;start=0}if(end>dur){start=Math.max(0,start-(end-dur));end=dur}return {start,end,cur,dur,span:Math.max(.001,end-start)}}
+function drawDeckOverview(letter){const d=djDecks[letter];if(!d.buffer)return;drawDjWaveRange(d.buffer,$(`#deck${letter}Wave`),0,d.buffer.duration,letter,true);updateDeckZoomWindow(letter)}
+function drawDeckZoom(letter,force=false){const d=djDecks[letter];if(!d.buffer)return;const cur=d.audio.currentTime||0;if(!force&&Math.abs(cur-d.lastZoomDraw)<.075)return;d.lastZoomDraw=cur;const r=deckZoomRange(letter);drawDjWaveRange(d.buffer,$(`#deck${letter}ZoomWave`),r.start,r.end,letter,true);$(`#deck${letter}ZoomInfo`).textContent=`${fmtDeckTime(r.start)} – ${fmtDeckTime(r.end)}`;updateDeckZoomWindow(letter)}
+function updateDeckZoomWindow(letter){const d=djDecks[letter],r=deckZoomRange(letter),el=$(`#deck${letter}ZoomWindow`);if(!el||!r.dur)return;const left=(r.start/r.dur)*100,width=((r.end-r.start)/r.dur)*100;el.style.left=(left+width/2)+'%';el.style.width=Math.max(.8,width)+'%'}
+
+function analyzeBpmBuffer(buffer){
+  const data=buffer.getChannelData(0),sr=buffer.sampleRate,maxSec=Math.min(buffer.duration,240),hop=1024,maxFrame=Math.min(Math.floor(maxSec*sr/hop),Math.floor(data.length/hop));if(maxFrame<50)return {bpm:0,beatOffset:0,confidence:0};
+  const env=new Float32Array(maxFrame);for(let f=0;f<maxFrame;f++){const base=f*hop,end=Math.min(data.length,base+hop);let sum=0,n=0;for(let i=base;i<end;i+=16){sum+=Math.abs(data[i]);n++}env[f]=n?sum/n:0}
+  const novelty=new Float32Array(maxFrame);let running=0;const win=8;for(let i=0;i<maxFrame;i++){const avg=i?running/Math.min(i,win):0;novelty[i]=Math.max(0,env[i]-avg);running+=env[i];if(i>=win)running-=env[i-win]}
+  const sorted=Array.from(novelty).sort((a,b)=>a-b),thr=sorted[Math.floor(sorted.length*.82)]||0;const peaks=[];const minFrames=Math.max(2,Math.floor(.18*sr/hop));let last=-9999;for(let i=1;i<maxFrame-1;i++){const v=novelty[i];if(v>thr&&v>=novelty[i-1]&&v>=novelty[i+1]&&i-last>=minFrames){peaks.push({i,v});last=i}}
+  if(peaks.length<6)return {bpm:0,beatOffset:0,confidence:0};
+  const hist=new Map();let totalW=0;for(let a=0;a<peaks.length;a++){for(let b=a+1;b<Math.min(peaks.length,a+9);b++){const dt=(peaks[b].i-peaks[a].i)*hop/sr;if(dt<.25||dt>1.5)continue;let bpm=60/dt;while(bpm<80)bpm*=2;while(bpm>190)bpm/=2;if(bpm<80||bpm>190)continue;const bin=Math.round(bpm*2)/2,w=(peaks[a].v+peaks[b].v)/(b-a);hist.set(bin,(hist.get(bin)||0)+w);totalW+=w}}
+  let bestBpm=0,best=0;for(const [b,w] of hist){const techWeight=(b>=115&&b<=175)?1.08:1;if(w*techWeight>best){best=w*techWeight;bestBpm=b}}
+  if(!bestBpm)return {bpm:0,beatOffset:0,confidence:0};
+  const period=60/bestBpm,bins=64,phase=new Float64Array(bins);for(const p of peaks){const tm=p.i*hop/sr,ph=((tm%period)+period)%period,bi=Math.min(bins-1,Math.floor(ph/period*bins));phase[bi]+=p.v}let bi=0;for(let i=1;i<bins;i++)if(phase[i]>phase[bi])bi=i;const offset=(bi+.5)/bins*period,confidence=clamp(best/(totalW*.12||1),0,1);return {bpm:Math.round(bestBpm*10)/10,beatOffset:offset,confidence}
+}
+async function analyzeDjItem(item,showStatus=true){
+  if(!item)return null;item.analyzing=true;renderDjLibrary();if(showStatus)setStatus(true,currentLang==='de'?'BPM-Analyse läuft':'BPM analysis running',item.title||item.name);
+  try{const buffer=await ensureDjItemBuffer(item),r=analyzeBpmBuffer(buffer);item.bpm=r.bpm||item.bpm||150;item.beatOffset=r.beatOffset||0;item.confidence=r.confidence||0;item.duration=buffer.duration;item.analyzing=false;await saveDjItem(item);renderDjLibrary();for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){djDecks[L].detectedBpm=item.bpm;djDecks[L].beatOffset=item.beatOffset;$(`#deck${L}Bpm`).value=item.bpm;refreshDeckUi(L);drawDeckOverview(L);drawDeckZoom(L,true)}if(showStatus)setStatus(true,currentLang==='de'?'Analyse fertig':'Analysis ready',`${item.bpm.toFixed(1)} BPM · ${Math.round(item.confidence*100)}%`);return r}catch(e){item.analyzing=false;console.warn(e);renderDjLibrary();return null}
+}
+function queueDjAnalysis(item){djAnalysisQueue=djAnalysisQueue.then(()=>analyzeDjItem(item,false)).catch(()=>null);return djAnalysisQueue}
+async function ensureDjItemBuffer(item){if(item.buffer)return item.buffer;await initAudio();const blob=item.file||item.blob;if(!blob)throw new Error('Audio file missing');const arr=await blob.arrayBuffer();item.buffer=await ctx.decodeAudioData(arr.slice(0));item.duration=item.buffer.duration;if(!item.title)item.title=cleanDjTitle(item.name);renderDjLibrary();return item.buffer}
+
+function renderDjLibrary(){
+  const box=$('#djLibraryList');if(!box)return;const q=($('#djLibrarySearch')?.value||'').trim().toLowerCase(),items=djLibrary.filter(item=>!q||`${item.title||''} ${item.name||''}`.toLowerCase().includes(q)).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));if(!items.length){box.innerHTML=`<div class="dj-empty">${djLibrary.length?(currentLang==='de'?'Keine Treffer.':'No matches.'):t('djEmpty')}</div>`;return}
+  box.innerHTML='';items.forEach(item=>{const el=document.createElement('div');el.className='dj-lib-item';const bpmText=item.analyzing?(currentLang==='de'?'ANALYSE…':'ANALYZING…'):(item.bpm?Number(item.bpm).toFixed(1):'—'),dur=item.duration?fmtDeckTime(item.duration):'—';el.innerHTML=`<div class="dj-lib-title"><strong>${item.title||cleanDjTitle(item.name)}</strong><small>${item.name}</small></div><div class="dj-lib-bpm ${item.analyzing?'analyzing':''}">${bpmText}</div><div class="dj-lib-duration">${dur}</div><div class="dj-lib-actions"><button class="btn small analyze-mini" title="BPM">⚡</button><button class="btn small">A</button><button class="btn small">B</button></div>`;const title=el.querySelector('.dj-lib-title strong'),[an,a,b]=el.querySelectorAll('button');title.onclick=async()=>{const v=prompt(currentLang==='de'?'Titel':'Title',item.title||cleanDjTitle(item.name));if(v&&v.trim()){item.title=v.trim();await saveDjItem(item);renderDjLibrary()}};an.onclick=()=>analyzeDjItem(item,true);a.onclick=()=>loadItemToDeck(item,'A');b.onclick=()=>loadItemToDeck(item,'B');box.appendChild(el)})
+}
+async function loadItemToDeck(item,letter){
+  const deck=djDecks[letter];await ensureDeckConnected(deck);const buffer=await ensureDjItemBuffer(item);deck.item=item;deck.buffer=buffer;deck.cue=Number(item.cue)||0;deck.hotCues=Array.isArray(item.hotCues)?[...item.hotCues]:[null,null,null,null];deck.beatOffset=Number(item.beatOffset)||0;deck.detectedBpm=Number(item.bpm)||0;deck.confidence=Number(item.confidence)||0;deck.loopBeats=0;deck.loopStart=0;deck.lastZoomDraw=-1;deck.audio.pause();deck.audio.src=item.url||(item.url=URL.createObjectURL(item.file||item.blob));deck.audio.currentTime=0;deck.audio.load();
+  const guessed=(item.name.match(/(?:^|\D)(1[2-8]\d)(?:\D|$)/)||[])[1],bpm=item.bpm||Number(guessed)||Number($('#bpm').value)||150;$(`#deck${letter}Bpm`).value=Number(bpm).toFixed(1);$(`#deck${letter}Pitch`).value=0;deck.audio.playbackRate=1;$(`#deck${letter}Title`).textContent=item.title||cleanDjTitle(item.name);$(`#deck${letter}Duration`).textContent=fmtDeckTime(buffer.duration);$(`#deck${letter}Time`).textContent='00:00.0';$(`#deck${letter}Playhead`).style.left='0%';$(`#deck${letter}Loop`).value='0';drawDeckOverview(letter);drawDeckZoom(letter,true);renderHotCues(letter);refreshDeckUi(letter);setStatus(true,t('djLoaded'),`${item.title||item.name} → DECK ${letter}`);if(!item.bpm)queueDjAnalysis(item)
+}
+function refreshDeckUi(letter){const d=djDecks[letter],play=$(`#deck${letter}Play`),key=$(`#deck${letter}KeyLock`);if(play)play.textContent=d.audio&&!d.audio.paused?'❚❚ PAUSE':'▶ PLAY';if(key){key.classList.toggle('on',d.keyLock);key.textContent=currentLang==='de'?(d.keyLock?'TONHALTE AN':'TONHALTE AUS'):(d.keyLock?'KEY LOCK ON':'KEY LOCK OFF')}const st=$(`#deck${letter}Status`);if(st)st.textContent=d.item?(d.audio.paused?'READY':'PLAY'):'EMPTY';const bpmEl=$(`#deck${letter}DetectedBpm`),phase=$(`#deck${letter}BeatPhase`);if(bpmEl)bpmEl.textContent=d.item?`${djDeckBpm(letter).toFixed(1)} BPM`:'— BPM';if(phase)phase.textContent=d.item?`GRID ${Math.round((d.beatOffset||0)*1000)} ms`:'GRID —';renderHotCues(letter)}
+function renderHotCues(letter){const d=djDecks[letter],box=$(`#deck${letter}HotCues`);if(!box)return;[...box.querySelectorAll('.hotcue')].forEach((b,i)=>{const v=d.hotCues?.[i];b.classList.toggle('set',Number.isFinite(v));b.querySelector('span').textContent=Number.isFinite(v)?fmtDeckTime(v):'HOT CUE'})}
+async function persistDeckMeta(letter){const d=djDecks[letter];if(!d.item)return;d.item.bpm=djDeckBpm(letter);d.item.beatOffset=d.beatOffset||0;d.item.hotCues=[...(d.hotCues||[])];d.item.cue=d.cue||0;d.item.confidence=d.confidence||0;await saveDjItem(d.item);renderDjLibrary()}
+function hotCueAction(letter,index){const d=djDecks[letter];if(!d.item)return;const v=d.hotCues[index];if(Number.isFinite(v)){d.audio.currentTime=clamp(v,0,d.audio.duration||0);setStatus(true,`HOT CUE ${index+1}`,`${fmtDeckTime(v)} · DECK ${letter}`)}else{d.hotCues[index]=d.audio.currentTime||0;persistDeckMeta(letter);renderHotCues(letter);setStatus(true,currentLang==='de'?'Hot Cue gesetzt':'Hot Cue set',`HOT ${index+1} · ${fmtDeckTime(d.hotCues[index])}`)}}
+function clearHotCue(letter,index){const d=djDecks[letter];if(!d.item)return;d.hotCues[index]=null;persistDeckMeta(letter);renderHotCues(letter);setStatus(true,currentLang==='de'?'Hot Cue gelöscht':'Hot Cue cleared',`HOT ${index+1}`)}
+function bindHotCueButton(btn){let timer=null,long=false;const L=btn.dataset.deck,i=Number(btn.dataset.hotcue);btn.onpointerdown=()=>{long=false;timer=setTimeout(()=>{long=true;clearHotCue(L,i)},650)};btn.onpointerup=()=>clearTimeout(timer);btn.onpointercancel=()=>clearTimeout(timer);btn.onclick=e=>{if(long){e.preventDefault();long=false;return}hotCueAction(L,i)}}
+function nudgeBeatgrid(letter,delta){const d=djDecks[letter],period=djBeatPeriod(letter);d.beatOffset=djNormalizeOffset((d.beatOffset||0)+delta,period);persistDeckMeta(letter);drawDeckOverview(letter);drawDeckZoom(letter,true);refreshDeckUi(letter)}
+function gridHere(letter){const d=djDecks[letter],period=djBeatPeriod(letter);d.beatOffset=djNormalizeOffset(d.audio.currentTime||0,period);persistDeckMeta(letter);drawDeckOverview(letter);drawDeckZoom(letter,true);refreshDeckUi(letter);setStatus(true,'BEATGRID',currentLang==='de'?'Aktuelle Position liegt jetzt auf einem Beat.':'Current position is now on a beat.')}
+function tapBpm(letter){const d=djDecks[letter],now=performance.now()/1000;if(d.tapTimes.length&&now-d.tapTimes.at(-1)>2.5)d.tapTimes=[];d.tapTimes.push(now);if(d.tapTimes.length>8)d.tapTimes.shift();if(d.tapTimes.length>=2){const ints=[];for(let i=1;i<d.tapTimes.length;i++)ints.push(d.tapTimes[i]-d.tapTimes[i-1]);const avg=ints.reduce((a,b)=>a+b,0)/ints.length,bpm=clamp(60/avg,60,220);$(`#deck${letter}Bpm`).value=bpm.toFixed(1);d.detectedBpm=bpm;d.beatOffset=djNormalizeOffset(d.audio.currentTime||0,60/bpm);persistDeckMeta(letter);drawDeckOverview(letter);drawDeckZoom(letter,true);refreshDeckUi(letter);setStatus(true,'TAP BPM',`${bpm.toFixed(1)} BPM`)}}
+function setDeckCue(letter){const d=djDecks[letter];if(!d.item)return;d.cue=d.audio.currentTime;persistDeckMeta(letter);setStatus(true,currentLang==='de'?'Cue gesetzt':'Cue set',`DECK ${letter} · ${fmtDeckTime(d.cue)}`)}
+function updateDeckRate(letter){const d=djDecks[letter],pct=Number($(`#deck${letter}Pitch`).value)||0;d.audio.playbackRate=clamp(1+pct/100,.5,2);$(`#deck${letter}PitchValue`).textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%';refreshDeckUi(letter)}
+function syncDeck(letter){const trackBpm=djDeckBpm(letter),masterBpm=clamp(Number($('#bpm').value)||150,60,220),pct=clamp((masterBpm/trackBpm-1)*100,-16,16);$(`#deck${letter}Pitch`).value=pct.toFixed(1);updateDeckRate(letter);setStatus(true,'SYNC',`DECK ${letter}: ${trackBpm.toFixed(1)} → ${masterBpm.toFixed(1)} BPM`)}
+function deckSeekFromWave(letter,e){const d=djDecks[letter];if(!d.item||!Number.isFinite(d.audio.duration))return;const wrap=e.currentTarget,r=wrap.getBoundingClientRect(),ratio=clamp((e.clientX-r.left)/r.width,0,1);if(wrap.dataset.wave==='zoom'){const zr=deckZoomRange(letter);d.audio.currentTime=zr.start+ratio*(zr.end-zr.start)}else d.audio.currentTime=ratio*d.audio.duration;drawDeckZoom(letter,true)}
+function updateCrossfaderGains(){const x=Number($('#djCrossfader')?.value||0),theta=(x+1)*Math.PI/4,a=Math.cos(theta),b=Math.sin(theta);for(const [L,f] of [['A',a],['B',b]]){const d=djDecks[L],vol=Number($(`#deck${L}Volume`)?.value||.9);if(d.gainNode)d.gainNode.gain.setTargetAtTime(vol*f,ctx?.currentTime||0,.01)}}
+function startDjTicker(){
+  let lastUi=0;const tick=ts=>{for(const L of ['A','B']){const d=djDecks[L];if(d.item){const dur=d.audio.duration||d.buffer?.duration||0,cur=d.audio.currentTime||0;if(ts-lastUi>50){$(`#deck${L}Time`).textContent=fmtDeckTime(cur);$(`#deck${L}Duration`).textContent=fmtDeckTime(dur);$(`#deck${L}Playhead`).style.left=(dur?clamp(cur/dur*100,0,100):0)+'%';updateDeckZoomWindow(L)}if(d.loopBeats&&dur){const bpm=djDeckBpm(L),loopEnd=d.loopStart+d.loopBeats*60/bpm;if(cur>=loopEnd-.015)d.audio.currentTime=d.loopStart}drawDeckZoom(L,false)}}if(ts-lastUi>50){lastUi=ts;refreshDeckUi('A');refreshDeckUi('B')}requestAnimationFrame(tick)};requestAnimationFrame(tick)
+}
+function refreshDjV28Labels(){
+  const de=currentLang==='de';if($('#djLibrarySearch'))$('#djLibrarySearch').placeholder=de?'Titel suchen …':'Search title …';if($('#djAnalyzeAll'))$('#djAnalyzeAll').textContent=de?'⚡ ALLE ANALYSIEREN':'⚡ ANALYZE ALL';if($('#djClearLibrary'))$('#djClearLibrary').textContent=de?'BIBLIOTHEK LEEREN':'CLEAR LIBRARY';const cols=$$('.dj-library-columns span'),names=de?['TITEL','BPM','LÄNGE','AKTION']:['TITLE','BPM','LENGTH','ACTION'];cols.forEach((x,i)=>x.textContent=names[i]||x.textContent);for(const L of ['A','B']){const deck=document.querySelector(`.dj-deck[data-deck="${L}"]`);if(!deck)continue;const ov=deck.querySelector('.dj-overview-label'),zo=deck.querySelector('.dj-zoom-label');if(ov){ov.querySelector('span').textContent=de?'GESAMT-WELLENFORM':'OVERVIEW WAVEFORM';ov.querySelector('small').textContent=de?'Tippen = springen':'Tap = seek'}if(zo)zo.querySelector('span').textContent=de?'ZOOM-WELLENFORM':'ZOOM WAVEFORM';$(`#deck${L}Analyze`).textContent=de?'⚡ BPM ANALYSE':'⚡ BPM ANALYSIS';$(`#deck${L}TapBpm`).textContent='TAP BPM';$(`#deck${L}GridHere`).textContent=de?'GRID HIER':'GRID HERE';const gt=deck.querySelector('.dj-grid-tools>span');if(gt)gt.textContent='BEATGRID';renderHotCues(L)}renderDjLibrary()
+}
+function setLanguage(lang){currentLang=lang==='en'?'en':'de';applyLanguageToUI(true);refreshDjV28Labels();setStatus(audioReady,t('languageChanged'),currentLang==='de'?'Die App ist jetzt auf Deutsch.':'The app is now in English.');setTimeout(()=>{try{refreshAllDeckUi()}catch{}},0)}
+async function clearDjLibraryAll(){if(!confirm(currentLang==='de'?'Player-Bibliothek wirklich leeren?':'Clear the player library?'))return;for(const d of Object.values(djDecks)){d.audio.pause();d.item=null;d.buffer=null;d.hotCues=[null,null,null,null]}for(const item of djLibrary){try{if(item.url)URL.revokeObjectURL(item.url)}catch{}}djLibrary.splice(0);await clearDjDb();renderDjLibrary();refreshAllDeckUi();setStatus(audioReady,currentLang==='de'?'Bibliothek geleert':'Library cleared','')}
+function bindDjPlayer(){
+  if(!$('#djImport'))return;
+  $('#djImport').onchange=async e=>{const files=[...e.target.files];for(const f of files){const item={id:uid()+Date.now().toString(36),file:f,blob:f,name:f.name,title:cleanDjTitle(f.name),url:URL.createObjectURL(f),buffer:null,duration:0,bpm:0,beatOffset:0,confidence:0,hotCues:[null,null,null,null],cue:0,addedAt:Date.now()};djLibrary.push(item);await saveDjItem(item);queueDjAnalysis(item)}renderDjLibrary();e.target.value=''};
+  $('#djLibrarySearch').oninput=renderDjLibrary;$('#djAnalyzeAll').onclick=()=>{for(const item of djLibrary)queueDjAnalysis(item)};$('#djClearLibrary').onclick=clearDjLibraryAll;
+  for(const L of ['A','B']){
+    $(`#deck${L}Play`).onclick=()=>toggleDeck(L);$(`#deck${L}Stop`).onclick=()=>stopDeck(L);$(`#deck${L}Cue`).onclick=()=>cueDeck(L);$(`#deck${L}SetCue`).onclick=()=>setDeckCue(L);$(`#deck${L}Sync`).onclick=()=>syncDeck(L);$(`#deck${L}Analyze`).onclick=()=>djDecks[L].item&&analyzeDjItem(djDecks[L].item,true);$(`#deck${L}KeyLock`).onclick=()=>toggleDeckKeyLock(L);$(`#deck${L}Pitch`).oninput=()=>updateDeckRate(L);$(`#deck${L}Volume`).oninput=updateCrossfaderGains;$(`#deck${L}Loop`).onchange=()=>setDeckLoop(L);$(`#deck${L}AddArranger`).onclick=()=>addDeckToArranger(L);$(`#deck${L}GridMinus`).onclick=()=>nudgeBeatgrid(L,-.01);$(`#deck${L}GridPlus`).onclick=()=>nudgeBeatgrid(L,.01);$(`#deck${L}GridHere`).onclick=()=>gridHere(L);$(`#deck${L}TapBpm`).onclick=()=>tapBpm(L);$(`#deck${L}Bpm`).onchange=()=>{const d=djDecks[L],v=djDeckBpm(L);d.detectedBpm=v;if(d.item){d.item.bpm=v;persistDeckMeta(L)}drawDeckOverview(L);drawDeckZoom(L,true);refreshDeckUi(L)};document.querySelectorAll(`.dj-wave-wrap[data-deck="${L}"]`).forEach(w=>w.onclick=e=>deckSeekFromWave(L,e));document.querySelectorAll(`.hotcue[data-deck="${L}"]`).forEach(bindHotCueButton);djDecks[L].audio.addEventListener('play',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('pause',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('ended',()=>refreshDeckUi(L))
+  }
+  $('#djCrossfader').oninput=updateCrossfaderGains;longPress($('.dj-panel'),()=>showHelp('djPlayer'));refreshDjV28Labels();renderDjLibrary();refreshAllDeckUi();loadPersistedDjLibrary();startDjTicker();
+}
+
 bindAudioEditor();bindDjPlayer();
