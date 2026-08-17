@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.1</title>
+  <title>NÉVO Studio v3.2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.1</span></div>
+        <div class="brand-sub">STUDIO <span>v3.2</span></div>
       </div>
 
       <div class="transport">
@@ -112,8 +112,14 @@
               <button id="djAnalyzeAll" class="btn small" type="button">⚡ ALLE ANALYSIEREN</button>
               <button id="djClearLibrary" class="btn small" type="button">BIBLIOTHEK LEEREN</button>
             </div>
+            <div class="v32-library-controls">
+              <label><span>ANALYSE</span><select id="djAnalysisProfile"><option value="techno">TECHNO 125–165</option><option value="minimal">MINIMAL 135–160</option><option value="psy">PSY 138–158</option><option value="wide">WEIT 80–190</option></select></label>
+              <label><span>SORTIEREN</span><select id="djLibrarySort"><option value="added">NEUE ZUERST</option><option value="title">TITEL A–Z</option><option value="bpm">BPM</option><option value="key">TONART</option><option value="rating">BEWERTUNG</option></select></label>
+              <label><span>PLAYLIST / CRATE</span><select id="djCrateFilter"><option value="all">ALLE</option><option value="favorites">★ FAVORITEN</option></select></label>
+              <span id="djSmartAnalysisStatus" class="v32-analysis-status">SMART ANALYSE · TECHNO-FOKUS</span>
+            </div>
           </div>
-          <div class="dj-library-columns"><span>TITEL</span><span>BPM</span><span>TONART</span><span>LÄNGE</span><span>AKTION</span></div>
+          <div class="dj-library-columns"><span>TITEL / ARTIST</span><span>BPM</span><span>TONART</span><span>LÄNGE</span><span>★</span><span>AKTION</span></div>
           <div id="djLibraryList" class="dj-library-list"><div class="dj-empty" data-i18n="djEmpty">Noch keine Songs geladen.</div></div>
         </div>
 
@@ -283,7 +289,7 @@
                 <select id="deckALoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
               </label>
             </div>
-            <button id="deckAAddArranger" class="btn small dj-arranger-btn" type="button" data-i18n="djAddArranger">→ IN ARRANGER</button>
+            <div class="v32-deck-to-studio"><button id="deckAAddArranger" class="btn small dj-arranger-btn" type="button" data-i18n="djAddArranger">→ SONG IN ARRANGER</button><button id="deckALoopToArranger" class="btn small v32-loop-arranger" type="button">↻ LOOP → ARRANGER</button></div>
           </article>
 
           <article class="dj-deck deck-b" data-deck="B">
@@ -376,7 +382,7 @@
                 <select id="deckBLoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
               </label>
             </div>
-            <button id="deckBAddArranger" class="btn small dj-arranger-btn" type="button" data-i18n="djAddArranger">→ IN ARRANGER</button>
+            <div class="v32-deck-to-studio"><button id="deckBAddArranger" class="btn small dj-arranger-btn" type="button" data-i18n="djAddArranger">→ SONG IN ARRANGER</button><button id="deckBLoopToArranger" class="btn small v32-loop-arranger" type="button">↻ LOOP → ARRANGER</button></div>
           </article>
         </div>
 
@@ -640,6 +646,21 @@
   </div>
 
 
+
+  <div id="djMetaModal" class="modal hidden">
+    <div class="modal-card v32-meta-card">
+      <div class="modal-head"><div><div class="eyebrow cyan">TRACK INFO</div><h3 id="djMetaHeading">Song bearbeiten</h3></div><button id="djMetaClose" class="modal-x" type="button">×</button></div>
+      <div class="v32-meta-grid">
+        <label>TITEL<input id="djMetaTitle" type="text"></label>
+        <label>ARTIST<input id="djMetaArtist" type="text"></label>
+        <label>PLAYLIST / CRATE<input id="djMetaCrate" type="text" placeholder="z. B. NÉVO Peak Set"></label>
+        <label>BEWERTUNG<select id="djMetaRating"><option value="0">0 – keine</option><option value="1">★</option><option value="2">★★</option><option value="3">★★★</option><option value="4">★★★★</option><option value="5">★★★★★</option></select></label>
+        <label class="wide">NOTIZ<textarea id="djMetaComment" rows="4" placeholder="Mix-In, Break, Stimmung, Idee …"></textarea></label>
+      </div>
+      <div class="audio-editor-footer"><button id="djMetaDelete" class="btn small danger" type="button">TRACK LÖSCHEN</button><button id="djMetaSave" class="btn primary small" type="button">SPEICHERN</button></div>
+    </div>
+  </div>
+
   <div id="audioEditorModal" class="modal hidden audio-editor-modal">
     <div class="modal-card audio-editor-card">
       <div class="modal-head">
@@ -657,6 +678,9 @@
         <button id="audioStopPreviewBtn" class="btn small" type="button">■ STOPP</button>
         <button id="audioLoopToggleBtn" class="btn small toggle" type="button">LOOP AUS</button>
         <button id="audioSplitBtn" class="btn small" type="button">✂ AM CURSOR TEILEN</button>
+        <button id="audioNormalizeBtn" class="btn small" type="button">↥ NORMALISIEREN</button>
+        <button id="audioReverseBtn" class="btn small" type="button">↔ AUSWAHL REVERSE</button>
+        <button id="audioDuplicateBtn" class="btn small" type="button">⧉ DUPLIZIEREN</button>
       </div>
 
       <div class="audio-wave-editor-wrap" id="audioWaveEditorWrap">

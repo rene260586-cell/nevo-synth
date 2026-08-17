@@ -1349,3 +1349,88 @@ const v31OldSetLanguage=setLanguage;
 setLanguage=function(lang){v31OldSetLanguage(lang);v31RefreshControls();for(const L of ['A','B']){const h=$(`#deck${L}GridHere`);if(h)h.textContent=currentLang==='de'?'DOWNBEAT HIER':'DOWNBEAT HERE'}const r=$('#cueRefreshOutputs');if(r)r.textContent=currentLang==='de'?'AUSGÄNGE LADEN':'LOAD OUTPUTS'};
 
 v31Bind();requestAnimationFrame(v31Ticker);
+
+// ===== v3.2: SMART ANALYSIS / LIBRARY METADATA / AUDIO TOOLS / DJ→STUDIO =====
+const V32_STORAGE='nevo-v32-smart-workflow';
+const nevoV32={analysisProfile:'techno',sort:'added',crate:'all'};
+try{Object.assign(nevoV32,JSON.parse(localStorage.getItem(V32_STORAGE)||'{}')||{})}catch{}
+function v32SavePrefs(){try{localStorage.setItem(V32_STORAGE,JSON.stringify(nevoV32))}catch{}}
+const V32_BPM_PROFILES={techno:{min:125,max:165,center:150,label:'TECHNO 125–165'},minimal:{min:135,max:160,center:147,label:'MINIMAL 135–160'},psy:{min:138,max:158,center:148,label:'PSY 138–158'},wide:{min:80,max:190,center:140,label:'WEIT 80–190'}};
+function v32Profile(){return V32_BPM_PROFILES[nevoV32.analysisProfile]||V32_BPM_PROFILES.techno}
+function v32Esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function v32Stars(n){n=clamp(Number(n)||0,0,5);return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n)}
+
+function v32SmartBpm(buffer){
+  const profile=v32Profile(),data=buffer.getChannelData(0),sr=buffer.sampleRate,maxSec=Math.min(buffer.duration,180),hop=2048,frames=Math.min(Math.floor(maxSec*sr/hop),Math.floor(data.length/hop));
+  if(frames<80)return {bpm:0,beatOffset:0,confidence:0};
+  const env=new Float32Array(frames);for(let f=0;f<frames;f++){const a=f*hop,b=Math.min(data.length,a+hop);let sum=0,n=0;for(let i=a;i<b;i+=8){const v=data[i]||0;sum+=v*v;n++}env[f]=n?Math.sqrt(sum/n):0}
+  const novelty=new Float32Array(frames);let ema=env[0]||0;for(let i=1;i<frames;i++){ema=ema*.92+env[i]*.08;novelty[i]=Math.max(0,env[i]-ema)}
+  let mean=0;for(const v of novelty)mean+=v;mean/=frames||1;for(let i=0;i<frames;i++)novelty[i]=Math.max(0,novelty[i]-mean*.7);
+  const corrAt=lag=>{lag=Math.max(1,Math.round(lag));let a=0,b=0,c=0;for(let i=lag;i<frames;i++){const x=novelty[i],y=novelty[i-lag];a+=x*y;b+=x*x;c+=y*y}return a/Math.sqrt((b*c)||1)};
+  let best={bpm:0,score:-1},second={score:-1};
+  for(let bpm=profile.min;bpm<=profile.max;bpm+=.5){const lag=60/bpm*sr/hop;const fundamental=corrAt(lag),barSupport=corrAt(lag*2),subSupport=corrAt(lag/2);const centerWeight=1-.055*Math.min(1,Math.abs(bpm-profile.center)/Math.max(1,(profile.max-profile.min)/2));const score=(fundamental+.28*barSupport+.08*subSupport)*centerWeight;if(score>best.score){second=best;best={bpm,score}}else if(score>second.score)second={bpm,score}}
+  if(!best.bpm||best.score<=0)return analyzeBpmBuffer(buffer);
+  const bpm=Math.round(best.bpm*10)/10,period=60/bpm,bins=96,phase=new Float64Array(bins);for(let i=1;i<frames;i++){const v=novelty[i];if(v<=0)continue;const tm=i*hop/sr,ph=((tm%period)+period)%period,bi=Math.min(bins-1,Math.floor(ph/period*bins));phase[bi]+=v}
+  let bi=0;for(let i=1;i<bins;i++)if(phase[i]>phase[bi])bi=i;const beatOffset=(bi+.5)/bins*period;const confidence=clamp((best.score-.35*Math.max(0,second.score))/.75,0,1);
+  return {bpm,beatOffset,confidence,profile:nevoV32.analysisProfile}
+}
+
+async function v32AnalyzeTrack(item,showStatus=true){
+  if(!item)return null;item.analyzing=true;renderDjLibrary();const prof=v32Profile();if(showStatus)setStatus(true,currentLang==='de'?'SMART ANALYSE LÄUFT':'SMART ANALYSIS RUNNING',`${item.title||item.name} · ${prof.label}`);
+  const badge=$('#djSmartAnalysisStatus');if(badge)badge.textContent=currentLang==='de'?'SMART ANALYSE LÄUFT …':'SMART ANALYSIS RUNNING …';
+  try{
+    const buffer=await ensureDjItemBuffer(item),r=v32SmartBpm(buffer),keyResult=v3AnalyzeKey(buffer);item.bpm=r.bpm||item.bpm||150;item.beatOffset=r.beatOffset||0;item.confidence=r.confidence||0;item.analysisProfile=nevoV32.analysisProfile;item.duration=buffer.duration;item.key=keyResult.key||item.key||'—';item.keyConfidence=keyResult.score||0;item.phrases=v3AnalyzePhrases(buffer,item.bpm);item.analyzing=false;await saveDjItem(item);
+    for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){const d=djDecks[L];d.detectedBpm=item.bpm;d.beatOffset=item.beatOffset;d.key=item.key;d.phrases=item.phrases;$(`#deck${L}Bpm`).value=item.bpm;$(`#deck${L}KeySelect`).value=item.key;drawDeckOverview(L);drawDeckZoom(L,true);v3RenderPhrases(L);refreshDeckUi(L)}
+    renderDjLibrary();if(badge)badge.textContent=`SMART · ${prof.label}`;if(showStatus)setStatus(true,currentLang==='de'?'Smart-Analyse fertig':'Smart analysis ready',`${item.bpm.toFixed(1)} BPM · ${item.key} · ${Math.round(item.confidence*100)}%`);return {...r,key:item.key,phrases:item.phrases}
+  }catch(e){item.analyzing=false;console.warn(e);renderDjLibrary();if(badge)badge.textContent='SMART ANALYSE';return null}
+}
+v3AnalyzeTrack=v32AnalyzeTrack;analyzeDjItem=v32AnalyzeTrack;
+
+// Persist v3.2 library metadata without changing the existing IndexedDB schema.
+saveDjItem=async function(item){
+  const db=await openDjDb();if(!db||!item)return;const blob=item.blob||item.file;if(!blob)return;
+  const row={id:item.id,name:item.name,title:item.title||cleanDjTitle(item.name),artist:item.artist||'',crate:item.crate||'',rating:clamp(Number(item.rating)||0,0,5),comment:item.comment||'',bpm:Number(item.bpm)||0,duration:Number(item.duration)||0,beatOffset:Number(item.beatOffset)||0,confidence:Number(item.confidence)||0,analysisProfile:item.analysisProfile||'',key:item.key||'—',phrases:Array.isArray(item.phrases)?item.phrases:[],hotCues:Array.isArray(item.hotCues)?item.hotCues:[null,null,null,null,null,null,null,null],cue:Number(item.cue)||0,blob,type:blob.type||'audio/*',addedAt:item.addedAt||Date.now()};
+  try{await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readwrite');tx.objectStore(DJ_DB_STORE).put(row);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch(e){console.warn('DJ library save failed',e)}
+};
+async function v32MergePersistedMeta(){
+  const db=await openDjDb();if(!db)return;let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),r=tx.objectStore(DJ_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return}
+  for(const row of rows){const item=djLibrary.find(x=>x.id===row.id);if(!item)continue;item.artist=row.artist||item.artist||'';item.crate=row.crate||item.crate||'';item.rating=Number(row.rating)||item.rating||0;item.comment=row.comment||item.comment||'';item.analysisProfile=row.analysisProfile||item.analysisProfile||''}
+  renderDjLibrary();v32RefreshCrateOptions()
+}
+
+function v32RefreshCrateOptions(){
+  const sel=$('#djCrateFilter');if(!sel)return;const keep=nevoV32.crate||'all',crates=[...new Set(djLibrary.map(x=>(x.crate||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));sel.innerHTML=`<option value="all">${currentLang==='de'?'ALLE':'ALL'}</option><option value="favorites">★ ${currentLang==='de'?'FAVORITEN':'FAVORITES'}</option>`+crates.map(x=>`<option value="crate:${v32Esc(x)}">${v32Esc(x)}</option>`).join('');if([...sel.options].some(o=>o.value===keep))sel.value=keep;else{sel.value='all';nevoV32.crate='all'}
+}
+let v32MetaItem=null;
+function v32OpenMeta(item){v32MetaItem=item;$('#djMetaHeading').textContent=item.title||cleanDjTitle(item.name);$('#djMetaTitle').value=item.title||cleanDjTitle(item.name);$('#djMetaArtist').value=item.artist||'';$('#djMetaCrate').value=item.crate||'';$('#djMetaRating').value=String(Number(item.rating)||0);$('#djMetaComment').value=item.comment||'';$('#djMetaModal').classList.remove('hidden')}
+function v32CloseMeta(){v32MetaItem=null;$('#djMetaModal')?.classList.add('hidden')}
+async function v32SaveMeta(){if(!v32MetaItem)return;v32MetaItem.title=$('#djMetaTitle').value.trim()||cleanDjTitle(v32MetaItem.name);v32MetaItem.artist=$('#djMetaArtist').value.trim();v32MetaItem.crate=$('#djMetaCrate').value.trim();v32MetaItem.rating=clamp(Number($('#djMetaRating').value)||0,0,5);v32MetaItem.comment=$('#djMetaComment').value.trim();await saveDjItem(v32MetaItem);v32CloseMeta();v32RefreshCrateOptions();renderDjLibrary()}
+async function v32DeleteItem(item){if(!item||!confirm(currentLang==='de'?`„${item.title||item.name}“ aus der Bibliothek löschen?`:`Delete “${item.title||item.name}” from library?`))return;for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){stopDeck(L);djDecks[L].item=null;djDecks[L].buffer=null}const i=djLibrary.findIndex(x=>x.id===item.id);if(i>=0)djLibrary.splice(i,1);try{URL.revokeObjectURL(item.url)}catch{}await deleteDjItemPersisted(item.id);v32CloseMeta();v32RefreshCrateOptions();renderDjLibrary();refreshAllDeckUi()}
+
+renderDjLibrary=function(){
+  const box=$('#djLibraryList');if(!box)return;v32RefreshCrateOptions();const q=($('#djLibrarySearch')?.value||'').trim().toLowerCase();let items=djLibrary.filter(item=>!q||`${item.title||''} ${item.name||''} ${item.artist||''} ${item.crate||''} ${item.comment||''}`.toLowerCase().includes(q));
+  const f=nevoV32.crate||'all';if(f==='favorites')items=items.filter(x=>(Number(x.rating)||0)>=4);else if(f.startsWith('crate:'))items=items.filter(x=>(x.crate||'')===f.slice(6));
+  const sort=nevoV32.sort||'added';items.sort((a,b)=>sort==='title'?(a.title||a.name).localeCompare(b.title||b.name):sort==='bpm'?(Number(a.bpm)||999)-(Number(b.bpm)||999):sort==='key'?String(a.key||'').localeCompare(String(b.key||'')):sort==='rating'?(Number(b.rating)||0)-(Number(a.rating)||0):(b.addedAt||0)-(a.addedAt||0));
+  if(!items.length){box.innerHTML=`<div class="dj-empty">${djLibrary.length?(currentLang==='de'?'Keine Treffer in diesem Filter.':'No tracks in this filter.'):t('djEmpty')}</div>`;return}
+  box.innerHTML='';items.forEach(item=>{const el=document.createElement('div');el.className='dj-lib-item';const bpm=item.analyzing?(currentLang==='de'?'ANALYSE…':'ANALYZING…'):(item.bpm?Number(item.bpm).toFixed(1):'—'),dur=item.duration?fmtDeckTime(item.duration):'—',artist=item.artist||item.name,crate=item.crate?`<span class="v32-crate">${v32Esc(item.crate)}</span>`:'';el.innerHTML=`<div class="dj-lib-title"><strong>${v32Esc(item.title||cleanDjTitle(item.name))}</strong><small class="v32-artist">${v32Esc(artist)}</small>${crate}</div><div class="dj-lib-bpm ${item.analyzing?'analyzing':''}">${bpm}</div><div class="dj-lib-key">${v32Esc(item.key||'—')}</div><div class="dj-lib-duration">${dur}</div><div class="dj-lib-rating" title="Bewertung">${v32Stars(item.rating)}</div><div class="dj-lib-actions"><button class="btn small fav-mini ${(Number(item.rating)||0)>=4?'active':''}" title="Favorit">★</button><button class="btn small meta-mini" title="Track Info">⚙</button><button class="btn small analyze-mini" title="Smart Analyse">⚡</button><button class="btn small">A</button><button class="btn small">B</button></div>`;
+    const [fav,meta,an,a,b]=el.querySelectorAll('button');fav.onclick=async()=>{item.rating=(Number(item.rating)||0)>=4?0:5;await saveDjItem(item);renderDjLibrary()};meta.onclick=()=>v32OpenMeta(item);an.onclick=()=>v32AnalyzeTrack(item,true);a.onclick=()=>loadItemToDeck(item,'A');b.onclick=()=>loadItemToDeck(item,'B');el.querySelector('.dj-lib-title strong').ondblclick=()=>v32OpenMeta(item);longPress(el,()=>v32OpenMeta(item));box.appendChild(el)
+  })
+};
+
+async function v32NormalizeAudio(){const b=audioEditBuffer(),c=audioEditClip;if(!b||!c)return;const s=Math.floor(c.trimStart*b.sampleRate),e=Math.min(b.length,Math.ceil(c.trimEnd*b.sampleRate)),stride=Math.max(1,Math.floor((e-s)/600000));let peak=0;for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let i=s;i<e;i+=stride)peak=Math.max(peak,Math.abs(d[i]||0))}if(peak<.00001)return;c.gain=clamp(.96/peak,.05,1.5);$('#audioClipGain').value=c.gain;updateAudioEditorVisuals();setStatus(audioReady,currentLang==='de'?'Clip normalisiert':'Clip normalized',`${Math.round(c.gain*100)}%`)}
+async function v32ReverseSelection(){const old=audioEditBuffer(),c=audioEditClip;if(!old||!c)return;const dur=c.trimEnd-c.trimStart;if(dur>180&&!confirm(currentLang==='de'?'Die Auswahl ist länger als 3 Minuten. Reverse kann auf dem Handy viel Speicher brauchen. Trotzdem fortfahren?':'Selection is longer than 3 minutes. Reverse can use a lot of memory. Continue?'))return;await initAudio();stopAudioEditPreview();const sr=old.sampleRate,s=Math.floor(c.trimStart*sr),e=Math.min(old.length,Math.ceil(c.trimEnd*sr)),len=Math.max(1,e-s),neo=ctx.createBuffer(old.numberOfChannels,len,sr);for(let ch=0;ch<old.numberOfChannels;ch++){const src=old.getChannelData(ch),dst=neo.getChannelData(ch);for(let i=0;i<len;i++)dst[i]=src[e-1-i]||0}const id=uid();audioBuffers.set(id,neo);c.audioId=id;c.trimStart=0;c.trimEnd=neo.duration;audioEditCursor=0;drawBufferWaveform(neo,$('#audioEditorWaveform'),'#b16bff');updateAudioEditorVisuals();setStatus(audioReady,currentLang==='de'?'Auswahl umgekehrt':'Selection reversed',fmtDeckTime(neo.duration))}
+function v32DuplicateAudio(){const tr=audioEditTrack,c=audioEditClip;if(!tr||!c)return;const start=clamp(c.start+c.len,0,TOTAL_BARS-1),copy={...c,id:uid(),start,name:localName(c)+' Copy',nameDe:(c.nameDe||c.name)+' Kopie',nameEn:(c.nameEn||c.name)+' Copy'};if(start+c.len>TOTAL_BARS)copy.len=Math.max(1,TOTAL_BARS-start);tr.clips.push(copy);renderTracks();setStatus(audioReady,currentLang==='de'?'Clip dupliziert':'Clip duplicated',localName(copy))}
+
+async function v32LoopToArranger(letter){const d=djDecks[letter];if(!d?.item)return;const buffer=await ensureDjItemBuffer(d.item),period=djBeatPeriod(letter);let start,end,label='8 Beat';if(d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)){start=d.manualLoopIn;end=d.manualLoopOut;label='Manual Loop'}else if(d.loopBeats){start=d.loopStart;end=start+d.loopBeats*period;label=`${d.loopBeats} Beat`}else{start=v3SnapTime(letter,d.audio.currentTime||0);end=start+8*period}start=clamp(start,0,buffer.duration);end=clamp(end,start+.03,buffer.duration);const audioId=uid();audioBuffers.set(audioId,buffer);let tr=tracks.find(t=>t.type==='audio');if(!tr){tr={id:'audio-'+uid(),name:'AUDIO',nameDe:'AUDIO',nameEn:'AUDIO',color:'#ffffff',type:'audio',mute:false,solo:false,clips:[]};tracks.push(tr)}const arrangerStart=clamp(Number($('#loopStart').value||1)-1,0,TOTAL_BARS-1),len=clamp(Math.max(1,Math.ceil((end-start)/barDurationSeconds())),1,TOTAL_BARS-arrangerStart),title=`${d.item.title||cleanDjTitle(d.item.name)} · ${label}`;tr.clips.push({id:uid(),start:arrangerStart,len,name:title,nameDe:title,nameEn:title,loop:true,audioId,trimStart:start,trimEnd:end,fadeIn:0,fadeOut:0,gain:1});renderTracks();setStatus(true,currentLang==='de'?'DJ-Loop im Arranger':'DJ loop in arranger',`${fmtDeckTime(start)} – ${fmtDeckTime(end)}`);document.querySelector('.arranger-panel')?.scrollIntoView({behavior:'smooth',block:'start'})}
+
+function v32RefreshLanguage(){const de=currentLang==='de';if($('#djSmartAnalysisStatus'))$('#djSmartAnalysisStatus').textContent=`SMART · ${v32Profile().label}`;if($('#deckALoopToArranger'))$('#deckALoopToArranger').textContent=de?'↻ LOOP → ARRANGER':'↻ LOOP → ARRANGER';if($('#deckBLoopToArranger'))$('#deckBLoopToArranger').textContent=de?'↻ LOOP → ARRANGER':'↻ LOOP → ARRANGER';v32RefreshCrateOptions();renderDjLibrary()}
+const v32OldSetLanguage=setLanguage;setLanguage=function(lang){v32OldSetLanguage(lang);v32RefreshLanguage()};
+
+function v32Bind(){
+  const profile=$('#djAnalysisProfile'),sort=$('#djLibrarySort'),crate=$('#djCrateFilter');if(profile){profile.value=nevoV32.analysisProfile;profile.onchange=e=>{nevoV32.analysisProfile=e.target.value;v32SavePrefs();v32RefreshLanguage();setStatus(audioReady,currentLang==='de'?'Analyseprofil geändert':'Analysis profile changed',v32Profile().label)}}if(sort){sort.value=nevoV32.sort;sort.onchange=e=>{nevoV32.sort=e.target.value;v32SavePrefs();renderDjLibrary()}}if(crate){crate.onchange=e=>{nevoV32.crate=e.target.value;v32SavePrefs();renderDjLibrary()}}
+  if($('#djLibrarySearch'))$('#djLibrarySearch').oninput=renderDjLibrary;
+  $('#djMetaClose')?.addEventListener('click',v32CloseMeta);$('#djMetaSave')?.addEventListener('click',v32SaveMeta);$('#djMetaDelete')?.addEventListener('click',()=>v32MetaItem&&v32DeleteItem(v32MetaItem));$('#djMetaModal')?.addEventListener('click',e=>{if(e.target.id==='djMetaModal')v32CloseMeta()});
+  $('#audioNormalizeBtn')?.addEventListener('click',v32NormalizeAudio);$('#audioReverseBtn')?.addEventListener('click',v32ReverseSelection);$('#audioDuplicateBtn')?.addEventListener('click',v32DuplicateAudio);$('#deckALoopToArranger')?.addEventListener('click',()=>v32LoopToArranger('A'));$('#deckBLoopToArranger')?.addEventListener('click',()=>v32LoopToArranger('B'));
+  v32RefreshLanguage();setTimeout(v32MergePersistedMeta,450);setTimeout(v32MergePersistedMeta,1400)
+}
+v32Bind();
