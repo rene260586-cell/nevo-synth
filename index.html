@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v2.5</title>
+  <title>NÉVO Studio v2.6</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v2.5</span></div>
+        <div class="brand-sub">STUDIO <span>v2.6</span></div>
       </div>
 
       <div class="transport">
@@ -124,10 +124,23 @@
           <div><div class="eyebrow cyan">ARRANGER</div><h2 data-i18n="songView">Song-Ansicht</h2></div>
           <div class="arranger-actions">
             <label class="loop-control"><span data-i18n="loop">LOOP</span>
-              <select id="loopStart"><option>1</option><option>5</option><option>9</option></select>
+              <select id="loopStart"></select>
               <span>→</span>
-              <select id="loopEnd"><option>8</option><option selected>16</option></select>
+              <select id="loopEnd"></select>
             </label>
+            <label class="song-length-control">
+              <span data-i18n="songLength">SONGLÄNGE</span>
+              <select id="songLengthPreset">
+                <option value="16">16 Takte</option>
+                <option value="32">32 Takte</option>
+                <option value="64">64 Takte</option>
+                <option value="128">128 Takte</option>
+                <option value="5m">5:00 Min</option>
+                <option value="10m">10:00 Min</option>
+              </select>
+            </label>
+            <button id="arrPlayBtn" class="btn small" type="button">▶ SONG</button>
+            <button id="arrStopBtn" class="btn small" type="button">■ STOPP</button>
             <button id="addTrackBtn" class="btn small" data-i18n="addTrack">+ SPUR</button>
             <label class="btn small file-btn"><span data-i18n="addAudio">+ AUDIO</span><input id="audioImport" type="file" accept="audio/*"></label>
           </div>
@@ -135,13 +148,23 @@
 
         <div class="arranger-help" data-i18n="arrangerHelp">Tipp auf eine freie Stelle = Clip hinzufügen · Clip ziehen = verschieben · rechten Griff ziehen = verlängern · lange drücken = Hilfe/Aktionen</div>
 
-        <div class="arranger-scroll">
+        <div class="arranger-scroll" id="arrangerScroll">
           <div class="timeline-row">
             <div class="track-label timeline-label" data-i18n="bar">TAKT</div>
             <div id="timeline" class="timeline"></div>
           </div>
           <div id="trackList" class="track-list"></div>
           <div id="playhead" class="playhead"></div>
+        </div>
+
+        <div class="arranger-bottom-transport">
+          <button id="arrBottomPlayBtn" class="btn primary small" type="button">▶ SONG ABSPIELEN</button>
+          <button id="arrBottomStopBtn" class="btn small" type="button">■ STOPP</button>
+          <div class="song-time-box">
+            <span data-i18n="position">POSITION</span>
+            <strong id="songPositionLabel">00:00 / 00:26</strong>
+          </div>
+          <div class="song-max-hint"><strong data-i18n="maxTenMinutes">MAX. 10 MINUTEN</strong><span id="songBarsInfo">150 BPM · 375 Takte</span></div>
         </div>
       </section>
 
@@ -212,10 +235,14 @@
           <div class="seq-controls">
             <label><span data-i18n="rootNote">GRUNDTON</span> <select id="rootNote"><option>C2</option><option>D2</option><option>E2</option><option>F2</option><option>G2</option><option>A2</option><option>B2</option><option selected>D3</option><option>F3</option><option>A3</option></select></label>
             <label class="swing-box"><span data-i18n="swing">SWING</span> <input id="swing" type="range" min="0" max="75" value="20"><span id="swingValue">20%</span></label>
+            <button id="groovePlayBtn" class="btn small groove-play" type="button">▶ GROOVE ANHÖREN</button>
+            <button id="grooveStopBtn" class="btn small" type="button">■ STOPP</button>
+            <button id="grooveToArrangerBtn" class="btn small groove-apply" type="button">→ IN SONG ÜBERNEHMEN</button>
             <button id="clearSeq" class="btn small" data-i18n="clear">LÖSCHEN</button>
             <button id="fillSeq" class="btn small" data-i18n="demo">DEMO</button>
           </div>
         </div>
+        <div id="grooveInfo" class="groove-info">Tippe einen Schritt an = Sound kurz vorhören. GROOVE ANHÖREN spielt nur diesen 16-Schritt-Groove. IN SONG ÜBERNEHMEN legt ihn als eigene Blöcke in den Arranger.</div>
         <div class="seq-table">
           <div class="seq-row"><div class="seq-name synth">SYNTH</div><div id="synthSteps" class="steps"></div></div>
           <div class="seq-row"><div class="seq-name kick">KICK</div><div id="kickSteps" class="steps"></div></div>
