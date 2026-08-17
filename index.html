@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v2.4</title>
+  <title>NÉVO Studio v2.5</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v2.4</span></div>
+        <div class="brand-sub">STUDIO <span>v2.5</span></div>
       </div>
 
       <div class="transport">
@@ -91,6 +91,31 @@
           <button class="preset-card" data-preset="acid"><strong>ACID 154</strong><span>Resonanz · Filter · Slide-Feeling</span></button>
           <button class="preset-card" data-preset="minimal"><strong>MINIMAL 146</strong><span>Wenig Melodie · viel Groove</span></button>
           <button class="preset-card" data-preset="raw"><strong>ROHER PEAK 152</strong><span>Härter · direkter · dichter</span></button>
+        </div>
+      </section>
+
+      <section class="panel glass library-panel" data-help="library">
+        <div class="section-head library-head">
+          <div>
+            <div class="eyebrow amber" data-i18n="templatesEyebrow">VORLAGEN & LOOPS</div>
+            <h2 data-i18n="templatesTitle">Fertige Beats als Startpunkt</h2>
+            <p class="section-copy" data-i18n="templatesText">Eine Vorlage laden und sofort hören – oder einzelne Kick-, Bass-, Drum-, Acid-, Synth-, Melodie-, Vocal- und FX-Blöcke in deinen eigenen Song setzen.</p>
+          </div>
+        </div>
+
+        <div class="template-strip">
+          <div class="subhead-row">
+            <div><strong data-i18n="demoSongs">DEMO-SONGS</strong><span data-i18n="demoSongsHint">Komplette 16-Takt-Grundlagen zum Zerlegen und Umbauen.</span></div>
+          </div>
+          <div id="demoTemplateGrid" class="demo-template-grid"></div>
+        </div>
+
+        <div class="loop-library-wrap">
+          <div class="subhead-row">
+            <div><strong data-i18n="loopLibrary">LOOP-BIBLIOTHEK</strong><span data-i18n="loopLibraryHint">Vorschau anhören oder als verlängerbaren Block in den Arranger legen.</span></div>
+          </div>
+          <div id="loopCategoryTabs" class="loop-tabs"></div>
+          <div id="loopLibraryGrid" class="loop-library-grid"></div>
         </div>
       </section>
 

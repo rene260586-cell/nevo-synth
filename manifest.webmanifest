@@ -1,7 +1,7 @@
 {
   "name": "NÉVO Studio",
   "short_name": "NÉVO Studio",
-  "description": "Einfache mobile Techno-DAW mit Arranger, Loops, Synth, Keyboard-Aufnahme, Piano-Roll und WAV-Export.",
+  "description": "Einfache mobile Techno-DAW mit Demo-Vorlagen, Loop-Bibliothek, Arranger, Synth, Keyboard-Aufnahme, Piano-Roll und WAV-Export.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
