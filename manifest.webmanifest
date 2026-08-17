@@ -1,13 +1,13 @@
 {
   "name": "NÉVO Synth Lab",
   "short_name": "NÉVO Synth",
-  "description": "Touch-optimierter Synthesizer, Sequencer, Loop-Recorder und WAV-Export.",
+  "description": "Touch-optimierter Synthesizer, Sequencer, Hat-Groove, Loop-Recorder und WAV-Export.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#080b0f",
-  "theme_color": "#0d1117",
+  "background_color": "#060912",
+  "theme_color": "#0b1120",
   "orientation": "any",
   "categories": ["music", "entertainment", "productivity"],
   "icons": [
