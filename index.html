@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v2.8</title>
+  <title>NÉVO Studio v2.9</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v2.8</span></div>
+        <div class="brand-sub">STUDIO <span>v2.9</span></div>
       </div>
 
       <div class="transport">
@@ -83,6 +83,19 @@
           </label>
         </div>
 
+        <div class="dj-modebar">
+          <div class="dj-mode-tabs" role="group" aria-label="DJ Ansicht">
+            <button id="djModePro" class="btn small mode-tab active" type="button">DJ PRO</button>
+            <button id="djModeFlx4" class="btn small mode-tab" type="button">DDJ-FLX4</button>
+          </div>
+          <div class="flx-midi-strip">
+            <button id="flxMidiConnect" class="btn small" type="button">USB/MIDI VERBINDEN</button>
+            <button id="flxMidiLearn" class="btn small" type="button">MIDI LEARN AUS</button>
+            <button id="flxMidiReset" class="btn small" type="button">MAPPINGS LÖSCHEN</button>
+            <span id="flxMidiStatus" class="flx-midi-status">Kein MIDI-Gerät verbunden</span>
+          </div>
+        </div>
+
         <div class="dj-library-box">
           <div class="subhead-row dj-library-head">
             <div><strong data-i18n="djLibrary">PLAYER-BIBLIOTHEK</strong><span data-i18n="djLibraryHint">Song auswählen und auf Deck A oder B laden.</span></div>
@@ -94,6 +107,76 @@
           </div>
           <div class="dj-library-columns"><span>TITEL</span><span>BPM</span><span>LÄNGE</span><span>AKTION</span></div>
           <div id="djLibraryList" class="dj-library-list"><div class="dj-empty" data-i18n="djEmpty">Noch keine Songs geladen.</div></div>
+        </div>
+
+        <div id="flx4Surface" class="flx4-surface" hidden>
+          <div class="flx4-helpbar">
+            <strong>DDJ-FLX4 MODUS</strong>
+            <span>Bildschirm wie dein Controller: Decks außen, Mixer in der Mitte. MIDI LEARN: einschalten → Bildschirm-Regler antippen → echten Regler bewegen.</span>
+          </div>
+
+          <div class="flx4-controller">
+            <section class="flx4-deck flx4-a">
+              <div class="flx4-deck-head"><span>DECK 1 / A</span><strong id="flxATitle">Kein Song</strong><small id="flxAMeta">— BPM · 00:00</small></div>
+              <div class="flx4-mini-wave"><div id="flxAProgress" class="flx4-mini-progress"></div><i></i></div>
+              <div class="flx4-deck-body">
+                <div class="flx4-pitch-column">
+                  <label>TEMPO <b id="flxAPitchVal">0.0%</b><input id="flxAPitch" data-flx-action="A.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
+                  <button class="flx4-sync" data-flx-action="A.sync" type="button">BEAT<br>SYNC</button>
+                </div>
+                <div id="flxAJog" class="flx4-jog" data-flx-action="A.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>A</span><small>JOG</small></div></div>
+              </div>
+              <div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY</button></div>
+              <div class="flx4-pads">
+                <button data-flx-action="A.hot1" data-hot="A-0"><b>1</b><span>HOT CUE</span></button><button data-flx-action="A.hot2" data-hot="A-1"><b>2</b><span>HOT CUE</span></button><button data-flx-action="A.hot3" data-hot="A-2"><b>3</b><span>HOT CUE</span></button><button data-flx-action="A.hot4" data-hot="A-3"><b>4</b><span>HOT CUE</span></button>
+                <button data-flx-action="A.loop4"><b>5</b><span>LOOP 4</span></button><button data-flx-action="A.loop8"><b>6</b><span>LOOP 8</span></button><button data-flx-action="A.loop16"><b>7</b><span>LOOP 16</span></button><button data-flx-action="A.loop32"><b>8</b><span>LOOP 32</span></button>
+              </div>
+            </section>
+
+            <section class="flx4-mixer-section">
+              <div class="flx4-mixer-brand"><strong>NÉVO</strong><span>FLX4 CONTROL</span></div>
+              <div class="flx4-mixer-columns">
+                <div class="flx4-channel" data-channel="A">
+                  <label>HIGH<input data-flx-action="A.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>MID<input data-flx-action="A.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>LOW<input data-flx-action="A.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>FILTER<input data-flx-action="A.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label class="flx4-fader">CH 1<input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+                </div>
+                <div class="flx4-master-column">
+                  <div class="flx4-levels"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                  <div class="flx4-mid-buttons"><button data-flx-action="A.keylock" type="button">KEY<br>LOCK A</button><button data-flx-action="B.keylock" type="button">KEY<br>LOCK B</button></div>
+                  <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small><em>Jeder markierte Regler kann gelernt werden.</em></div>
+                </div>
+                <div class="flx4-channel" data-channel="B">
+                  <label>HIGH<input data-flx-action="B.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>MID<input data-flx-action="B.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>LOW<input data-flx-action="B.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>FILTER<input data-flx-action="B.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label class="flx4-fader">CH 2<input data-flx-action="B.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+                </div>
+              </div>
+              <label class="flx4-cross"><span>A</span><input id="flxCrossfader" data-flx-action="crossfader" type="range" min="-1" max="1" step="0.01" value="0"><span>B</span></label>
+              <button id="flxResetMixer" class="btn small flx-reset" type="button">MIXER NULLSTELLEN</button>
+            </section>
+
+            <section class="flx4-deck flx4-b">
+              <div class="flx4-deck-head"><span>DECK 2 / B</span><strong id="flxBTitle">Kein Song</strong><small id="flxBMeta">— BPM · 00:00</small></div>
+              <div class="flx4-mini-wave"><div id="flxBProgress" class="flx4-mini-progress"></div><i></i></div>
+              <div class="flx4-deck-body">
+                <div id="flxBJog" class="flx4-jog" data-flx-action="B.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>B</span><small>JOG</small></div></div>
+                <div class="flx4-pitch-column">
+                  <label>TEMPO <b id="flxBPitchVal">0.0%</b><input id="flxBPitch" data-flx-action="B.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
+                  <button class="flx4-sync" data-flx-action="B.sync" type="button">BEAT<br>SYNC</button>
+                </div>
+              </div>
+              <div class="flx4-transport"><button data-flx-action="B.cue" type="button">CUE</button><button class="play" data-flx-action="B.play" type="button">▶ PLAY</button></div>
+              <div class="flx4-pads">
+                <button data-flx-action="B.hot1" data-hot="B-0"><b>1</b><span>HOT CUE</span></button><button data-flx-action="B.hot2" data-hot="B-1"><b>2</b><span>HOT CUE</span></button><button data-flx-action="B.hot3" data-hot="B-2"><b>3</b><span>HOT CUE</span></button><button data-flx-action="B.hot4" data-hot="B-3"><b>4</b><span>HOT CUE</span></button>
+                <button data-flx-action="B.loop4"><b>5</b><span>LOOP 4</span></button><button data-flx-action="B.loop8"><b>6</b><span>LOOP 8</span></button><button data-flx-action="B.loop16"><b>7</b><span>LOOP 16</span></button><button data-flx-action="B.loop32"><b>8</b><span>LOOP 32</span></button>
+              </div>
+            </section>
+          </div>
         </div>
 
         <div class="dj-decks">

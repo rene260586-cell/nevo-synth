@@ -1,7 +1,7 @@
 {
   "name": "NÉVO Studio",
   "short_name": "NÉVO Studio",
-  "description": "Einfache Techno-DAW und DJ-Player mit zwei Decks, farbigen Overview- und Zoom-Wellenformen, Hot Cues, Beatgrid, BPM-Analyse, lokaler Song-Bibliothek, Loop-Bibliothek, Arranger, Audio-Editor, Synth und Piano-Roll.",
+  "description": "Einfache Techno-DAW und DJ-Player mit zwei Decks, farbigen Overview- und Zoom-Wellenformen, Hot Cues, Beatgrid, BPM-Analyse, lokaler Song-Bibliothek, FLX4-Controller-Modus mit MIDI-Learn, Loop-Bibliothek, Arranger, Audio-Editor, Synth und Piano-Roll.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",

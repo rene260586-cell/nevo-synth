@@ -916,3 +916,158 @@ function bindDjPlayer(){
 }
 
 bindAudioEditor();bindDjPlayer();
+
+// ===== v2.9: DDJ-FLX4 MODE + GENERIC WEB MIDI LEARN =====
+const FLX_MIDI_STORAGE='nevo-flx4-midi-mappings-v1';
+const FLX_MODE_STORAGE='nevo-dj-view-mode-v1';
+const flxState={mode:'pro',midiAccess:null,learn:false,target:null,mappings:{},lastMidi:new Map()};
+try{flxState.mappings=JSON.parse(localStorage.getItem(FLX_MIDI_STORAGE)||'{}')||{}}catch{flxState.mappings={}}
+
+function flxIsContinuous(action){return /\.(pitch|volume|eqHigh|eqMid|eqLow|filter)$/.test(action)||action==='crossfader'}
+function flxActionLabel(action){
+  const map={
+    'A.play':'Deck A Play/Pause','A.cue':'Deck A Cue','A.sync':'Deck A Sync','A.keylock':'Deck A Key Lock',
+    'B.play':'Deck B Play/Pause','B.cue':'Deck B Cue','B.sync':'Deck B Sync','B.keylock':'Deck B Key Lock',
+    'A.pitch':'Deck A Tempo','B.pitch':'Deck B Tempo','A.volume':'Deck A Lautstärke','B.volume':'Deck B Lautstärke',
+    'A.eqHigh':'Deck A High','A.eqMid':'Deck A Mid','A.eqLow':'Deck A Low','A.filter':'Deck A Filter',
+    'B.eqHigh':'Deck B High','B.eqMid':'Deck B Mid','B.eqLow':'Deck B Low','B.filter':'Deck B Filter','crossfader':'Crossfader'
+  };
+  if(map[action])return map[action];
+  const m=action.match(/^([AB])\.hot([1-4])$/);if(m)return `Deck ${m[1]} Hot Cue ${m[2]}`;
+  const l=action.match(/^([AB])\.loop(4|8|16|32)$/);if(l)return `Deck ${l[1]} Loop ${l[2]}`;
+  return action;
+}
+function flxStatus(text,kind=''){
+  const el=$('#flxMidiStatus');if(!el)return;el.textContent=text;el.classList.toggle('connected',kind==='connected');el.classList.toggle('error',kind==='error');
+}
+function setDjViewMode(mode){
+  flxState.mode=mode==='flx4'?'flx4':'pro';
+  const panel=$('.dj-panel');if(panel)panel.classList.toggle('flx4-active',flxState.mode==='flx4');
+  const surf=$('#flx4Surface');if(surf)surf.hidden=flxState.mode!=='flx4';
+  $('#djModePro')?.classList.toggle('active',flxState.mode==='pro');$('#djModeFlx4')?.classList.toggle('active',flxState.mode==='flx4');
+  try{localStorage.setItem(FLX_MODE_STORAGE,flxState.mode)}catch{}
+}
+
+// Enhanced deck audio graph: 3-band EQ + DJ filter before channel gain.
+async function ensureDeckConnected(deck){
+  await initAudio();
+  if(!deck.source){
+    deck.source=ctx.createMediaElementSource(deck.audio);
+    deck.eqLowNode=ctx.createBiquadFilter();deck.eqLowNode.type='lowshelf';deck.eqLowNode.frequency.value=180;
+    deck.eqMidNode=ctx.createBiquadFilter();deck.eqMidNode.type='peaking';deck.eqMidNode.frequency.value=1000;deck.eqMidNode.Q.value=.8;
+    deck.eqHighNode=ctx.createBiquadFilter();deck.eqHighNode.type='highshelf';deck.eqHighNode.frequency.value=6000;
+    deck.colorFilterNode=ctx.createBiquadFilter();deck.colorFilterNode.type='lowpass';deck.colorFilterNode.frequency.value=20000;deck.colorFilterNode.Q.value=.75;
+    deck.gainNode=ctx.createGain();
+    deck.source.connect(deck.eqLowNode);deck.eqLowNode.connect(deck.eqMidNode);deck.eqMidNode.connect(deck.eqHighNode);deck.eqHighNode.connect(deck.colorFilterNode);deck.colorFilterNode.connect(deck.gainNode);deck.gainNode.connect(master);
+    deck.eqLow=deck.eqLow||0;deck.eqMid=deck.eqMid||0;deck.eqHigh=deck.eqHigh||0;deck.filterValue=deck.filterValue||0;
+    flxApplyEq(deck.letter);
+  }
+  updateCrossfaderGains();
+}
+function flxApplyEq(letter){
+  const d=djDecks[letter];if(!d)return;
+  const t=ctx?.currentTime||0;
+  if(d.eqLowNode)d.eqLowNode.gain.setTargetAtTime((d.eqLow||0)*12,t,.015);
+  if(d.eqMidNode)d.eqMidNode.gain.setTargetAtTime((d.eqMid||0)*12,t,.015);
+  if(d.eqHighNode)d.eqHighNode.gain.setTargetAtTime((d.eqHigh||0)*12,t,.015);
+  if(d.colorFilterNode){
+    const v=clamp(d.filterValue||0,-1,1);
+    if(Math.abs(v)<.02){d.colorFilterNode.type='lowpass';d.colorFilterNode.frequency.setTargetAtTime(20000,t,.02);d.colorFilterNode.Q.setTargetAtTime(.75,t,.02)}
+    else if(v<0){d.colorFilterNode.type='lowpass';const f=200*Math.pow(100,1+v);d.colorFilterNode.frequency.setTargetAtTime(clamp(f,180,20000),t,.02);d.colorFilterNode.Q.setTargetAtTime(1+Math.abs(v)*5,t,.02)}
+    else{d.colorFilterNode.type='highpass';const f=22*Math.pow(230,v);d.colorFilterNode.frequency.setTargetAtTime(clamp(f,22,5500),t,.02);d.colorFilterNode.Q.setTargetAtTime(1+v*4,t,.02)}
+  }
+}
+function flxSetContinuous(action,norm,fromMidi=false){
+  norm=clamp(Number(norm)||0,0,1);
+  if(action==='crossfader'){
+    const v=norm*2-1;if($('#djCrossfader'))$('#djCrossfader').value=v;if($('#flxCrossfader'))$('#flxCrossfader').value=v;updateCrossfaderGains();return;
+  }
+  const m=action.match(/^([AB])\.(.+)$/);if(!m)return;const L=m[1],kind=m[2],d=djDecks[L];
+  if(kind==='pitch'){
+    const v=-16+norm*32;if($(`#deck${L}Pitch`))$(`#deck${L}Pitch`).value=v;if($(`#flx${L}Pitch`))$(`#flx${L}Pitch`).value=v;updateDeckRate(L);return;
+  }
+  if(kind==='volume'){
+    const v=norm;if($(`#deck${L}Volume`))$(`#deck${L}Volume`).value=v;const flx=document.querySelector(`[data-flx-action="${L}.volume"]`);if(flx)flx.value=v;updateCrossfaderGains();return;
+  }
+  const v=norm*2-1;
+  if(kind==='eqHigh')d.eqHigh=v;if(kind==='eqMid')d.eqMid=v;if(kind==='eqLow')d.eqLow=v;if(kind==='filter')d.filterValue=v;
+  const input=document.querySelector(`[data-flx-action="${action}"]`);if(input&&!fromMidi)input.value=v;else if(input)input.value=v;
+  flxApplyEq(L);
+}
+function flxTriggerAction(action){
+  const m=action.match(/^([AB])\.(.+)$/);if(!m)return;const L=m[1],kind=m[2];
+  if(kind==='play')return toggleDeck(L);if(kind==='cue')return cueDeck(L);if(kind==='sync')return syncDeck(L);if(kind==='keylock')return toggleDeckKeyLock(L);
+  let hot=kind.match(/^hot([1-4])$/);if(hot)return hotCueAction(L,Number(hot[1])-1);
+  let loop=kind.match(/^loop(4|8|16|32)$/);if(loop){const beats=Number(loop[1]);const sel=$(`#deck${L}Loop`);if(sel)sel.value=String(beats);return setDeckLoop(L)}
+}
+function flxRunAction(action,norm=1,fromMidi=false){if(flxIsContinuous(action))return flxSetContinuous(action,norm,fromMidi);if(norm>.45)flxTriggerAction(action)}
+
+function bindFlxRange(input){
+  if(!input)return;const action=input.dataset.flxAction;if(!action)return;
+  input.addEventListener('input',()=>{
+    if(flxState.learn)return;
+    let norm;if(action.endsWith('.pitch'))norm=(Number(input.value)+16)/32;else if(action.endsWith('.volume'))norm=Number(input.value);else norm=(Number(input.value)+1)/2;
+    flxRunAction(action,norm,false);
+  });
+}
+function bindFlxJog(letter){
+  const el=$(`#flx${letter}Jog`);if(!el)return;let active=false,lastX=0,moved=false;
+  el.addEventListener('pointerdown',e=>{if(flxState.learn)return;active=true;moved=false;lastX=e.clientX;el.setPointerCapture(e.pointerId)});
+  el.addEventListener('pointermove',e=>{if(!active)return;const d=djDecks[letter];if(!d.item)return;const dx=e.clientX-lastX;lastX=e.clientX;if(Math.abs(dx)>.5)moved=true;try{d.audio.currentTime=clamp((d.audio.currentTime||0)+dx*.012,0,d.audio.duration||0)}catch{}});
+  const end=()=>{active=false};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+}
+
+function refreshFlx4Ui(){
+  for(const L of ['A','B']){
+    const d=djDecks[L],dur=d.audio?.duration||d.buffer?.duration||0,cur=d.audio?.currentTime||0;
+    const title=$(`#flx${L}Title`),meta=$(`#flx${L}Meta`),prog=$(`#flx${L}Progress`),jog=$(`#flx${L}Jog`),pitch=$(`#flx${L}Pitch`),pv=$(`#flx${L}PitchVal`);
+    if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');
+    if(meta)meta.textContent=`${d.item?djDeckBpm(L).toFixed(1):'—'} BPM · ${fmtDeckTime(cur)}`;if(prog)prog.style.width=(dur?clamp(cur/dur*100,0,100):0)+'%';
+    if(jog)jog.style.setProperty('--jog-angle',`${(cur*72)%360}deg`);
+    const stdPitch=Number($(`#deck${L}Pitch`)?.value||0);if(pitch&&document.activeElement!==pitch)pitch.value=stdPitch;if(pv)pv.textContent=(stdPitch>=0?'+':'')+stdPitch.toFixed(1)+'%';
+    const play=document.querySelector(`[data-flx-action="${L}.play"]`);if(play){play.classList.toggle('playing',!!d.item&&!d.audio.paused);play.textContent=!!d.item&&!d.audio.paused?'❚❚ PAUSE':'▶ PLAY'}
+    for(let i=0;i<4;i++){const p=document.querySelector(`[data-hot="${L}-${i}"]`);if(p)p.classList.toggle('hot-set',Number.isFinite(d.hotCues?.[i]))}
+  }
+  if($('#flxCrossfader')&&document.activeElement!==$('#flxCrossfader'))$('#flxCrossfader').value=$('#djCrossfader')?.value||0;
+}
+function startFlxTicker(){let last=0;const tick=ts=>{if(ts-last>80){last=ts;refreshFlx4Ui()}requestAnimationFrame(tick)};requestAnimationFrame(tick)}
+
+function flxMidiMessageKey(data){
+  const status=data[0]||0,type=status&0xF0,ch=status&0x0F,d1=data[1]||0,d2=data[2]||0;
+  if(type===0xE0)return {key:`e0:${ch}:pitch`,norm:clamp(((d2<<7)|d1)/16383,0,1)};
+  return {key:`${type.toString(16)}:${ch}:${d1}`,norm:clamp(d2/127,0,1)};
+}
+function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{}}
+function clearFlxLearnTarget(){document.querySelectorAll('.learn-target').forEach(x=>x.classList.remove('learn-target'));flxState.target=null}
+function selectFlxLearnTarget(el){clearFlxLearnTarget();flxState.target=el.dataset.flxAction;el.classList.add('learn-target');$('#flxLearnHint').textContent=`Warte: ${flxActionLabel(flxState.target)}`;flxStatus(`Bewege jetzt am Controller: ${flxActionLabel(flxState.target)}`,'connected')}
+function handleFlxMidiMessage(e){
+  const {key,norm}=flxMidiMessageKey(e.data||[]);if(!key)return;
+  if(flxState.learn&&flxState.target){if(norm<=.01)return;for(const k of Object.keys(flxState.mappings))if(flxState.mappings[k]===flxState.target)delete flxState.mappings[k];flxState.mappings[key]=flxState.target;saveFlxMappings();const label=flxActionLabel(flxState.target);clearFlxLearnTarget();$('#flxLearnHint').textContent=`Gelernt: ${label}`;flxStatus(`MIDI gelernt: ${label}`,'connected');return}
+  const action=flxState.mappings[key];if(!action)return;
+  const prev=flxState.lastMidi.get(key)??0;flxState.lastMidi.set(key,norm);
+  if(flxIsContinuous(action))flxRunAction(action,norm,true);else if(norm>.45&&prev<=.45)flxRunAction(action,1,true);
+}
+function attachFlxMidiInputs(){
+  if(!flxState.midiAccess)return;let count=0,names=[];for(const input of flxState.midiAccess.inputs.values()){count++;names.push(input.name||'MIDI');input.onmidimessage=handleFlxMidiMessage}
+  if(count)flxStatus(`${count} MIDI-Gerät${count===1?'':'e'}: ${names.join(', ')}`,'connected');else flxStatus(currentLang==='de'?'MIDI bereit – noch kein Gerät gefunden':'MIDI ready – no device found','error')
+}
+async function connectFlxMidi(){
+  if(!navigator.requestMIDIAccess){flxStatus(currentLang==='de'?'Dieser Browser bietet hier kein Web MIDI. FLX4-Modus am Bildschirm funktioniert trotzdem.':'This browser does not provide Web MIDI here. On-screen FLX4 mode still works.','error');return}
+  try{flxState.midiAccess=await navigator.requestMIDIAccess({sysex:false});attachFlxMidiInputs();flxState.midiAccess.onstatechange=attachFlxMidiInputs}catch(e){console.warn(e);flxStatus(currentLang==='de'?'MIDI-Verbindung nicht erlaubt oder fehlgeschlagen':'MIDI connection denied or failed','error')}
+}
+function toggleFlxMidiLearn(){flxState.learn=!flxState.learn;clearFlxLearnTarget();$('#flxMidiLearn').textContent=flxState.learn?(currentLang==='de'?'MIDI LEARN AN':'MIDI LEARN ON'):(currentLang==='de'?'MIDI LEARN AUS':'MIDI LEARN OFF');$('#flxMidiLearn').classList.toggle('active',flxState.learn);$('#flxLearnHint').textContent=flxState.learn?(currentLang==='de'?'Ziel antippen':'Tap a target'):(currentLang==='de'?'AUS':'OFF')}
+function resetFlxMixer(){
+  for(const L of ['A','B']){const d=djDecks[L];d.eqLow=d.eqMid=d.eqHigh=d.filterValue=0;['eqLow','eqMid','eqHigh','filter'].forEach(k=>{const el=document.querySelector(`[data-flx-action="${L}.${k}"]`);if(el)el.value=0});const vol=document.querySelector(`[data-flx-action="${L}.volume"]`);if(vol)vol.value=.9;if($(`#deck${L}Volume`))$(`#deck${L}Volume`).value=.9;flxApplyEq(L)}if($('#flxCrossfader'))$('#flxCrossfader').value=0;if($('#djCrossfader'))$('#djCrossfader').value=0;updateCrossfaderGains();
+}
+function bindFlx4Mode(){
+  if(!$('#flx4Surface'))return;
+  $('#djModePro').onclick=()=>setDjViewMode('pro');$('#djModeFlx4').onclick=()=>setDjViewMode('flx4');$('#flxMidiConnect').onclick=connectFlxMidi;$('#flxMidiLearn').onclick=toggleFlxMidiLearn;$('#flxMidiReset').onclick=()=>{if(confirm(currentLang==='de'?'Alle MIDI-Zuweisungen löschen?':'Clear all MIDI mappings?')){flxState.mappings={};saveFlxMappings();flxStatus(currentLang==='de'?'MIDI-Zuweisungen gelöscht':'MIDI mappings cleared','')}};$('#flxResetMixer').onclick=resetFlxMixer;
+  document.querySelectorAll('#flx4Surface [data-flx-action]').forEach(el=>{
+    el.addEventListener('click',e=>{if(flxState.learn){e.preventDefault();e.stopPropagation();selectFlxLearnTarget(el);return}if(el.matches('button'))flxTriggerAction(el.dataset.flxAction)},true);
+    if(el.matches('input[type="range"]'))bindFlxRange(el);
+  });
+  bindFlxJog('A');bindFlxJog('B');
+  const mode=localStorage.getItem(FLX_MODE_STORAGE)||'pro';setDjViewMode(mode);startFlxTicker();
+}
+
+bindFlx4Mode();
