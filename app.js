@@ -1205,3 +1205,147 @@ function refreshV3Labels(){
 var v29SetLanguageV3=setLanguage;setLanguage=function(lang){v29SetLanguageV3(lang);refreshV3Labels()};
 
 v3BindControls();refreshV3Labels();v3Ticker();
+
+// ===== v3.1: LIVE DJ CORE / SYNC LOCK / AUTO MASTER / PFL / GRID TOOLS =====
+const V31_STORAGE='nevo-v31-live-dj-core';
+const nevoV31={
+  autoMaster:true,
+  autoAnalyze:true,
+  syncLock:{A:false,B:false},
+  pfl:{A:false,B:false},
+  cueLevel:.75,
+  cueOutputId:'',
+  lastPhaseFix:{A:0,B:0},
+  libraryCursor:0
+};
+try{Object.assign(nevoV31,JSON.parse(localStorage.getItem(V31_STORAGE)||'{}')||{});nevoV31.syncLock={A:!!nevoV31.syncLock?.A,B:!!nevoV31.syncLock?.B};nevoV31.pfl={A:false,B:false}}catch{}
+function saveV31(){try{localStorage.setItem(V31_STORAGE,JSON.stringify({autoMaster:nevoV31.autoMaster,autoAnalyze:nevoV31.autoAnalyze,syncLock:nevoV31.syncLock,cueLevel:nevoV31.cueLevel,cueOutputId:nevoV31.cueOutputId}))}catch{}}
+
+// Wider range so 1/2 and x2 BPM corrections are useful.
+djDeckBpm=function(letter){return clamp(Number($(`#deck${letter}Bpm`)?.value)||djDecks[letter].detectedBpm||150,50,300)};
+for(const L of ['A','B']){const el=$(`#deck${L}Bpm`);if(el){el.min='50';el.max='300'}}
+
+function v31SetSyncLock(letter,on){
+  if(letter===nevoV3.masterDeck&&on){setStatus(true,'SYNC LOCK',currentLang==='de'?`Deck ${letter} ist MASTER und folgt keinem anderen Deck.`:`Deck ${letter} is MASTER and does not follow another deck.`);on=false}
+  nevoV31.syncLock[letter]=!!on;saveV31();
+  const b=$(`#deck${letter}SyncLock`);if(b){b.classList.toggle('active',!!on);b.textContent=currentLang==='de'?(on?'SYNC LOCK AN':'SYNC LOCK AUS'):(on?'SYNC LOCK ON':'SYNC LOCK OFF')}
+  document.querySelector(`.dj-deck[data-deck="${letter}"]`)?.classList.toggle('sync-locked',!!on);
+  const fb=document.querySelector(`[data-flx-action="${letter}.synclock"]`);if(fb)fb.classList.toggle('active',!!on);
+  if(on)syncDeck(letter)
+}
+function v31ToggleSyncLock(letter){v31SetSyncLock(letter,!nevoV31.syncLock[letter])}
+
+function v31SetAutoMaster(on){
+  nevoV31.autoMaster=!!on;saveV31();const b=$('#autoMasterBtn');if(b){b.classList.toggle('active',nevoV31.autoMaster);b.textContent=currentLang==='de'?(nevoV31.autoMaster?'AUTO MASTER AN':'AUTO MASTER AUS'):(nevoV31.autoMaster?'AUTO MASTER ON':'AUTO MASTER OFF')}
+}
+function v31SetAutoAnalyze(on){
+  nevoV31.autoAnalyze=!!on;saveV31();const b=$('#autoAnalyzeBtn');if(b){b.classList.toggle('active',nevoV31.autoAnalyze);b.textContent=currentLang==='de'?(nevoV31.autoAnalyze?'AUTO ANALYSE AN':'AUTO ANALYSE AUS'):(nevoV31.autoAnalyze?'AUTO ANALYSIS ON':'AUTO ANALYSIS OFF')}
+}
+function v31AutoMasterOnPlay(letter){
+  if(!nevoV31.autoMaster)return;const other=letter==='A'?'B':'A',m=djDecks[nevoV3.masterDeck];
+  if(!m?.item||m.audio.paused||!djDecks[other]?.item||djDecks[other].audio.paused)v3SetMaster(letter)
+}
+function v31AutoMasterOnPause(letter){
+  if(!nevoV31.autoMaster||nevoV3.masterDeck!==letter)return;const other=letter==='A'?'B':'A';if(djDecks[other]?.item&&!djDecks[other].audio.paused)v3SetMaster(other)
+}
+
+// Make master switching safe for sync-lock: the master itself never follows.
+const v31OldSetMaster=v3SetMaster;
+v3SetMaster=function(letter){v31OldSetMaster(letter);if(nevoV31.syncLock[letter])v31SetSyncLock(letter,false);const other=letter==='A'?'B':'A';if(nevoV31.syncLock[other])syncDeck(other);v31RefreshControls()};
+
+function v31ScaleGridBpm(letter,factor){
+  const d=djDecks[letter];if(!d?.item)return;const old=djDeckBpm(letter),v=clamp(old*factor,50,300);$(`#deck${letter}Bpm`).value=v.toFixed(1);d.detectedBpm=v;const p=60/v;d.beatOffset=djNormalizeOffset(d.beatOffset||0,p);if(d.item){d.item.bpm=v;d.item.beatOffset=d.beatOffset;persistDeckMeta(letter)}drawDeckOverview(letter);drawDeckZoom(letter,true);refreshDeckUi(letter);setStatus(true,'BEATGRID',`${old.toFixed(1)} → ${v.toFixed(1)} BPM`);if(nevoV31.syncLock[letter])syncDeck(letter)
+}
+function v31SetDownbeat(letter){gridHere(letter);setStatus(true,currentLang==='de'?'DOWNBEAT GESETZT':'DOWNBEAT SET',`DECK ${letter} · ${fmtDeckTime(djDecks[letter].audio.currentTime||0)}`)}
+
+function v31CueAudio(letter){
+  const d=djDecks[letter];if(!d.cueAudio){const a=new Audio();a.preload='auto';a.preservesPitch=true;a.mozPreservesPitch=true;a.webkitPreservesPitch=true;d.cueAudio=a}return d.cueAudio
+}
+async function v31ApplyCueSink(audio){
+  if(!audio||!nevoV31.cueOutputId||typeof audio.setSinkId!=='function')return false;
+  try{await audio.setSinkId(nevoV31.cueOutputId);return true}catch(e){console.warn('Cue sink failed',e);return false}
+}
+async function v31TogglePfl(letter){
+  const d=djDecks[letter];if(!d?.item)return;const a=v31CueAudio(letter);nevoV31.pfl[letter]=!nevoV31.pfl[letter];
+  if(nevoV31.pfl[letter]){
+    if(a.src!==d.item.url)a.src=d.item.url;a.currentTime=clamp(d.audio.currentTime||0,0,d.audio.duration||d.buffer?.duration||0);a.playbackRate=d.audio.playbackRate||1;a.preservesPitch=d.keyLock;a.mozPreservesPitch=d.keyLock;a.webkitPreservesPitch=d.keyLock;a.volume=clamp(nevoV31.cueLevel,0,1);await v31ApplyCueSink(a);try{await a.play()}catch(e){console.warn(e)}
+  }else a.pause();
+  v31RefreshPfl(letter)
+}
+function v31RefreshPfl(letter){
+  const on=!!nevoV31.pfl[letter],b=$(`#deck${letter}Pfl`);if(b){b.classList.toggle('active',on);b.textContent=currentLang==='de'?(on?'🎧 PFL AN':'🎧 PFL AUS'):(on?'🎧 PFL ON':'🎧 PFL OFF')}
+  document.querySelector(`.dj-deck[data-deck="${letter}"]`)?.classList.toggle('pfl-on',on);const fb=document.querySelector(`[data-flx-action="${letter}.pfl"]`);if(fb)fb.classList.toggle('active',on)
+}
+async function v31LoadCueOutputs(){
+  const sel=$('#cueOutputSelect');if(!sel)return;sel.innerHTML='<option value="">Systemausgang</option>';
+  if(!navigator.mediaDevices?.enumerateDevices){$('#cueRoutingStatus').textContent=currentLang==='de'?'Ausgangswahl in diesem Browser nicht verfügbar':'Output selection unavailable in this browser';return}
+  try{
+    const list=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='audiooutput');for(const d of list){const o=document.createElement('option');o.value=d.deviceId;o.textContent=d.label||`Audio-Ausgang ${sel.options.length}`;sel.appendChild(o)}if(nevoV31.cueOutputId&&[...sel.options].some(o=>o.value===nevoV31.cueOutputId))sel.value=nevoV31.cueOutputId;
+    const supported=typeof v31CueAudio('A').setSinkId==='function';$('#cueRoutingStatus').textContent=supported?(currentLang==='de'?'Separater Browser-Ausgang möglich':'Separate browser output available'):(currentLang==='de'?'Systemausgang · separater Ausgang braucht Desktop-Unterstützung':'System output · separate output needs desktop support')
+  }catch(e){console.warn(e);$('#cueRoutingStatus').textContent=currentLang==='de'?'Audio-Ausgänge konnten nicht gelesen werden':'Could not read audio outputs'}
+}
+async function v31SetCueOutput(id){nevoV31.cueOutputId=id||'';saveV31();for(const L of ['A','B']){const a=v31CueAudio(L);if(typeof a.setSinkId==='function')try{await a.setSinkId(id||'default')}catch(e){console.warn(e)}}}
+
+function v31SyncFollower(letter){
+  if(!nevoV31.syncLock[letter]||letter===nevoV3.masterDeck)return;const d=djDecks[letter],m=djDecks[nevoV3.masterDeck];if(!d?.item||!m?.item)return;
+  const target=v3EffectiveBpm(nevoV3.masterDeck),base=djDeckBpm(letter);if(!base)return;const desired=clamp(target/base,.84,1.16),pct=(desired-1)*100;
+  const pitch=$(`#deck${letter}Pitch`);if(pitch&&document.activeElement!==pitch)pitch.value=pct.toFixed(1);const fp=$(`#flx${letter}Pitch`);if(fp&&document.activeElement!==fp)fp.value=pct;
+  let actual=desired;
+  if(!d.audio.paused&&!m.audio.paused&&d.quantize&&nevoV3.globalQuantize){let diff=v3PhaseFraction(letter)-v3PhaseFraction(nevoV3.masterDeck);if(diff>.5)diff-=1;if(diff<-.5)diff+=1;const now=performance.now();if(Math.abs(diff)>.20&&now-nevoV31.lastPhaseFix[letter]>550){const p=djBeatPeriod(letter);try{d.audio.currentTime=clamp((d.audio.currentTime||0)-diff*p,0,d.audio.duration||0)}catch{}nevoV31.lastPhaseFix[letter]=now}else actual=clamp(desired*(1+clamp(-diff*.035,-.008,.008)),.5,2)}
+  if(Math.abs((d.audio.playbackRate||1)-actual)>.0002)d.audio.playbackRate=actual;$(`#deck${letter}PitchValue`).textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%';
+  if(nevoV31.pfl[letter]){const a=v31CueAudio(letter);a.playbackRate=d.audio.playbackRate}
+}
+
+function v31BrowseMove(delta){
+  if(!djLibrary.length)return;nevoV31.libraryCursor=(nevoV31.libraryCursor+delta+djLibrary.length)%djLibrary.length;v31UpdateBrowseTitle()
+}
+function v31BrowseItem(){return djLibrary[clamp(nevoV31.libraryCursor,0,Math.max(0,djLibrary.length-1))]||null}
+function v31UpdateBrowseTitle(){const el=$('#flxBrowseTitle'),item=v31BrowseItem();if(el)el.textContent=item?(item.title||cleanDjTitle(item.name)):(currentLang==='de'?'BIBLIOTHEK LEER':'LIBRARY EMPTY')}
+async function v31BrowseLoad(letter){const item=v31BrowseItem();if(item)await loadItemToDeck(item,letter)}
+
+// Auto-analyze before loading a new deck when requested.
+const v31OldLoadItemToDeck=loadItemToDeck;
+loadItemToDeck=async function(item,letter){
+  if(nevoV31.autoAnalyze&&item&&!item.analyzing&&(!item.bpm||!item.key||item.key==='—'))await v3AnalyzeTrack(item,false);
+  await v31OldLoadItemToDeck(item,letter);const d=djDecks[letter],a=v31CueAudio(letter);a.pause();nevoV31.pfl[letter]=false;a.src=item.url;a.load();if(nevoV31.cueOutputId)await v31ApplyCueSink(a);v31RefreshPfl(letter);v31UpdateBrowseTitle();
+};
+
+// FLX4 MIDI Learn gets the new actions too.
+const v31OldFlxTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  if(action==='library.prev')return v31BrowseMove(-1);if(action==='library.next')return v31BrowseMove(1);if(action==='library.loadA')return v31BrowseLoad('A');if(action==='library.loadB')return v31BrowseLoad('B');
+  const m=action.match(/^([AB])\.(pfl|synclock)$/);if(m)return m[2]==='pfl'?v31TogglePfl(m[1]):v31ToggleSyncLock(m[1]);return v31OldFlxTrigger(action)
+};
+const v31OldFlxLabel=flxActionLabel;
+flxActionLabel=function(action){const map={'A.pfl':'Deck A Kopfhörer/PFL','B.pfl':'Deck B Kopfhörer/PFL','A.synclock':'Deck A Sync Lock','B.synclock':'Deck B Sync Lock','library.prev':'Bibliothek vorheriger Song','library.next':'Bibliothek nächster Song','library.loadA':'Bibliothek Load A','library.loadB':'Bibliothek Load B'};return map[action]||v31OldFlxLabel(action)};
+
+function v31RefreshControls(){
+  v31SetAutoMaster(nevoV31.autoMaster);v31SetAutoAnalyze(nevoV31.autoAnalyze);for(const L of ['A','B']){const b=$(`#deck${L}SyncLock`);if(b){b.classList.toggle('active',nevoV31.syncLock[L]);b.textContent=currentLang==='de'?(nevoV31.syncLock[L]?'SYNC LOCK AN':'SYNC LOCK AUS'):(nevoV31.syncLock[L]?'SYNC LOCK ON':'SYNC LOCK OFF')}v31RefreshPfl(L)}
+  if($('#cueLevel'))$('#cueLevel').value=nevoV31.cueLevel;if($('#cueLevelValue'))$('#cueLevelValue').textContent=Math.round(nevoV31.cueLevel*100)+'%';v31UpdateBrowseTitle()
+}
+
+function v31Bind(){
+  $('#autoMasterBtn')?.addEventListener('click',()=>v31SetAutoMaster(!nevoV31.autoMaster));$('#autoAnalyzeBtn')?.addEventListener('click',()=>v31SetAutoAnalyze(!nevoV31.autoAnalyze));
+  for(const L of ['A','B']){
+    $(`#deck${L}SyncLock`)?.addEventListener('click',()=>v31ToggleSyncLock(L));$(`#deck${L}Pfl`)?.addEventListener('click',()=>v31TogglePfl(L));$(`#deck${L}HalfBpm`)?.addEventListener('click',()=>v31ScaleGridBpm(L,.5));$(`#deck${L}DoubleBpm`)?.addEventListener('click',()=>v31ScaleGridBpm(L,2));
+    // Replace GRID HIER's old click result with a clearer downbeat action; both use the same underlying beat anchor.
+    const gh=$(`#deck${L}GridHere`);if(gh)gh.addEventListener('click',()=>setTimeout(()=>v31SetDownbeat(L),0));
+    const d=djDecks[L];d.audio.addEventListener('play',()=>v31AutoMasterOnPlay(L));d.audio.addEventListener('pause',()=>v31AutoMasterOnPause(L));d.audio.addEventListener('ended',()=>v31AutoMasterOnPause(L));
+  }
+  $('#cueLevel')?.addEventListener('input',e=>{nevoV31.cueLevel=clamp(Number(e.target.value)||0,0,1);$('#cueLevelValue').textContent=Math.round(nevoV31.cueLevel*100)+'%';for(const L of ['A','B'])v31CueAudio(L).volume=nevoV31.cueLevel;saveV31()});
+  $('#cueRefreshOutputs')?.addEventListener('click',v31LoadCueOutputs);$('#cueOutputSelect')?.addEventListener('change',e=>v31SetCueOutput(e.target.value));
+  v31RefreshControls();v31LoadCueOutputs();
+}
+
+let v31LastTick=0;
+function v31Ticker(ts){
+  if(ts-v31LastTick>55){v31LastTick=ts;for(const L of ['A','B']){
+    v31SyncFollower(L);const d=djDecks[L];if(nevoV31.pfl[L]&&d?.item){const a=v31CueAudio(L);a.volume=nevoV31.cueLevel;a.playbackRate=d.audio.playbackRate||1;if(!d.audio.paused&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.12)try{a.currentTime=d.audio.currentTime||0}catch{};if(d.audio.paused&&a.paused===false&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.35)try{a.currentTime=d.audio.currentTime||0}catch{}}}
+  }requestAnimationFrame(v31Ticker)
+}
+
+// Extend language refresh.
+const v31OldSetLanguage=setLanguage;
+setLanguage=function(lang){v31OldSetLanguage(lang);v31RefreshControls();for(const L of ['A','B']){const h=$(`#deck${L}GridHere`);if(h)h.textContent=currentLang==='de'?'DOWNBEAT HIER':'DOWNBEAT HERE'}const r=$('#cueRefreshOutputs');if(r)r.textContent=currentLang==='de'?'AUSGÄNGE LADEN':'LOAD OUTPUTS'};
+
+v31Bind();requestAnimationFrame(v31Ticker);

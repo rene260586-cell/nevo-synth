@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.0</title>
+  <title>NÉVO Studio v3.1</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.0</span></div>
+        <div class="brand-sub">STUDIO <span>v3.1</span></div>
       </div>
 
       <div class="transport">
@@ -98,7 +98,9 @@
             <span>MASTER DECK</span>
             <button id="masterDeckA" class="btn small active" type="button">A</button>
             <button id="masterDeckB" class="btn small" type="button">B</button>
+            <button id="autoMasterBtn" class="btn small toggle" type="button">AUTO MASTER AUS</button>
             <button id="globalQuantize" class="btn small toggle on" type="button">QUANTIZE AN</button>
+            <button id="autoAnalyzeBtn" class="btn small toggle on" type="button">AUTO ANALYSE AN</button>
           </div>
         </div>
 
@@ -153,6 +155,9 @@
                 <div class="flx4-master-column">
                   <div class="flx4-levels"><span></span><span></span><span></span><span></span><span></span><span></span></div>
                   <div class="flx4-mid-buttons"><button data-flx-action="A.keylock" type="button">KEY<br>LOCK A</button><button data-flx-action="B.keylock" type="button">KEY<br>LOCK B</button></div>
+                  <div class="flx4-mid-buttons v31"><button data-flx-action="A.pfl" type="button">PFL A</button><button data-flx-action="B.pfl" type="button">PFL B</button></div>
+                  <div class="flx4-mid-buttons v31"><button data-flx-action="A.synclock" type="button">LOCK A</button><button data-flx-action="B.synclock" type="button">LOCK B</button></div>
+                  <div class="flx4-browser-controls"><button data-flx-action="library.prev" type="button">▲</button><button data-flx-action="library.next" type="button">▼</button><button data-flx-action="library.loadA" type="button">LOAD A</button><button data-flx-action="library.loadB" type="button">LOAD B</button><small id="flxBrowseTitle">BIBLIOTHEK</small></div>
                   <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small><em>Jeder markierte Regler kann gelernt werden.</em></div>
                 </div>
                 <div class="flx4-channel" data-channel="B">
@@ -237,6 +242,8 @@
               <button id="deckASetCue" class="btn small" type="button" data-i18n="djSetCue">SET CUE</button>
               <button id="deckAStop" class="btn small" type="button">■ STOP</button>
               <button id="deckASync" class="btn small" type="button">SYNC</button>
+              <button id="deckASyncLock" class="btn small sync-lock-btn" type="button">SYNC LOCK AUS</button>
+              <button id="deckAPfl" class="btn small pfl-btn" type="button">🎧 PFL AUS</button>
               <button id="deckAAnalyze" class="btn small analyze-btn" type="button">⚡ TRACK ANALYSE</button>
               <button id="deckAKeyLock" class="btn small toggle on" type="button" data-i18n="djKeyLock">TONHALTE AN</button>
             </div>
@@ -261,8 +268,10 @@
               <span>BEATGRID</span>
               <button id="deckAGridMinus" class="btn small" type="button">← 10 ms</button>
               <button id="deckAGridPlus" class="btn small" type="button">10 ms →</button>
+              <button id="deckAHalfBpm" class="btn small" type="button">½ BPM</button>
+              <button id="deckADoubleBpm" class="btn small" type="button">×2 BPM</button>
               <button id="deckATapBpm" class="btn small" type="button">TAP BPM</button>
-              <button id="deckAGridHere" class="btn small" type="button">GRID HIER</button>
+              <button id="deckAGridHere" class="btn small" type="button">DOWNBEAT HIER</button>
             </div>
 
             <div class="dj-sliders">
@@ -326,6 +335,8 @@
               <button id="deckBSetCue" class="btn small" type="button" data-i18n="djSetCue">SET CUE</button>
               <button id="deckBStop" class="btn small" type="button">■ STOP</button>
               <button id="deckBSync" class="btn small" type="button">SYNC</button>
+              <button id="deckBSyncLock" class="btn small sync-lock-btn" type="button">SYNC LOCK AUS</button>
+              <button id="deckBPfl" class="btn small pfl-btn" type="button">🎧 PFL AUS</button>
               <button id="deckBAnalyze" class="btn small analyze-btn" type="button">⚡ TRACK ANALYSE</button>
               <button id="deckBKeyLock" class="btn small toggle on" type="button" data-i18n="djKeyLock">TONHALTE AN</button>
             </div>
@@ -350,8 +361,10 @@
               <span>BEATGRID</span>
               <button id="deckBGridMinus" class="btn small" type="button">← 10 ms</button>
               <button id="deckBGridPlus" class="btn small" type="button">10 ms →</button>
+              <button id="deckBHalfBpm" class="btn small" type="button">½ BPM</button>
+              <button id="deckBDoubleBpm" class="btn small" type="button">×2 BPM</button>
               <button id="deckBTapBpm" class="btn small" type="button">TAP BPM</button>
-              <button id="deckBGridHere" class="btn small" type="button">GRID HIER</button>
+              <button id="deckBGridHere" class="btn small" type="button">DOWNBEAT HIER</button>
             </div>
 
             <div class="dj-sliders">
@@ -371,6 +384,17 @@
           <div><span>DECK A</span><strong id="deckAStatus">READY</strong></div>
           <label class="dj-crossfader"><span data-i18n="djCrossfader">CROSSFADER</span><input id="djCrossfader" type="range" min="-1" max="1" step="0.01" value="0"></label>
           <div><strong id="deckBStatus">READY</strong><span>DECK B</span></div>
+        </div>
+
+        <div class="headphone-monitor glass-inner">
+          <div class="headphone-title">
+            <strong>🎧 KOPFHÖRER / PFL</strong>
+            <span id="cueRoutingStatus">Browser-Monitor · Systemausgang</span>
+          </div>
+          <label>CUE LEVEL <input id="cueLevel" type="range" min="0" max="1" step="0.01" value="0.75"><b id="cueLevelValue">75%</b></label>
+          <label>AUSGANG <select id="cueOutputSelect"><option value="">Systemausgang</option></select></label>
+          <button id="cueRefreshOutputs" class="btn small" type="button">AUSGÄNGE LADEN</button>
+          <small>Auf Desktop-Browsern mit Audio-Ausgangswahl kann PFL auf einen separaten Ausgang gelegt werden. Sonst läuft die Vorschau über den Systemausgang.</small>
         </div>
       </section>
 
