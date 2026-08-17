@@ -4,6 +4,8 @@ const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
 const uid = () => Math.random().toString(36).slice(2,9);
 const BAR_W = 72;
 const TOTAL_BARS = 16;
+const PIANO_STEP_W = 36;
+const PIANO_ROW_H = 30;
 
 const helpTextDE = {
   arranger:['ARRANGER','Hier baust du deinen Song aus Blöcken. Tippe auf eine freie Stelle, um einen Clip anzulegen. Ziehe einen Clip, um ihn zu verschieben. Ziehe den Griff rechts, um ihn länger oder kürzer zu machen.'],
@@ -21,7 +23,8 @@ const helpTextDE = {
   space:['RAUM','Ein Makro für Echo, Hall und längere Ausklänge. Gut für Breaks und Atmosphäre.'],
   shimmer:['BREITE','Ein Makro für Breite und Haltepegel. Mehr Breite macht Synths größer und weiter.'],
   playMode:['SPIELART','DIREKT: Der Ton endet fast sofort, sobald du den Finger hebst – gut für kurze Stabs und perkussives Spiel. NATÜRLICH: Der Ton klingt nach dem Loslassen mit dem eingestellten Ausklang weiter – näher an einem echten Instrument.'],
-  sustain:['SUSTAIN','Sustain hält losgelassene Töne weiter. Schalte Sustain wieder aus, damit die gehaltenen Töne natürlich ausklingen.']
+  sustain:['SUSTAIN','Sustain hält losgelassene Töne weiter. Schalte Sustain wieder aus, damit die gehaltenen Töne natürlich ausklingen.'],
+  piano:['PIANO-ROLL','Hier bearbeitest du einen aufgenommenen Noten-Clip. Tippe ins Raster, um eine Note zu setzen. Ziehe die Note zum Verschieben und ihren rechten Rand zum Verlängern.']
 };
 
 const helpTextEN = {
@@ -40,7 +43,8 @@ const helpTextEN = {
   space:['SPACE','A macro for delay, reverb and longer tails. Useful for breaks and atmosphere.'],
   shimmer:['SHIMMER','A macro for width and sustain. More shimmer makes synths feel bigger and wider.'],
   playMode:['PLAY STYLE','DIRECT: The note stops almost immediately when you lift your finger – useful for short stabs and percussive playing. NATURAL: The note continues with the release setting after you lift your finger – closer to a real instrument.'],
-  sustain:['SUSTAIN','Sustain keeps released notes sounding. Turn Sustain off again to let held notes fade naturally.']
+  sustain:['SUSTAIN','Sustain keeps released notes sounding. Turn Sustain off again to let held notes fade naturally.'],
+  piano:['PIANO ROLL','Edit a recorded note clip here. Tap the grid to add a note. Drag a note to move it and drag its right edge to change its length.']
 };
 
 const I18N = {
@@ -56,7 +60,7 @@ const I18N = {
     audioInactive:'Audio noch nicht gestartet', audioInactiveSub:'Tippe auf AUDIO STARTEN', audioActive:'Audio aktiv', audioActiveSub:'Arranger und Instrumente sind bereit.', songRunning:'Song läuft', songStopped:'Song gestoppt.',
     recording:'Aufnahme läuft', recordingSub:'Master-Ausgang wird aufgenommen.', recordingSaved:'Aufnahme gespeichert', recordingSavedSub:'Datei wurde erstellt.', noteClipSaved:'Noten-Clip erstellt', noteClipSavedSub:'Dein Klavierspiel liegt jetzt als Block im Arranger.', wavExporting:'WAV Export', wavExportingSub:'Der aktuelle 16-Schritt-Groove wird gerendert …', wavDone:'WAV fertig', wavDoneSub:'Groove wurde exportiert.',
     imported:'Audio importiert', projectSaved:'Projekt gespeichert', projectSavedSub:'Automatische Sicherung im Browser aktualisiert.', noProject:'Noch kein Projekt gespeichert.', projectImported:'Projekt importiert', invalidProject:'Ungültige Projektdatei.',
-    helpModeOn:'Hilfe-Modus aktiv', helpModeOff:'Hilfe-Modus aus', helpModeOnSub:'Tippe oder halte Elemente für Erklärungen.', helpModeOffSub:'Normale Bedienung.', preset:'Preset', languageChanged:'Sprache: Deutsch'
+    helpModeOn:'Hilfe-Modus aktiv', helpModeOff:'Hilfe-Modus aus', helpModeOnSub:'Tippe oder halte Elemente für Erklärungen.', helpModeOffSub:'Normale Bedienung.', preset:'Preset', languageChanged:'Sprache: Deutsch', pianoRoll:'PIANO-ROLL', pianoSub:'Tippe ins Raster für eine Note. Ziehe eine Note zum Verschieben. Ziehe ihren rechten Rand zum Verlängern.', preview:'▶ VORSCHAU', snap:'RASTER', deleteNote:'NOTE LÖSCHEN', clearNotes:'ALLE NOTEN LÖSCHEN', editNotes:'NOTEN BEARBEITEN', pianoLongHelp:'Langes Drücken auf einen Noten-Clip öffnet ebenfalls diesen Editor.', stepsWord:'Schritte', noNoteSelected:'Keine Note ausgewählt.'
   },
   en:{
     audioStart:'START AUDIO', audioOn:'AUDIO ON', play:'▶ PLAY', stop:'■ STOP', record:'● RECORD', stopRecord:'■ STOP REC', bpm:'BPM', save:'SAVE', load:'LOAD', exportWav:'EXPORT WAV', help:'? HELP',
@@ -70,7 +74,7 @@ const I18N = {
     audioInactive:'Audio not started', audioInactiveSub:'Tap START AUDIO', audioActive:'Audio active', audioActiveSub:'Arranger and instruments are ready.', songRunning:'Song playing', songStopped:'Song stopped.',
     recording:'Recording', recordingSub:'The master output is being recorded.', recordingSaved:'Recording saved', recordingSavedSub:'File created.', noteClipSaved:'Note clip created', noteClipSavedSub:'Your keyboard performance is now a block in the arranger.', wavExporting:'WAV Export', wavExportingSub:'Rendering the current 16-step groove …', wavDone:'WAV ready', wavDoneSub:'Groove exported.',
     imported:'Audio imported', projectSaved:'Project saved', projectSavedSub:'Browser autosave updated.', noProject:'No saved project yet.', projectImported:'Project imported', invalidProject:'Invalid project file.',
-    helpModeOn:'Help Mode on', helpModeOff:'Help Mode off', helpModeOnSub:'Tap or hold elements for explanations.', helpModeOffSub:'Normal controls.', preset:'Preset', languageChanged:'Language: English'
+    helpModeOn:'Help Mode on', helpModeOff:'Help Mode off', helpModeOnSub:'Tap or hold elements for explanations.', helpModeOffSub:'Normal controls.', preset:'Preset', languageChanged:'Language: English', pianoRoll:'PIANO ROLL', pianoSub:'Tap the grid to add a note. Drag a note to move it. Drag its right edge to change its length.', preview:'▶ PREVIEW', snap:'SNAP', deleteNote:'DELETE NOTE', clearNotes:'DELETE ALL NOTES', editNotes:'EDIT NOTES', pianoLongHelp:'Long-pressing a note clip also opens this editor.', stepsWord:'steps', noNoteSelected:'No note selected.'
   }
 };
 let currentLang = localStorage.getItem('nevoLanguage') || 'de';
@@ -103,7 +107,7 @@ function applyLanguageToUI(rebuild=true){
   Object.values(params).forEach(p=>{if(!p.labelDe)p.labelDe=p.label;p.label=currentLang==='en'?(p.labelEn||p.labelDe):p.labelDe});
   Object.values(macros).forEach(p=>{if(!p.labelDe)p.labelDe=p.label;p.label=currentLang==='en'?(p.labelEn||p.labelDe):p.labelDe});
   $$('.preset-card').forEach(card=>{const copy=presetCopy[card.dataset.preset]?.[currentLang];if(copy){card.querySelector('strong').textContent=copy[0];card.querySelector('span').textContent=copy[1]}});
-  if(rebuild){buildMacros(false);buildKnobs();renderTracks()}
+  if(rebuild){buildMacros(false);buildKnobs();renderTracks();if(pianoClip)renderPianoRoll()}
 }
 function setLanguage(lang){currentLang=lang==='en'?'en':'de';applyLanguageToUI(true);setStatus(audioReady,t('languageChanged'),currentLang==='de'?'Die App ist jetzt auf Deutsch.':'The app is now in English.')}
 
@@ -141,6 +145,7 @@ const audioBuffers = new Map();
 let ctx,master,filter,driveNode,dryGain,delay,delayFeedback,delayWet,convolver,reverbWet,mediaDest,analyser,noiseBuffer;
 let voices=new Map(),audioReady=false,isPlaying=false,seqTimer=null,nextStepTime=0,globalStep=0,recorder=null,recChunks=[],meterRAF=null;
 let midiTake=null,midiTakeCount=Number(localStorage.getItem('nevoMidiTakeCount')||0);
+let pianoTrack=null,pianoClip=null,pianoSelectedNote=null,pianoPitches=[];
 let helpMode=false,safeNotes=true;
 let keyboardPlayMode=localStorage.getItem('nevoKeyboardMode')||'natural';
 let sustainPedal=localStorage.getItem('nevoSustain')==='true';
@@ -290,13 +295,90 @@ function buildTimeline(){const t=$('#timeline');t.innerHTML='';for(let i=1;i<=TO
 function anySolo(){return tracks.some(t=>t.solo)}
 function trackAudible(track){return !track.mute&&(!anySolo()||track.solo)}
 function activeClip(track,bar){return track.clips.find(c=>bar>=c.start&&bar<c.start+c.len)}
-function clipHelp(track,clip){showHelp('clip',[{label:clip.loop?t('loopOff'):t('loopOn'),run:()=>{clip.loop=!clip.loop;renderTracks()}},{label:t('duplicate'),run:()=>{const copy={...clip,id:uid(),start:clamp(clip.start+clip.len,0,TOTAL_BARS-1)};copy.len=Math.min(copy.len,TOTAL_BARS-copy.start);track.clips.push(copy);renderTracks()}},{label:t('delete'),run:()=>{track.clips=track.clips.filter(c=>c.id!==clip.id);renderTracks()}}])}
+function clipHelp(track,clip){const actions=[];if(Array.isArray(clip.notes))actions.push({label:t('editNotes'),run:()=>openPianoRoll(track,clip)});actions.push({label:clip.loop?t('loopOff'):t('loopOn'),run:()=>{clip.loop=!clip.loop;renderTracks()}},{label:t('duplicate'),run:()=>{const copy={...clip,id:uid(),start:clamp(clip.start+clip.len,0,TOTAL_BARS-1),notes:Array.isArray(clip.notes)?clip.notes.map(n=>({...n})):clip.notes};copy.len=Math.min(copy.len,TOTAL_BARS-copy.start);track.clips.push(copy);renderTracks()}},{label:t('delete'),run:()=>{track.clips=track.clips.filter(c=>c.id!==clip.id);renderTracks()}});showHelp(Array.isArray(clip.notes)?'piano':'clip',actions)}
 function renderTracks(){const list=$('#trackList');list.innerHTML='';tracks.forEach(track=>{const row=document.createElement('div');row.className='track-row';const lab=document.createElement('div');lab.className='track-label';lab.innerHTML=`<span class="track-color" style="color:${track.color};background:${track.color}"></span><div class="track-meta"><strong>${localName(track)}</strong><small>${track.type==='fx'?t('effects'):track.type.toUpperCase()}</small></div><button class="track-btn mute ${track.mute?'on':''}">M</button><button class="track-btn solo ${track.solo?'on':''}">S</button>`;row.appendChild(lab);const lane=document.createElement('div');lane.className='track-lane';lane.dataset.track=track.id;row.appendChild(lane);lab.querySelector('.mute').onclick=e=>{e.stopPropagation();track.mute=!track.mute;renderTracks()};lab.querySelector('.solo').onclick=e=>{e.stopPropagation();track.solo=!track.solo;renderTracks()};longPress(lab,()=>showHelp('arranger'));
     lane.addEventListener('click',e=>{if(e.target!==lane)return;const r=lane.getBoundingClientRect(),bar=clamp(Math.floor((e.clientX-r.left)/BAR_W),0,TOTAL_BARS-1);track.clips.push({id:uid(),start:bar,len:2,name:track.name+' Clip',nameDe:localName(track)+' '+t('clipSuffix'),nameEn:(track.nameEn||track.name)+' Clip',loop:true});renderTracks()});
     track.clips.forEach(clip=>lane.appendChild(makeClip(track,clip,lane)));
     list.appendChild(row)
   })}
-function makeClip(track,clip,lane){const el=document.createElement('div');el.className='clip'+(clip.loop?' looped':'')+(clip.notes?' midi-clip':'');el.style.color=track.color;el.style.left=clip.start*BAR_W+'px';el.style.width=Math.max(BAR_W,clip.len*BAR_W-4)+'px';el.innerHTML=`<div><strong>${localName(clip)}${clip.notes?`<span class="clip-note-count">${clip.notes.length} ${currentLang==='de'?'NOTEN':'NOTES'}</span>`:''}</strong><small>${barText(clip.len)}</small></div><span class="resize-handle"></span>`;let mode=null,sx=0,start=0,len=0,moved=false;el.addEventListener('pointerdown',e=>{e.stopPropagation();mode=e.target.classList.contains('resize-handle')?'resize':'move';sx=e.clientX;start=clip.start;len=clip.len;moved=false;el.setPointerCapture(e.pointerId)});el.addEventListener('pointermove',e=>{if(!mode)return;const dx=e.clientX-sx;if(Math.abs(dx)>6)moved=true;const bars=Math.round(dx/BAR_W);if(mode==='move'){clip.start=clamp(start+bars,0,TOTAL_BARS-clip.len);el.style.left=clip.start*BAR_W+'px'}else{clip.len=clamp(len+bars,1,TOTAL_BARS-clip.start);el.style.width=Math.max(BAR_W,clip.len*BAR_W-4)+'px';el.querySelector('small').textContent=barText(clip.len)}});const end=()=>{mode=null};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);longPress(el,()=>{if(!moved)clipHelp(track,clip)});return el}
+function makeClip(track,clip,lane){
+  const el=document.createElement('div');
+  el.className='clip'+(clip.loop?' looped':'')+(clip.notes?' midi-clip':'');
+  el.style.color=track.color;
+  el.style.left=clip.start*BAR_W+'px';
+  el.style.width=Math.max(BAR_W,clip.len*BAR_W-4)+'px';
+  el.innerHTML=`<div><strong>${localName(clip)}${clip.notes?`<span class="clip-note-count">${clip.notes.length} ${currentLang==='de'?'NOTEN':'NOTES'}</span>`:''}</strong><small>${barText(clip.len)}</small></div>${clip.notes?'<button class="clip-edit" type="button" aria-label="Edit">✎</button>':''}<span class="resize-handle"></span>`;
+  if(clip.notes){const edit=el.querySelector('.clip-edit');edit.onclick=e=>{e.stopPropagation();openPianoRoll(track,clip)}}
+  let mode=null,sx=0,start=0,len=0,moved=false;
+  el.addEventListener('pointerdown',e=>{
+    if(e.target.closest('.clip-edit'))return;
+    e.stopPropagation();mode=e.target.classList.contains('resize-handle')?'resize':'move';sx=e.clientX;start=clip.start;len=clip.len;moved=false;el.setPointerCapture(e.pointerId)
+  });
+  el.addEventListener('pointermove',e=>{if(!mode)return;const dx=e.clientX-sx;if(Math.abs(dx)>6)moved=true;const bars=Math.round(dx/BAR_W);if(mode==='move'){clip.start=clamp(start+bars,0,TOTAL_BARS-clip.len);el.style.left=clip.start*BAR_W+'px'}else{clip.len=clamp(len+bars,1,TOTAL_BARS-clip.start);el.style.width=Math.max(BAR_W,clip.len*BAR_W-4)+'px';el.querySelector('small').textContent=barText(clip.len)}});
+  const end=()=>{mode=null};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+  longPress(el,()=>{if(!moved)clipHelp(track,clip)});
+  return el
+}
+
+function noteToMidi(note){const names=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];const m=note.match(/^([A-G]#?)(-?\d)$/);return (Number(m[2])+1)*12+names.indexOf(m[1])}
+function midiToNote(midi){const names=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];return names[(midi%12+12)%12]+(Math.floor(midi/12)-1)}
+function buildPianoPitches(){
+  const noteMidis=(pianoClip?.notes||[]).map(n=>noteToMidi(n.note));
+  let min=48,max=72;
+  if(noteMidis.length){min=Math.min(min,Math.min(...noteMidis)-3);max=Math.max(max,Math.max(...noteMidis)+3)}
+  min=clamp(min,24,96);max=clamp(max,36,108);
+  if(max-min<24)max=Math.min(108,min+24);
+  const out=[];for(let m=max;m>=min;m--)out.push(midiToNote(m));return out
+}
+function pianoSnapValue(){return Math.max(1,Number($('#pianoSnap')?.value||1))}
+function snapStep(v){const q=pianoSnapValue();return Math.round(v/q)*q}
+function pianoSafe(note){const pc=note.match(/^([A-G]#?)/)[1];return safePitchClasses().has(pc)}
+function updatePianoInfo(){if(!pianoClip)return;const steps=Math.max(16,pianoClip.sourceSteps||pianoClip.len*16);const bars=Math.ceil(steps/16);$('#pianoLengthInfo').textContent=`${barText(bars)} · ${steps} ${t('stepsWord')}`;$('#pianoDeleteNote').disabled=!pianoSelectedNote}
+function openPianoRoll(track,clip){
+  if(!Array.isArray(clip.notes))return;
+  pianoTrack=track;pianoClip=clip;pianoSelectedNote=null;
+  if(!pianoClip.sourceSteps)pianoClip.sourceSteps=Math.max(16,pianoClip.len*16);
+  $('#pianoClipTitle').textContent=localName(clip);
+  $('#pianoModal').classList.remove('hidden');
+  renderPianoRoll();
+  setTimeout(()=>{const sc=$('#pianoRollScroll');if(sc){sc.scrollTop=Math.max(0,(pianoPitches.findIndex(n=>n==='C4')-4)*PIANO_ROW_H)}},30)
+}
+function closePianoRoll(){pianoTrack=null;pianoClip=null;pianoSelectedNote=null;$('#pianoModal').classList.add('hidden');renderTracks()}
+function renderPianoRoll(){
+  if(!pianoClip)return;
+  $('#pianoClipTitle').textContent=localName(pianoClip);
+  pianoPitches=buildPianoPitches();
+  const labels=$('#pianoPitchLabels'),grid=$('#pianoGrid');labels.innerHTML='';grid.innerHTML='';
+  const steps=Math.max(16,pianoClip.sourceSteps||pianoClip.len*16),width=steps*PIANO_STEP_W,height=pianoPitches.length*PIANO_ROW_H;
+  labels.style.height=height+'px';grid.style.width=width+'px';grid.style.height=height+'px';
+  grid.style.setProperty('--piano-step',PIANO_STEP_W+'px');grid.style.setProperty('--piano-row',PIANO_ROW_H+'px');
+  pianoPitches.forEach((note,i)=>{const r=document.createElement('div');r.className='piano-pitch'+(note.includes('#')?' black':'')+(safeNotes&&pianoSafe(note)?' safe':'');r.style.top=i*PIANO_ROW_H+'px';r.textContent=note;labels.appendChild(r)});
+  for(let b=0;b<=Math.ceil(steps/16);b++){const line=document.createElement('div');line.className='piano-bar-line';line.style.left=(b*16*PIANO_STEP_W)+'px';grid.appendChild(line);if(b<Math.ceil(steps/16)){const num=document.createElement('span');num.className='piano-bar-num';num.style.left=(b*16*PIANO_STEP_W+6)+'px';num.textContent=(b+1);grid.appendChild(num)}}
+  pianoClip.notes.forEach(note=>grid.appendChild(makePianoNote(note)));
+  grid.onclick=e=>{
+    if(e.target!==grid)return;
+    const r=grid.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,row=clamp(Math.floor(y/PIANO_ROW_H),0,pianoPitches.length-1),step=clamp(snapStep(Math.floor(x/PIANO_STEP_W)),0,steps-1);
+    const n={note:pianoPitches[row],startStep:step,durationSteps:pianoSnapValue()};pianoClip.notes.push(n);pianoSelectedNote=n;previewPianoNote(n);renderPianoRoll();
+  };
+  updatePianoInfo();
+}
+function makePianoNote(note){
+  const el=document.createElement('div'),steps=Math.max(16,pianoClip.sourceSteps||pianoClip.len*16);let row=pianoPitches.indexOf(note.note);if(row<0)row=0;
+  el.className='piano-note'+(note===pianoSelectedNote?' selected':'');
+  el.style.left=(note.startStep*PIANO_STEP_W+1)+'px';el.style.top=(row*PIANO_ROW_H+2)+'px';el.style.width=Math.max(16,note.durationSteps*PIANO_STEP_W-2)+'px';el.style.height=(PIANO_ROW_H-4)+'px';
+  el.innerHTML=`<span>${note.note}</span><i class="piano-note-handle"></i>`;
+  let mode=null,sx=0,sy=0,start=0,dur=0,startRow=0,moved=false;
+  el.addEventListener('pointerdown',e=>{e.stopPropagation();mode=e.target.classList.contains('piano-note-handle')?'resize':'move';sx=e.clientX;sy=e.clientY;start=note.startStep;dur=note.durationSteps;startRow=pianoPitches.indexOf(note.note);moved=false;el.setPointerCapture(e.pointerId);pianoSelectedNote=note;updatePianoInfo()});
+  el.addEventListener('pointermove',e=>{if(!mode)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)>5||Math.abs(dy)>5)moved=true;if(mode==='move'){const delta=snapStep(dx/PIANO_STEP_W);note.startStep=clamp(snapStep(start+delta),0,Math.max(0,steps-note.durationSteps));const ri=clamp(startRow+Math.round(dy/PIANO_ROW_H),0,pianoPitches.length-1);note.note=pianoPitches[ri];el.style.left=(note.startStep*PIANO_STEP_W+1)+'px';el.style.top=(ri*PIANO_ROW_H+2)+'px';el.querySelector('span').textContent=note.note}else{const q=pianoSnapValue();note.durationSteps=clamp(Math.max(q,snapStep(dur+dx/PIANO_STEP_W)),q,steps-note.startStep);el.style.width=Math.max(16,note.durationSteps*PIANO_STEP_W-2)+'px'}});
+  el.addEventListener('pointerup',()=>{mode=null;if(!moved){pianoSelectedNote=note;previewPianoNote(note);renderPianoRoll()}});el.addEventListener('pointercancel',()=>mode=null);
+  longPress(el,()=>{pianoSelectedNote=note;showHelp('piano',[{label:t('deleteNote'),run:()=>{pianoClip.notes=pianoClip.notes.filter(n=>n!==note);pianoSelectedNote=null;renderPianoRoll()}}])});
+  return el
+}
+async function previewPianoNote(note){await initAudio();startVoice(note.note,ctx.currentTime+.01,Math.max(.05,note.durationSteps*stepDur()),{amp:.28,width:params.width.value})}
+async function previewPianoClip(){if(!pianoClip)return;await initAudio();const t0=ctx.currentTime+.06;for(const n of pianoClip.notes)startVoice(n.note,t0+n.startStep*stepDur(),Math.max(.05,n.durationSteps*stepDur()),{amp:.28,width:params.width.value})}
+function changePianoBars(delta){if(!pianoClip)return;let steps=Math.max(16,pianoClip.sourceSteps||pianoClip.len*16);steps=clamp(steps+delta*16,16,TOTAL_BARS*16);pianoClip.sourceSteps=steps;pianoClip.len=Math.max(1,Math.ceil(steps/16));pianoClip.notes=pianoClip.notes.filter(n=>n.startStep<steps).map(n=>({...n,durationSteps:Math.min(n.durationSteps,steps-n.startStep)}));pianoSelectedNote=null;renderPianoRoll();renderTracks()}
+function deleteSelectedPianoNote(){if(!pianoClip||!pianoSelectedNote){alert(t('noNoteSelected'));return}pianoClip.notes=pianoClip.notes.filter(n=>n!==pianoSelectedNote);pianoSelectedNote=null;renderPianoRoll();renderTracks()}
+
 
 function buildSteps(){[['synthSteps',synthPattern],['kickSteps',kickPattern],['hatSteps',hatPattern]].forEach(([id,a])=>{const e=$('#'+id);e.innerHTML='';a.forEach((v,i)=>{const b=document.createElement('button');b.className='step'+(v?' on':'');b.textContent=i+1;b.onclick=()=>{a[i]=!a[i];b.classList.toggle('on',a[i])};e.appendChild(b)})})}
 function stepDur(){return 60/Number($('#bpm').value)/4}
@@ -316,7 +398,7 @@ const presets={
 function applyPreset(name){const p=presets[name];$('#bpm').value=p.bpm;$('#swing').value=p.swing;$('#swingValue').textContent=p.swing+'%';params.cutoff.value=p.cutoff;params.drive.value=p.drive;params.reverb.value=p.reverb;params.delay.value=p.delay;Object.values(params).forEach(x=>x.render?.());updateAudioParams();$$('.preset-card').forEach(x=>x.classList.toggle('active',x.dataset.preset===name));setStatus(audioReady,`${t('preset')}: ${presetCopy[name]?.[currentLang]?.[0]||name.toUpperCase()}`,`${p.bpm} BPM · ${t('swing')} ${p.swing}%`)}
 $$('.preset-card').forEach(b=>b.onclick=()=>applyPreset(b.dataset.preset));
 
-function projectData(){return{version:2.3,language:currentLang,keyboardPlayMode,sustainPedal,keyboardOctave,bpm:Number($('#bpm').value),waveform:$('#waveform').value,key:$('#keySelect').value,safeNotes,swing:Number($('#swing').value),params:Object.fromEntries(Object.entries(params).map(([k,p])=>[k,p.value])),macros:Object.fromEntries(Object.entries(macros).map(([k,p])=>[k,p.value])),patterns:{synth:[...synthPattern],kick:[...kickPattern],hat:[...hatPattern]},tracks:tracks.map(t=>({...t,clips:t.clips.map(c=>({...c,audioId:c.audioId?null:undefined}))}))}}
+function projectData(){return{version:2.4,language:currentLang,keyboardPlayMode,sustainPedal,keyboardOctave,bpm:Number($('#bpm').value),waveform:$('#waveform').value,key:$('#keySelect').value,safeNotes,swing:Number($('#swing').value),params:Object.fromEntries(Object.entries(params).map(([k,p])=>[k,p.value])),macros:Object.fromEntries(Object.entries(macros).map(([k,p])=>[k,p.value])),patterns:{synth:[...synthPattern],kick:[...kickPattern],hat:[...hatPattern]},tracks:tracks.map(t=>({...t,clips:t.clips.map(c=>({...c,audioId:c.audioId?null:undefined}))}))}}
 function applyProject(d){if(!d)return;if(d.language)setLanguage(d.language);if(d.keyboardPlayMode)keyboardPlayMode=d.keyboardPlayMode==='direct'?'direct':'natural';if(typeof d.sustainPedal==='boolean')sustainPedal=d.sustainPedal;if(Number.isFinite(Number(d.keyboardOctave)))keyboardOctave=clamp(Number(d.keyboardOctave),-2,2);$('#bpm').value=d.bpm||150;$('#waveform').value=d.waveform||'sawtooth';$('#keySelect').value=d.key||'D3';safeNotes=d.safeNotes!==false;$('#safeNotesBtn').classList.toggle('on',safeNotes);$('#safeNotesBtn').textContent=safeNotes?t('safeOn'):t('safeOff');$('#swing').value=d.swing??20;$('#swingValue').textContent=$('#swing').value+'%';if(d.params)Object.entries(d.params).forEach(([k,v])=>{if(params[k]){params[k].value=clamp(Number(v),params[k].min,params[k].max);params[k].render?.()}});if(d.macros)Object.entries(d.macros).forEach(([k,v])=>{if(macros[k]){macros[k].value=clamp(Number(v),macros[k].min,macros[k].max);macros[k].render?.()}});if(d.patterns){['synth','kick','hat'].forEach(n=>{const arr=n==='synth'?synthPattern:n==='kick'?kickPattern:hatPattern;if(Array.isArray(d.patterns[n]))d.patterns[n].slice(0,16).forEach((v,i)=>arr[i]=!!v)})}if(Array.isArray(d.tracks)){tracks.length=0;d.tracks.forEach(t=>tracks.push({...t,clips:(t.clips||[]).map(c=>({...c,id:c.id||uid()}))}))}buildSteps();renderTracks();buildKeyboard();refreshSafeNotes();updateKeyboardControls();updateAudioParams()}
 function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1200)}
 
@@ -358,6 +440,8 @@ longPress($('.arranger-panel'),()=>showHelp('arranger'));longPress($('.swing-box
 $('#langDe').onclick=()=>setLanguage('de');$('#langEn').onclick=()=>setLanguage('en');
 $('#modeDirect').onclick=()=>setKeyboardMode('direct');$('#modeNatural').onclick=()=>setKeyboardMode('natural');$('#sustainBtn').onclick=toggleSustain;$('#octaveDown').onclick=()=>changeKeyboardOctave(-1);$('#octaveUp').onclick=()=>changeKeyboardOctave(1);
 longPress($('#modeDirect'),()=>showHelp('playMode'));longPress($('#modeNatural'),()=>showHelp('playMode'));longPress($('#sustainBtn'),()=>showHelp('sustain'));
+
+$('#pianoClose').onclick=closePianoRoll;$('#pianoModal').addEventListener('pointerdown',e=>{if(e.target===$('#pianoModal'))closePianoRoll()});$('#pianoPreview').onclick=previewPianoClip;$('#pianoPlusBar').onclick=()=>changePianoBars(1);$('#pianoMinusBar').onclick=()=>changePianoBars(-1);$('#pianoDeleteNote').onclick=deleteSelectedPianoNote;$('#pianoClear').onclick=()=>{if(pianoClip){pianoClip.notes=[];pianoSelectedNote=null;renderPianoRoll();renderTracks()}};$('#pianoSnap').onchange=()=>{if(pianoClip)renderPianoRoll()};
 
 buildTimeline();renderTracks();buildMacros();buildKnobs();buildKeyboard();buildSteps();updateKeyboardControls();applyLanguageToUI(true);applyPreset('driving');if(!audioReady)setStatus(false,t('audioInactive'),t('audioInactiveSub'));
 setInterval(()=>{try{localStorage.setItem('nevoStudioAutosave',JSON.stringify(projectData()))}catch{}},15000);

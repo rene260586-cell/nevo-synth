@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v2.3</title>
+  <title>NÉVO Studio v2.4</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v2.3</span></div>
+        <div class="brand-sub">STUDIO <span>v2.4</span></div>
       </div>
 
       <div class="transport">
@@ -215,6 +215,47 @@
       <h3 id="helpHeading">Element</h3>
       <p id="helpText"></p>
       <div id="helpActions" class="help-actions"></div>
+    </div>
+  </div>
+
+
+  <div id="pianoModal" class="modal hidden piano-modal">
+    <div class="piano-card glass">
+      <div class="piano-modal-head">
+        <div>
+          <div class="eyebrow cyan" data-i18n="pianoRoll">PIANO-ROLL</div>
+          <h3 id="pianoClipTitle">Noten bearbeiten</h3>
+          <p class="piano-sub" data-i18n="pianoSub">Tippe ins Raster für eine Note. Ziehe eine Note zum Verschieben. Ziehe ihren rechten Rand zum Verlängern.</p>
+        </div>
+        <button id="pianoClose" class="modal-close" type="button">×</button>
+      </div>
+
+      <div class="piano-toolbar">
+        <button id="pianoPreview" class="btn small" type="button" data-i18n="preview">▶ VORSCHAU</button>
+        <label class="piano-select"><span data-i18n="snap">RASTER</span>
+          <select id="pianoSnap">
+            <option value="1" selected>1/16</option>
+            <option value="2">1/8</option>
+            <option value="4">1/4</option>
+          </select>
+        </label>
+        <button id="pianoMinusBar" class="btn small" type="button">− 1 <span data-i18n="barOne">Takt</span></button>
+        <button id="pianoPlusBar" class="btn small" type="button">+ 1 <span data-i18n="barOne">Takt</span></button>
+        <button id="pianoDeleteNote" class="btn small danger" type="button" data-i18n="deleteNote">NOTE LÖSCHEN</button>
+        <button id="pianoClear" class="btn small" type="button" data-i18n="clearNotes">ALLE NOTEN LÖSCHEN</button>
+      </div>
+
+      <div class="piano-info">
+        <span id="pianoLengthInfo">1 Takt · 16 Schritte</span>
+        <span data-i18n="pianoLongHelp">Langes Drücken auf einen Noten-Clip öffnet ebenfalls diesen Editor.</span>
+      </div>
+
+      <div id="pianoRollScroll" class="piano-roll-scroll">
+        <div id="pianoRollInner" class="piano-roll-inner">
+          <div id="pianoPitchLabels" class="piano-pitch-labels"></div>
+          <div id="pianoGrid" class="piano-grid"></div>
+        </div>
+      </div>
     </div>
   </div>
 
