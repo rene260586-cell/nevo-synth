@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v2.9</title>
+  <title>NÉVO Studio v3.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v2.9</span></div>
+        <div class="brand-sub">STUDIO <span>v3.0</span></div>
       </div>
 
       <div class="transport">
@@ -94,6 +94,12 @@
             <button id="flxMidiReset" class="btn small" type="button">MAPPINGS LÖSCHEN</button>
             <span id="flxMidiStatus" class="flx-midi-status">Kein MIDI-Gerät verbunden</span>
           </div>
+          <div class="dj-master-strip">
+            <span>MASTER DECK</span>
+            <button id="masterDeckA" class="btn small active" type="button">A</button>
+            <button id="masterDeckB" class="btn small" type="button">B</button>
+            <button id="globalQuantize" class="btn small toggle on" type="button">QUANTIZE AN</button>
+          </div>
         </div>
 
         <div class="dj-library-box">
@@ -105,7 +111,7 @@
               <button id="djClearLibrary" class="btn small" type="button">BIBLIOTHEK LEEREN</button>
             </div>
           </div>
-          <div class="dj-library-columns"><span>TITEL</span><span>BPM</span><span>LÄNGE</span><span>AKTION</span></div>
+          <div class="dj-library-columns"><span>TITEL</span><span>BPM</span><span>TONART</span><span>LÄNGE</span><span>AKTION</span></div>
           <div id="djLibraryList" class="dj-library-list"><div class="dj-empty" data-i18n="djEmpty">Noch keine Songs geladen.</div></div>
         </div>
 
@@ -127,9 +133,10 @@
                 <div id="flxAJog" class="flx4-jog" data-flx-action="A.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>A</span><small>JOG</small></div></div>
               </div>
               <div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY</button></div>
+              <div class="flx4-padmode"><span>HOT CUE MODE</span><small>8 farbige Hot Cues</small></div>
               <div class="flx4-pads">
                 <button data-flx-action="A.hot1" data-hot="A-0"><b>1</b><span>HOT CUE</span></button><button data-flx-action="A.hot2" data-hot="A-1"><b>2</b><span>HOT CUE</span></button><button data-flx-action="A.hot3" data-hot="A-2"><b>3</b><span>HOT CUE</span></button><button data-flx-action="A.hot4" data-hot="A-3"><b>4</b><span>HOT CUE</span></button>
-                <button data-flx-action="A.loop4"><b>5</b><span>LOOP 4</span></button><button data-flx-action="A.loop8"><b>6</b><span>LOOP 8</span></button><button data-flx-action="A.loop16"><b>7</b><span>LOOP 16</span></button><button data-flx-action="A.loop32"><b>8</b><span>LOOP 32</span></button>
+                <button data-flx-action="A.hot5" data-hot="A-4"><b>5</b><span>HOT CUE</span></button><button data-flx-action="A.hot6" data-hot="A-5"><b>6</b><span>HOT CUE</span></button><button data-flx-action="A.hot7" data-hot="A-6"><b>7</b><span>HOT CUE</span></button><button data-flx-action="A.hot8" data-hot="A-7"><b>8</b><span>HOT CUE</span></button>
               </div>
             </section>
 
@@ -171,9 +178,10 @@
                 </div>
               </div>
               <div class="flx4-transport"><button data-flx-action="B.cue" type="button">CUE</button><button class="play" data-flx-action="B.play" type="button">▶ PLAY</button></div>
+              <div class="flx4-padmode"><span>HOT CUE MODE</span><small>8 farbige Hot Cues</small></div>
               <div class="flx4-pads">
                 <button data-flx-action="B.hot1" data-hot="B-0"><b>1</b><span>HOT CUE</span></button><button data-flx-action="B.hot2" data-hot="B-1"><b>2</b><span>HOT CUE</span></button><button data-flx-action="B.hot3" data-hot="B-2"><b>3</b><span>HOT CUE</span></button><button data-flx-action="B.hot4" data-hot="B-3"><b>4</b><span>HOT CUE</span></button>
-                <button data-flx-action="B.loop4"><b>5</b><span>LOOP 4</span></button><button data-flx-action="B.loop8"><b>6</b><span>LOOP 8</span></button><button data-flx-action="B.loop16"><b>7</b><span>LOOP 16</span></button><button data-flx-action="B.loop32"><b>8</b><span>LOOP 32</span></button>
+                <button data-flx-action="B.hot5" data-hot="B-4"><b>5</b><span>HOT CUE</span></button><button data-flx-action="B.hot6" data-hot="B-5"><b>6</b><span>HOT CUE</span></button><button data-flx-action="B.hot7" data-hot="B-6"><b>7</b><span>HOT CUE</span></button><button data-flx-action="B.hot8" data-hot="B-7"><b>8</b><span>HOT CUE</span></button>
               </div>
             </section>
           </div>
@@ -187,6 +195,13 @@
               <div class="deck-meta"><span id="deckADetectedBpm">— BPM</span><span id="deckABeatPhase">GRID —</span></div>
             </div>
 
+            <div class="dj-performance-display">
+              <div><small>BPM</small><strong id="deckABigBpm">—</strong></div>
+              <div><small>RESTZEIT</small><strong id="deckARemain">-00:00.0</strong></div>
+              <div><small>TONART</small><strong id="deckAKey">—</strong></div>
+              <div><small>PHASE</small><strong id="deckAPhase">—</strong></div>
+            </div>
+
             <div class="dj-overview-label"><span>GESAMT-WELLENFORM</span><small>Tippen = springen</small></div>
             <div class="dj-wave-wrap dj-overview-wrap" data-deck="A" data-wave="overview">
               <canvas id="deckAWave" class="dj-wave" width="1400" height="180"></canvas>
@@ -194,6 +209,7 @@
               <div id="deckAPlayhead" class="dj-wave-playhead"></div>
               <div id="deckAZoomWindow" class="dj-zoom-window"></div>
             </div>
+            <div id="deckAPhrases" class="dj-phrase-strip"><span class="phrase-empty">TRACK ANALYSIEREN → PHRASES</span></div>
 
             <div class="dj-zoom-label"><span>ZOOM-WELLENFORM</span><small id="deckAZoomInfo">± 8 Beats</small></div>
             <div class="dj-wave-wrap dj-zoom-wrap" data-deck="A" data-wave="zoom">
@@ -205,10 +221,14 @@
             <div class="dj-time"><strong id="deckATime">00:00.0</strong><span>/</span><span id="deckADuration">00:00.0</span></div>
 
             <div class="dj-hotcues" id="deckAHotCues">
-              <button class="hotcue" data-deck="A" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
-              <button class="hotcue" data-deck="A" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
-              <button class="hotcue" data-deck="A" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
-              <button class="hotcue" data-deck="A" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-1" data-deck="A" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-2" data-deck="A" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-3" data-deck="A" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-4" data-deck="A" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-5" data-deck="A" data-hotcue="4"><b>5</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-6" data-deck="A" data-hotcue="5"><b>6</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-7" data-deck="A" data-hotcue="6"><b>7</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-8" data-deck="A" data-hotcue="7"><b>8</b><span>HOT CUE</span></button>
             </div>
 
             <div class="dj-controls">
@@ -217,11 +237,27 @@
               <button id="deckASetCue" class="btn small" type="button" data-i18n="djSetCue">SET CUE</button>
               <button id="deckAStop" class="btn small" type="button">■ STOP</button>
               <button id="deckASync" class="btn small" type="button">SYNC</button>
-              <button id="deckAAnalyze" class="btn small analyze-btn" type="button">⚡ BPM ANALYSE</button>
+              <button id="deckAAnalyze" class="btn small analyze-btn" type="button">⚡ TRACK ANALYSE</button>
               <button id="deckAKeyLock" class="btn small toggle on" type="button" data-i18n="djKeyLock">TONHALTE AN</button>
             </div>
 
-            <div class="dj-grid-tools">
+            <div class="dj-advanced-tools">
+              <button id="deckAMaster" class="btn small" type="button">MASTER</button>
+              <button id="deckAQuantize" class="btn small toggle on" type="button">QUANTIZE AN</button>
+              <button id="deckALoopIn" class="btn small" type="button">LOOP IN</button>
+              <button id="deckALoopOut" class="btn small" type="button">LOOP OUT</button>
+              <button id="deckAReloop" class="btn small" type="button">RELOOP</button>
+            </div>
+            <div class="dj-beatjump-tools">
+              <span>BEAT JUMP</span>
+              <button class="btn small" data-beatjump="A:-16" type="button">−16</button>
+              <button class="btn small" data-beatjump="A:-8" type="button">−8</button>
+              <button class="btn small" data-beatjump="A:-4" type="button">−4</button>
+              <button class="btn small" data-beatjump="A:4" type="button">+4</button>
+              <button class="btn small" data-beatjump="A:8" type="button">+8</button>
+              <button class="btn small" data-beatjump="A:16" type="button">+16</button>
+            </div>
+<div class="dj-grid-tools">
               <span>BEATGRID</span>
               <button id="deckAGridMinus" class="btn small" type="button">← 10 ms</button>
               <button id="deckAGridPlus" class="btn small" type="button">10 ms →</button>
@@ -233,6 +269,7 @@
               <label><span data-i18n="djTrackBpm">TRACK BPM</span><input id="deckABpm" type="number" min="60" max="220" step="0.1" value="150"></label>
               <label><span data-i18n="djPitch">TEMPO</span><input id="deckAPitch" type="range" min="-16" max="16" step="0.1" value="0"><b id="deckAPitchValue">0.0%</b></label>
               <label><span data-i18n="djVolume">LAUTSTÄRKE</span><input id="deckAVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+              <label><span>TONART</span><select id="deckAKeySelect"><option value="—">—</option><option value="C">C</option><option value="Cm">Cm</option><option value="C#">C#</option><option value="C#m">C#m</option><option value="D">D</option><option value="Dm">Dm</option><option value="D#">D#</option><option value="D#m">D#m</option><option value="E">E</option><option value="Em">Em</option><option value="F">F</option><option value="Fm">Fm</option><option value="F#">F#</option><option value="F#m">F#m</option><option value="G">G</option><option value="Gm">Gm</option><option value="G#">G#</option><option value="G#m">G#m</option><option value="A">A</option><option value="Am">Am</option><option value="A#">A#</option><option value="A#m">A#m</option><option value="B">B</option><option value="Bm">Bm</option></select></label>
               <label><span data-i18n="djLoop">LOOP</span>
                 <select id="deckALoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
               </label>
@@ -247,6 +284,13 @@
               <div class="deck-meta"><span id="deckBDetectedBpm">— BPM</span><span id="deckBBeatPhase">GRID —</span></div>
             </div>
 
+            <div class="dj-performance-display">
+              <div><small>BPM</small><strong id="deckBBigBpm">—</strong></div>
+              <div><small>RESTZEIT</small><strong id="deckBRemain">-00:00.0</strong></div>
+              <div><small>TONART</small><strong id="deckBKey">—</strong></div>
+              <div><small>PHASE</small><strong id="deckBPhase">—</strong></div>
+            </div>
+
             <div class="dj-overview-label"><span>GESAMT-WELLENFORM</span><small>Tippen = springen</small></div>
             <div class="dj-wave-wrap dj-overview-wrap" data-deck="B" data-wave="overview">
               <canvas id="deckBWave" class="dj-wave" width="1400" height="180"></canvas>
@@ -254,6 +298,7 @@
               <div id="deckBPlayhead" class="dj-wave-playhead"></div>
               <div id="deckBZoomWindow" class="dj-zoom-window"></div>
             </div>
+            <div id="deckBPhrases" class="dj-phrase-strip"><span class="phrase-empty">TRACK ANALYSIEREN → PHRASES</span></div>
 
             <div class="dj-zoom-label"><span>ZOOM-WELLENFORM</span><small id="deckBZoomInfo">± 8 Beats</small></div>
             <div class="dj-wave-wrap dj-zoom-wrap" data-deck="B" data-wave="zoom">
@@ -265,10 +310,14 @@
             <div class="dj-time"><strong id="deckBTime">00:00.0</strong><span>/</span><span id="deckBDuration">00:00.0</span></div>
 
             <div class="dj-hotcues" id="deckBHotCues">
-              <button class="hotcue" data-deck="B" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
-              <button class="hotcue" data-deck="B" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
-              <button class="hotcue" data-deck="B" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
-              <button class="hotcue" data-deck="B" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-1" data-deck="B" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-2" data-deck="B" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-3" data-deck="B" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-4" data-deck="B" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-5" data-deck="B" data-hotcue="4"><b>5</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-6" data-deck="B" data-hotcue="5"><b>6</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-7" data-deck="B" data-hotcue="6"><b>7</b><span>HOT CUE</span></button>
+              <button class="hotcue hot-8" data-deck="B" data-hotcue="7"><b>8</b><span>HOT CUE</span></button>
             </div>
 
             <div class="dj-controls">
@@ -277,8 +326,24 @@
               <button id="deckBSetCue" class="btn small" type="button" data-i18n="djSetCue">SET CUE</button>
               <button id="deckBStop" class="btn small" type="button">■ STOP</button>
               <button id="deckBSync" class="btn small" type="button">SYNC</button>
-              <button id="deckBAnalyze" class="btn small analyze-btn" type="button">⚡ BPM ANALYSE</button>
+              <button id="deckBAnalyze" class="btn small analyze-btn" type="button">⚡ TRACK ANALYSE</button>
               <button id="deckBKeyLock" class="btn small toggle on" type="button" data-i18n="djKeyLock">TONHALTE AN</button>
+            </div>
+<div class="dj-advanced-tools">
+              <button id="deckBMaster" class="btn small" type="button">MASTER</button>
+              <button id="deckBQuantize" class="btn small toggle on" type="button">QUANTIZE AN</button>
+              <button id="deckBLoopIn" class="btn small" type="button">LOOP IN</button>
+              <button id="deckBLoopOut" class="btn small" type="button">LOOP OUT</button>
+              <button id="deckBReloop" class="btn small" type="button">RELOOP</button>
+            </div>
+            <div class="dj-beatjump-tools">
+              <span>BEAT JUMP</span>
+              <button class="btn small" data-beatjump="B:-16" type="button">−16</button>
+              <button class="btn small" data-beatjump="B:-8" type="button">−8</button>
+              <button class="btn small" data-beatjump="B:-4" type="button">−4</button>
+              <button class="btn small" data-beatjump="B:4" type="button">+4</button>
+              <button class="btn small" data-beatjump="B:8" type="button">+8</button>
+              <button class="btn small" data-beatjump="B:16" type="button">+16</button>
             </div>
 
             <div class="dj-grid-tools">
@@ -293,6 +358,7 @@
               <label><span data-i18n="djTrackBpm">TRACK BPM</span><input id="deckBBpm" type="number" min="60" max="220" step="0.1" value="150"></label>
               <label><span data-i18n="djPitch">TEMPO</span><input id="deckBPitch" type="range" min="-16" max="16" step="0.1" value="0"><b id="deckBPitchValue">0.0%</b></label>
               <label><span data-i18n="djVolume">LAUTSTÄRKE</span><input id="deckBVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+              <label><span>TONART</span><select id="deckBKeySelect"><option value="—">—</option><option value="C">C</option><option value="Cm">Cm</option><option value="C#">C#</option><option value="C#m">C#m</option><option value="D">D</option><option value="Dm">Dm</option><option value="D#">D#</option><option value="D#m">D#m</option><option value="E">E</option><option value="Em">Em</option><option value="F">F</option><option value="Fm">Fm</option><option value="F#">F#</option><option value="F#m">F#m</option><option value="G">G</option><option value="Gm">Gm</option><option value="G#">G#</option><option value="G#m">G#m</option><option value="A">A</option><option value="Am">Am</option><option value="A#">A#</option><option value="A#m">A#m</option><option value="B">B</option><option value="Bm">Bm</option></select></label>
               <label><span data-i18n="djLoop">LOOP</span>
                 <select id="deckBLoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
               </label>

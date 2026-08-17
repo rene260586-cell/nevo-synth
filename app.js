@@ -811,7 +811,7 @@ function openDjDb(){
 async function saveDjItem(item){
   const db=await openDjDb();if(!db||!item)return;
   const blob=item.blob||item.file;if(!blob)return;
-  const row={id:item.id,name:item.name,title:item.title||cleanDjTitle(item.name),bpm:Number(item.bpm)||0,duration:Number(item.duration)||0,beatOffset:Number(item.beatOffset)||0,confidence:Number(item.confidence)||0,hotCues:Array.isArray(item.hotCues)?item.hotCues:[null,null,null,null],cue:Number(item.cue)||0,blob,type:blob.type||'audio/*',addedAt:item.addedAt||Date.now()};
+  const row={id:item.id,name:item.name,title:item.title||cleanDjTitle(item.name),bpm:Number(item.bpm)||0,duration:Number(item.duration)||0,beatOffset:Number(item.beatOffset)||0,confidence:Number(item.confidence)||0,key:item.key||'—',phrases:Array.isArray(item.phrases)?item.phrases:[],hotCues:Array.isArray(item.hotCues)?item.hotCues:[null,null,null,null,null,null,null,null],cue:Number(item.cue)||0,blob,type:blob.type||'audio/*',addedAt:item.addedAt||Date.now()};
   try{await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readwrite');tx.objectStore(DJ_DB_STORE).put(row);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch(e){console.warn('DJ library save failed',e)}
 }
 async function deleteDjItemPersisted(id){const db=await openDjDb();if(!db)return;try{await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readwrite');tx.objectStore(DJ_DB_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch{}}
@@ -819,13 +819,13 @@ async function clearDjDb(){const db=await openDjDb();if(!db)return;try{await new
 async function loadPersistedDjLibrary(){
   const db=await openDjDb();if(!db)return;
   let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),r=tx.objectStore(DJ_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return}
-  for(const row of rows){if(djLibrary.some(x=>x.id===row.id))continue;const blob=row.blob,url=URL.createObjectURL(blob);djLibrary.push({id:row.id,file:blob,blob,name:row.name,title:row.title||cleanDjTitle(row.name),url,buffer:null,duration:row.duration||0,bpm:row.bpm||0,beatOffset:row.beatOffset||0,confidence:row.confidence||0,hotCues:Array.isArray(row.hotCues)?row.hotCues:[null,null,null,null],cue:row.cue||0,addedAt:row.addedAt||Date.now()})}
+  for(const row of rows){if(djLibrary.some(x=>x.id===row.id))continue;const blob=row.blob,url=URL.createObjectURL(blob);djLibrary.push({id:row.id,file:blob,blob,name:row.name,title:row.title||cleanDjTitle(row.name),url,buffer:null,duration:row.duration||0,bpm:row.bpm||0,beatOffset:row.beatOffset||0,confidence:row.confidence||0,key:row.key||'—',phrases:Array.isArray(row.phrases)?row.phrases:[],hotCues:Array.isArray(row.hotCues)?row.hotCues:[null,null,null,null,null,null,null,null],cue:row.cue||0,addedAt:row.addedAt||Date.now()})}
   renderDjLibrary();
 }
 function cleanDjTitle(name=''){return String(name).replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim()||'Unbenannter Song'}
 function makeDjDeck(letter){
   const audio=new Audio();audio.preload='auto';audio.preservesPitch=true;audio.mozPreservesPitch=true;audio.webkitPreservesPitch=true;
-  return {letter,audio,item:null,source:null,gainNode:null,cue:0,keyLock:true,loopBeats:0,loopStart:0,buffer:null,hotCues:[null,null,null,null],beatOffset:0,detectedBpm:0,confidence:0,lastZoomDraw:-1,tapTimes:[]}
+  return {letter,audio,item:null,source:null,gainNode:null,cue:0,keyLock:true,loopBeats:0,loopStart:0,buffer:null,hotCues:[null,null,null,null,null,null,null,null],beatOffset:0,detectedBpm:0,confidence:0,key:'—',phrases:[],quantize:true,manualLoopIn:null,manualLoopOut:null,manualLoopActive:false,lastZoomDraw:-1,tapTimes:[]}
 }
 function djDeckBpm(letter){return clamp(Number($(`#deck${letter}Bpm`)?.value)||djDecks[letter].detectedBpm||150,60,220)}
 function djBeatPeriod(letter){return 60/djDeckBpm(letter)}
@@ -880,7 +880,7 @@ function renderDjLibrary(){
   box.innerHTML='';items.forEach(item=>{const el=document.createElement('div');el.className='dj-lib-item';const bpmText=item.analyzing?(currentLang==='de'?'ANALYSE…':'ANALYZING…'):(item.bpm?Number(item.bpm).toFixed(1):'—'),dur=item.duration?fmtDeckTime(item.duration):'—';el.innerHTML=`<div class="dj-lib-title"><strong>${item.title||cleanDjTitle(item.name)}</strong><small>${item.name}</small></div><div class="dj-lib-bpm ${item.analyzing?'analyzing':''}">${bpmText}</div><div class="dj-lib-duration">${dur}</div><div class="dj-lib-actions"><button class="btn small analyze-mini" title="BPM">⚡</button><button class="btn small">A</button><button class="btn small">B</button></div>`;const title=el.querySelector('.dj-lib-title strong'),[an,a,b]=el.querySelectorAll('button');title.onclick=async()=>{const v=prompt(currentLang==='de'?'Titel':'Title',item.title||cleanDjTitle(item.name));if(v&&v.trim()){item.title=v.trim();await saveDjItem(item);renderDjLibrary()}};an.onclick=()=>analyzeDjItem(item,true);a.onclick=()=>loadItemToDeck(item,'A');b.onclick=()=>loadItemToDeck(item,'B');box.appendChild(el)})
 }
 async function loadItemToDeck(item,letter){
-  const deck=djDecks[letter];await ensureDeckConnected(deck);const buffer=await ensureDjItemBuffer(item);deck.item=item;deck.buffer=buffer;deck.cue=Number(item.cue)||0;deck.hotCues=Array.isArray(item.hotCues)?[...item.hotCues]:[null,null,null,null];deck.beatOffset=Number(item.beatOffset)||0;deck.detectedBpm=Number(item.bpm)||0;deck.confidence=Number(item.confidence)||0;deck.loopBeats=0;deck.loopStart=0;deck.lastZoomDraw=-1;deck.audio.pause();deck.audio.src=item.url||(item.url=URL.createObjectURL(item.file||item.blob));deck.audio.currentTime=0;deck.audio.load();
+  const deck=djDecks[letter];await ensureDeckConnected(deck);const buffer=await ensureDjItemBuffer(item);deck.item=item;deck.buffer=buffer;deck.cue=Number(item.cue)||0;deck.hotCues=Array.isArray(item.hotCues)?[...item.hotCues]:[null,null,null,null,null,null,null,null];deck.beatOffset=Number(item.beatOffset)||0;deck.detectedBpm=Number(item.bpm)||0;deck.confidence=Number(item.confidence)||0;deck.key=item.key||'—';deck.phrases=Array.isArray(item.phrases)?item.phrases:[];deck.quantize=true;deck.manualLoopIn=null;deck.manualLoopOut=null;deck.manualLoopActive=false;deck.loopBeats=0;deck.loopStart=0;deck.lastZoomDraw=-1;deck.audio.pause();deck.audio.src=item.url||(item.url=URL.createObjectURL(item.file||item.blob));deck.audio.currentTime=0;deck.audio.load();
   const guessed=(item.name.match(/(?:^|\D)(1[2-8]\d)(?:\D|$)/)||[])[1],bpm=item.bpm||Number(guessed)||Number($('#bpm').value)||150;$(`#deck${letter}Bpm`).value=Number(bpm).toFixed(1);$(`#deck${letter}Pitch`).value=0;deck.audio.playbackRate=1;$(`#deck${letter}Title`).textContent=item.title||cleanDjTitle(item.name);$(`#deck${letter}Duration`).textContent=fmtDeckTime(buffer.duration);$(`#deck${letter}Time`).textContent='00:00.0';$(`#deck${letter}Playhead`).style.left='0%';$(`#deck${letter}Loop`).value='0';drawDeckOverview(letter);drawDeckZoom(letter,true);renderHotCues(letter);refreshDeckUi(letter);setStatus(true,t('djLoaded'),`${item.title||item.name} → DECK ${letter}`);if(!item.bpm)queueDjAnalysis(item)
 }
 function refreshDeckUi(letter){const d=djDecks[letter],play=$(`#deck${letter}Play`),key=$(`#deck${letter}KeyLock`);if(play)play.textContent=d.audio&&!d.audio.paused?'❚❚ PAUSE':'▶ PLAY';if(key){key.classList.toggle('on',d.keyLock);key.textContent=currentLang==='de'?(d.keyLock?'TONHALTE AN':'TONHALTE AUS'):(d.keyLock?'KEY LOCK ON':'KEY LOCK OFF')}const st=$(`#deck${letter}Status`);if(st)st.textContent=d.item?(d.audio.paused?'READY':'PLAY'):'EMPTY';const bpmEl=$(`#deck${letter}DetectedBpm`),phase=$(`#deck${letter}BeatPhase`);if(bpmEl)bpmEl.textContent=d.item?`${djDeckBpm(letter).toFixed(1)} BPM`:'— BPM';if(phase)phase.textContent=d.item?`GRID ${Math.round((d.beatOffset||0)*1000)} ms`:'GRID —';renderHotCues(letter)}
@@ -904,10 +904,10 @@ function refreshDjV28Labels(){
   const de=currentLang==='de';if($('#djLibrarySearch'))$('#djLibrarySearch').placeholder=de?'Titel suchen …':'Search title …';if($('#djAnalyzeAll'))$('#djAnalyzeAll').textContent=de?'⚡ ALLE ANALYSIEREN':'⚡ ANALYZE ALL';if($('#djClearLibrary'))$('#djClearLibrary').textContent=de?'BIBLIOTHEK LEEREN':'CLEAR LIBRARY';const cols=$$('.dj-library-columns span'),names=de?['TITEL','BPM','LÄNGE','AKTION']:['TITLE','BPM','LENGTH','ACTION'];cols.forEach((x,i)=>x.textContent=names[i]||x.textContent);for(const L of ['A','B']){const deck=document.querySelector(`.dj-deck[data-deck="${L}"]`);if(!deck)continue;const ov=deck.querySelector('.dj-overview-label'),zo=deck.querySelector('.dj-zoom-label');if(ov){ov.querySelector('span').textContent=de?'GESAMT-WELLENFORM':'OVERVIEW WAVEFORM';ov.querySelector('small').textContent=de?'Tippen = springen':'Tap = seek'}if(zo)zo.querySelector('span').textContent=de?'ZOOM-WELLENFORM':'ZOOM WAVEFORM';$(`#deck${L}Analyze`).textContent=de?'⚡ BPM ANALYSE':'⚡ BPM ANALYSIS';$(`#deck${L}TapBpm`).textContent='TAP BPM';$(`#deck${L}GridHere`).textContent=de?'GRID HIER':'GRID HERE';const gt=deck.querySelector('.dj-grid-tools>span');if(gt)gt.textContent='BEATGRID';renderHotCues(L)}renderDjLibrary()
 }
 function setLanguage(lang){currentLang=lang==='en'?'en':'de';applyLanguageToUI(true);refreshDjV28Labels();setStatus(audioReady,t('languageChanged'),currentLang==='de'?'Die App ist jetzt auf Deutsch.':'The app is now in English.');setTimeout(()=>{try{refreshAllDeckUi()}catch{}},0)}
-async function clearDjLibraryAll(){if(!confirm(currentLang==='de'?'Player-Bibliothek wirklich leeren?':'Clear the player library?'))return;for(const d of Object.values(djDecks)){d.audio.pause();d.item=null;d.buffer=null;d.hotCues=[null,null,null,null]}for(const item of djLibrary){try{if(item.url)URL.revokeObjectURL(item.url)}catch{}}djLibrary.splice(0);await clearDjDb();renderDjLibrary();refreshAllDeckUi();setStatus(audioReady,currentLang==='de'?'Bibliothek geleert':'Library cleared','')}
+async function clearDjLibraryAll(){if(!confirm(currentLang==='de'?'Player-Bibliothek wirklich leeren?':'Clear the player library?'))return;for(const d of Object.values(djDecks)){d.audio.pause();d.item=null;d.buffer=null;d.hotCues=[null,null,null,null,null,null,null,null]}for(const item of djLibrary){try{if(item.url)URL.revokeObjectURL(item.url)}catch{}}djLibrary.splice(0);await clearDjDb();renderDjLibrary();refreshAllDeckUi();setStatus(audioReady,currentLang==='de'?'Bibliothek geleert':'Library cleared','')}
 function bindDjPlayer(){
   if(!$('#djImport'))return;
-  $('#djImport').onchange=async e=>{const files=[...e.target.files];for(const f of files){const item={id:uid()+Date.now().toString(36),file:f,blob:f,name:f.name,title:cleanDjTitle(f.name),url:URL.createObjectURL(f),buffer:null,duration:0,bpm:0,beatOffset:0,confidence:0,hotCues:[null,null,null,null],cue:0,addedAt:Date.now()};djLibrary.push(item);await saveDjItem(item);queueDjAnalysis(item)}renderDjLibrary();e.target.value=''};
+  $('#djImport').onchange=async e=>{const files=[...e.target.files];for(const f of files){const item={id:uid()+Date.now().toString(36),file:f,blob:f,name:f.name,title:cleanDjTitle(f.name),url:URL.createObjectURL(f),buffer:null,duration:0,bpm:0,beatOffset:0,confidence:0,key:'—',phrases:[],hotCues:[null,null,null,null,null,null,null,null],cue:0,addedAt:Date.now()};djLibrary.push(item);await saveDjItem(item);queueDjAnalysis(item)}renderDjLibrary();e.target.value=''};
   $('#djLibrarySearch').oninput=renderDjLibrary;$('#djAnalyzeAll').onclick=()=>{for(const item of djLibrary)queueDjAnalysis(item)};$('#djClearLibrary').onclick=clearDjLibraryAll;
   for(const L of ['A','B']){
     $(`#deck${L}Play`).onclick=()=>toggleDeck(L);$(`#deck${L}Stop`).onclick=()=>stopDeck(L);$(`#deck${L}Cue`).onclick=()=>cueDeck(L);$(`#deck${L}SetCue`).onclick=()=>setDeckCue(L);$(`#deck${L}Sync`).onclick=()=>syncDeck(L);$(`#deck${L}Analyze`).onclick=()=>djDecks[L].item&&analyzeDjItem(djDecks[L].item,true);$(`#deck${L}KeyLock`).onclick=()=>toggleDeckKeyLock(L);$(`#deck${L}Pitch`).oninput=()=>updateDeckRate(L);$(`#deck${L}Volume`).oninput=updateCrossfaderGains;$(`#deck${L}Loop`).onchange=()=>setDeckLoop(L);$(`#deck${L}AddArranger`).onclick=()=>addDeckToArranger(L);$(`#deck${L}GridMinus`).onclick=()=>nudgeBeatgrid(L,-.01);$(`#deck${L}GridPlus`).onclick=()=>nudgeBeatgrid(L,.01);$(`#deck${L}GridHere`).onclick=()=>gridHere(L);$(`#deck${L}TapBpm`).onclick=()=>tapBpm(L);$(`#deck${L}Bpm`).onchange=()=>{const d=djDecks[L],v=djDeckBpm(L);d.detectedBpm=v;if(d.item){d.item.bpm=v;persistDeckMeta(L)}drawDeckOverview(L);drawDeckZoom(L,true);refreshDeckUi(L)};document.querySelectorAll(`.dj-wave-wrap[data-deck="${L}"]`).forEach(w=>w.onclick=e=>deckSeekFromWave(L,e));document.querySelectorAll(`.hotcue[data-deck="${L}"]`).forEach(bindHotCueButton);djDecks[L].audio.addEventListener('play',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('pause',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('ended',()=>refreshDeckUi(L))
@@ -997,7 +997,7 @@ function flxSetContinuous(action,norm,fromMidi=false){
 function flxTriggerAction(action){
   const m=action.match(/^([AB])\.(.+)$/);if(!m)return;const L=m[1],kind=m[2];
   if(kind==='play')return toggleDeck(L);if(kind==='cue')return cueDeck(L);if(kind==='sync')return syncDeck(L);if(kind==='keylock')return toggleDeckKeyLock(L);
-  let hot=kind.match(/^hot([1-4])$/);if(hot)return hotCueAction(L,Number(hot[1])-1);
+  let hot=kind.match(/^hot([1-8])$/);if(hot)return hotCueAction(L,Number(hot[1])-1);
   let loop=kind.match(/^loop(4|8|16|32)$/);if(loop){const beats=Number(loop[1]);const sel=$(`#deck${L}Loop`);if(sel)sel.value=String(beats);return setDeckLoop(L)}
 }
 function flxRunAction(action,norm=1,fromMidi=false){if(flxIsContinuous(action))return flxSetContinuous(action,norm,fromMidi);if(norm>.45)flxTriggerAction(action)}
@@ -1026,7 +1026,7 @@ function refreshFlx4Ui(){
     if(jog)jog.style.setProperty('--jog-angle',`${(cur*72)%360}deg`);
     const stdPitch=Number($(`#deck${L}Pitch`)?.value||0);if(pitch&&document.activeElement!==pitch)pitch.value=stdPitch;if(pv)pv.textContent=(stdPitch>=0?'+':'')+stdPitch.toFixed(1)+'%';
     const play=document.querySelector(`[data-flx-action="${L}.play"]`);if(play){play.classList.toggle('playing',!!d.item&&!d.audio.paused);play.textContent=!!d.item&&!d.audio.paused?'❚❚ PAUSE':'▶ PLAY'}
-    for(let i=0;i<4;i++){const p=document.querySelector(`[data-hot="${L}-${i}"]`);if(p)p.classList.toggle('hot-set',Number.isFinite(d.hotCues?.[i]))}
+    for(let i=0;i<8;i++){const p=document.querySelector(`[data-hot="${L}-${i}"]`);if(p)p.classList.toggle('hot-set',Number.isFinite(d.hotCues?.[i]))}
   }
   if($('#flxCrossfader')&&document.activeElement!==$('#flxCrossfader'))$('#flxCrossfader').value=$('#djCrossfader')?.value||0;
 }
@@ -1071,3 +1071,137 @@ function bindFlx4Mode(){
 }
 
 bindFlx4Mode();
+
+// ===== v3.0: PRO DJ ENGINE / KEY + PHRASE ANALYSIS / MASTER SYNC =====
+var nevoV3={masterDeck:'A',globalQuantize:true};
+
+function v3Pad8(arr){const out=Array.isArray(arr)?arr.slice(0,8):[];while(out.length<8)out.push(null);return out}
+function v3SnapTime(letter,time){
+  const d=djDecks[letter]; if(!d?.quantize||!nevoV3.globalQuantize)return clamp(time,0,d.audio.duration||d.buffer?.duration||0);
+  const p=djBeatPeriod(letter),off=djNormalizeOffset(d.beatOffset||0,p); if(!p)return time;
+  return clamp(off+Math.round((time-off)/p)*p,0,d.audio.duration||d.buffer?.duration||0);
+}
+function v3EffectiveBpm(letter){const d=djDecks[letter];return djDeckBpm(letter)*(d.audio?.playbackRate||1)}
+function v3PhaseFraction(letter){const d=djDecks[letter],p=djBeatPeriod(letter),off=djNormalizeOffset(d.beatOffset||0,p);if(!d.item||!p)return 0;const raw=((d.audio.currentTime||0)-off)/p;return ((raw%1)+1)%1}
+function v3SetMaster(letter){
+  nevoV3.masterDeck=letter==='B'?'B':'A';
+  for(const L of ['A','B']){
+    $(`#deck${L}Master`)?.classList.toggle('active',L===nevoV3.masterDeck);
+    $(`#masterDeck${L}`)?.classList.toggle('active',L===nevoV3.masterDeck);
+  }
+  setStatus(true,'MASTER DECK',`DECK ${nevoV3.masterDeck}`);
+}
+function v3SetQuantize(letter,on){
+  const d=djDecks[letter]; if(!d)return; d.quantize=on;
+  const b=$(`#deck${letter}Quantize`);if(b){b.classList.toggle('on',on);b.textContent=on?(currentLang==='de'?'QUANTIZE AN':'QUANTIZE ON'):(currentLang==='de'?'QUANTIZE AUS':'QUANTIZE OFF')}
+}
+function v3ToggleGlobalQuantize(){
+  nevoV3.globalQuantize=!nevoV3.globalQuantize;const b=$('#globalQuantize');if(b){b.classList.toggle('on',nevoV3.globalQuantize);b.textContent=nevoV3.globalQuantize?(currentLang==='de'?'QUANTIZE AN':'QUANTIZE ON'):(currentLang==='de'?'QUANTIZE AUS':'QUANTIZE OFF')}
+}
+function v3BeatJump(letter,beats){const d=djDecks[letter];if(!d?.item)return;const target=(d.audio.currentTime||0)+beats*djBeatPeriod(letter);d.audio.currentTime=v3SnapTime(letter,target);drawDeckZoom(letter,true)}
+function v3LoopIn(letter){const d=djDecks[letter];if(!d?.item)return;d.manualLoopIn=v3SnapTime(letter,d.audio.currentTime||0);d.manualLoopOut=null;d.manualLoopActive=false;setStatus(true,'LOOP IN',`DECK ${letter} · ${fmtDeckTime(d.manualLoopIn)}`)}
+function v3LoopOut(letter){const d=djDecks[letter];if(!d?.item)return;let out=v3SnapTime(letter,d.audio.currentTime||0);if(!Number.isFinite(d.manualLoopIn))d.manualLoopIn=v3SnapTime(letter,Math.max(0,out-4*djBeatPeriod(letter)));if(out<=d.manualLoopIn+.02)out=d.manualLoopIn+4*djBeatPeriod(letter);d.manualLoopOut=clamp(out,0,d.audio.duration||out);d.manualLoopActive=true;d.loopBeats=0;if($(`#deck${letter}Loop`))$(`#deck${letter}Loop`).value='0';setStatus(true,'LOOP',`DECK ${letter} · ${fmtDeckTime(d.manualLoopIn)} → ${fmtDeckTime(d.manualLoopOut)}`)}
+function v3Reloop(letter){const d=djDecks[letter];if(!d?.item||!Number.isFinite(d.manualLoopIn)||!Number.isFinite(d.manualLoopOut))return;d.manualLoopActive=!d.manualLoopActive;if(d.manualLoopActive&&(d.audio.currentTime<d.manualLoopIn||d.audio.currentTime>d.manualLoopOut))d.audio.currentTime=d.manualLoopIn;const b=$(`#deck${letter}Reloop`);b?.classList.toggle('active',d.manualLoopActive);setStatus(true,'RELOOP',d.manualLoopActive?'AN':'AUS')}
+
+// Best-effort musical-key analysis using Goertzel pitch-class energy + Krumhansl profiles.
+function v3Goertzel(data,start,len,sr,freq){const w=2*Math.PI*freq/sr,coeff=2*Math.cos(w);let s0=0,s1=0,s2=0;const end=Math.min(data.length,start+len);for(let i=start;i<end;i+=2){s0=data[i]+coeff*s1-s2;s2=s1;s1=s0}return Math.max(0,s1*s1+s2*s2-coeff*s1*s2)}
+function v3RotateProfile(profile,root){const out=[];for(let i=0;i<12;i++)out[i]=profile[(i-root+12)%12];return out}
+function v3Corr(a,b){const am=a.reduce((x,y)=>x+y,0)/a.length,bm=b.reduce((x,y)=>x+y,0)/b.length;let n=0,da=0,db=0;for(let i=0;i<a.length;i++){const x=a[i]-am,y=b[i]-bm;n+=x*y;da+=x*x;db+=y*y}return n/Math.sqrt((da||1)*(db||1))}
+function v3AnalyzeKey(buffer){
+  const data=buffer.getChannelData(0),sr=buffer.sampleRate,dur=buffer.duration,pc=new Float64Array(12),segments=10,segLen=Math.min(8192,Math.floor(sr*.22));
+  const baseMidi=36; // C2
+  for(let seg=0;seg<segments;seg++){
+    const t=dur*(.08+.84*(seg+.5)/segments),start=clamp(Math.floor(t*sr-segLen/2),0,Math.max(0,data.length-segLen));
+    for(let midi=baseMidi;midi<=83;midi++){
+      const f=440*Math.pow(2,(midi-69)/12);pc[midi%12]+=Math.sqrt(v3Goertzel(data,start,segLen,sr,f));
+    }
+  }
+  const sum=pc.reduce((a,b)=>a+b,0)||1,vec=Array.from(pc,x=>x/sum),maj=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88],min=[6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17],names=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];let best={score:-9,key:'—'};
+  for(let r=0;r<12;r++){const a=v3Corr(vec,v3RotateProfile(maj,r));if(a>best.score)best={score:a,key:names[r]};const m=v3Corr(vec,v3RotateProfile(min,r));if(m>best.score)best={score:m,key:names[r]+'m'}}return best;
+}
+function v3AnalyzePhrases(buffer,bpm){
+  const data=buffer.getChannelData(0),sr=buffer.sampleRate,dur=buffer.duration,bar=60/bpm*4,chunkBars=8,chunk=Math.max(4,bar*chunkBars),count=Math.max(1,Math.ceil(dur/chunk)),energies=[];
+  for(let c=0;c<count;c++){const s=Math.floor(c*chunk*sr),e=Math.min(data.length,Math.floor(Math.min(dur,(c+1)*chunk)*sr)),stride=Math.max(1,Math.floor((e-s)/5000));let sum=0,n=0;for(let i=s;i<e;i+=stride){sum+=data[i]*data[i];n++}energies.push(Math.sqrt(sum/Math.max(1,n)))}
+  const sorted=[...energies].sort((a,b)=>a-b),lo=sorted[Math.floor(sorted.length*.25)]||0,hi=sorted[Math.floor(sorted.length*.72)]||0;
+  const parts=[];for(let i=0;i<count;i++){let label='GROOVE';if(i===0)label='INTRO';else if(i===count-1)label='OUTRO';else if(energies[i]>=hi)label='PEAK';else if(energies[i]<=lo)label='BREAK';else if(i>0&&energies[i]>energies[i-1]*1.16)label='BUILD';parts.push({start:i*chunk,end:Math.min(dur,(i+1)*chunk),label,energy:energies[i]})}
+  // Merge adjacent identical labels.
+  const merged=[];for(const p of parts){const last=merged.at(-1);if(last&&last.label===p.label)last.end=p.end;else merged.push({...p})}return merged;
+}
+function v3PhraseColor(label){return {INTRO:'#54d8ff',GROOVE:'#28e7b2',BUILD:'#ffb55e',PEAK:'#ff5d78',BREAK:'#9a79ff',OUTRO:'#7c8b98'}[label]||'#708494'}
+function v3RenderPhrases(letter){const d=djDecks[letter],box=$(`#deck${letter}Phrases`);if(!box)return;const dur=d.buffer?.duration||d.audio?.duration||0,phr=Array.isArray(d.phrases)?d.phrases:[];if(!phr.length||!dur){box.innerHTML=`<span class="phrase-empty">${currentLang==='de'?'TRACK ANALYSIEREN → PHRASES':'ANALYZE TRACK → PHRASES'}</span>`;return}box.innerHTML='';for(const p of phr){const el=document.createElement('button');el.className='phrase-block';el.style.width=Math.max(1,(p.end-p.start)/dur*100)+'%';el.style.setProperty('--phrase-color',v3PhraseColor(p.label));el.textContent=p.label;el.title=`${fmtDeckTime(p.start)} – ${fmtDeckTime(p.end)}`;el.onclick=()=>{d.audio.currentTime=clamp(p.start,0,dur);drawDeckZoom(letter,true)};box.appendChild(el)}}
+
+async function v3AnalyzeTrack(item,showStatus=true){
+  if(!item)return null;item.analyzing=true;renderDjLibrary();if(showStatus)setStatus(true,currentLang==='de'?'Track-Analyse läuft':'Track analysis running',item.title||item.name);
+  try{
+    const buffer=await ensureDjItemBuffer(item),r=analyzeBpmBuffer(buffer),keyResult=v3AnalyzeKey(buffer);item.bpm=r.bpm||item.bpm||150;item.beatOffset=r.beatOffset||0;item.confidence=r.confidence||0;item.duration=buffer.duration;item.key=keyResult.key||item.key||'—';item.keyConfidence=keyResult.score||0;item.phrases=v3AnalyzePhrases(buffer,item.bpm);item.analyzing=false;await saveDjItem(item);
+    for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){const d=djDecks[L];d.detectedBpm=item.bpm;d.beatOffset=item.beatOffset;d.key=item.key;d.phrases=item.phrases;$(`#deck${L}Bpm`).value=item.bpm;$(`#deck${L}KeySelect`).value=item.key;drawDeckOverview(L);drawDeckZoom(L,true);v3RenderPhrases(L);refreshDeckUi(L)}
+    renderDjLibrary();if(showStatus)setStatus(true,currentLang==='de'?'Analyse fertig':'Analysis ready',`${item.bpm.toFixed(1)} BPM · ${item.key} · ${Math.round(item.confidence*100)}%`);return {...r,key:item.key,phrases:item.phrases}
+  }catch(e){item.analyzing=false;console.warn(e);renderDjLibrary();return null}
+}
+analyzeDjItem=v3AnalyzeTrack;
+
+var v29RenderDjLibrary=renderDjLibrary;
+renderDjLibrary=function(){
+  const box=$('#djLibraryList');if(!box)return;const q=($('#djLibrarySearch')?.value||'').trim().toLowerCase(),items=djLibrary.filter(item=>!q||`${item.title||''} ${item.name||''} ${item.key||''}`.toLowerCase().includes(q)).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));if(!items.length){box.innerHTML=`<div class="dj-empty">${djLibrary.length?(currentLang==='de'?'Keine Treffer.':'No matches.'):t('djEmpty')}</div>`;return}
+  box.innerHTML='';items.forEach(item=>{const el=document.createElement('div');el.className='dj-lib-item';const bpmText=item.analyzing?(currentLang==='de'?'ANALYSE…':'ANALYZING…'):(item.bpm?Number(item.bpm).toFixed(1):'—'),dur=item.duration?fmtDeckTime(item.duration):'—',key=item.key||'—';el.innerHTML=`<div class="dj-lib-title"><strong>${item.title||cleanDjTitle(item.name)}</strong><small>${item.name}</small></div><div class="dj-lib-bpm ${item.analyzing?'analyzing':''}">${bpmText}</div><div class="dj-lib-key">${key}</div><div class="dj-lib-duration">${dur}</div><div class="dj-lib-actions"><button class="btn small analyze-mini" title="Analyse">⚡</button><button class="btn small">A</button><button class="btn small">B</button></div>`;const title=el.querySelector('.dj-lib-title strong'),[an,a,b]=el.querySelectorAll('button');title.onclick=async()=>{const v=prompt(currentLang==='de'?'Titel':'Title',item.title||cleanDjTitle(item.name));if(v&&v.trim()){item.title=v.trim();await saveDjItem(item);renderDjLibrary()}};an.onclick=()=>v3AnalyzeTrack(item,true);a.onclick=()=>loadItemToDeck(item,'A');b.onclick=()=>loadItemToDeck(item,'B');box.appendChild(el)})
+};
+
+var v29LoadItemToDeck=loadItemToDeck;
+loadItemToDeck=async function(item,letter){await v29LoadItemToDeck(item,letter);const d=djDecks[letter];d.hotCues=v3Pad8(d.hotCues);d.key=item.key||'—';d.phrases=Array.isArray(item.phrases)?item.phrases:[];d.quantize=true;d.manualLoopIn=null;d.manualLoopOut=null;d.manualLoopActive=false;if($(`#deck${letter}KeySelect`))$(`#deck${letter}KeySelect`).value=d.key;v3SetQuantize(letter,true);v3RenderPhrases(letter);refreshDeckUi(letter)};
+
+var v29PersistDeckMeta=persistDeckMeta;
+persistDeckMeta=async function(letter){const d=djDecks[letter];if(d?.item){d.item.key=d.key||'—';d.item.phrases=Array.isArray(d.phrases)?d.phrases:[];d.item.hotCues=v3Pad8(d.hotCues)}return v29PersistDeckMeta(letter)};
+
+var v29RefreshDeckUi=refreshDeckUi;
+refreshDeckUi=function(letter){
+  v29RefreshDeckUi(letter);const d=djDecks[letter],dur=d.audio.duration||d.buffer?.duration||0,cur=d.audio.currentTime||0,bpm=d.item?v3EffectiveBpm(letter):0;
+  if($(`#deck${letter}BigBpm`))$(`#deck${letter}BigBpm`).textContent=d.item?bpm.toFixed(2):'—';
+  if($(`#deck${letter}Remain`))$(`#deck${letter}Remain`).textContent=d.item?'-'+fmtDeckTime(Math.max(0,dur-cur)):'-00:00.0';
+  if($(`#deck${letter}Key`))$(`#deck${letter}Key`).textContent=d.key||'—';
+  if($(`#deck${letter}KeySelect`)&&document.activeElement!==$(`#deck${letter}KeySelect`))$(`#deck${letter}KeySelect`).value=d.key||'—';
+  if($(`#deck${letter}Phase`)){
+    if(!d.item)$(`#deck${letter}Phase`).textContent='—';else if(nevoV3.masterDeck===letter)$(`#deck${letter}Phase`).textContent='MASTER';else{const master=djDecks[nevoV3.masterDeck];if(master?.item){let diff=v3PhaseFraction(letter)-v3PhaseFraction(nevoV3.masterDeck);if(diff>.5)diff-=1;if(diff<-.5)diff+=1;$(`#deck${letter}Phase`).textContent=(diff>=0?'+':'')+Math.round(diff*100)+'%'}else $(`#deck${letter}Phase`).textContent=Math.round(v3PhaseFraction(letter)*100)+'%'}
+  }
+  $(`#deck${letter}Master`)?.classList.toggle('active',nevoV3.masterDeck===letter);
+  if(d.manualLoopActive)$(`#deck${letter}Reloop`)?.classList.add('active');else $(`#deck${letter}Reloop`)?.classList.remove('active');
+  renderHotCues(letter);
+};
+
+var v29SyncDeck=syncDeck;
+syncDeck=function(letter){
+  const d=djDecks[letter],M=nevoV3.masterDeck,master=djDecks[M];if(!d?.item)return;
+  if(M===letter||!master?.item)return v29SyncDeck(letter);
+  const target=v3EffectiveBpm(M),base=djDeckBpm(letter),rate=clamp(target/base,.84,1.16),pct=(rate-1)*100;$(`#deck${letter}Pitch`).value=pct.toFixed(1);updateDeckRate(letter);
+  if(d.quantize&&nevoV3.globalQuantize){const p=djBeatPeriod(letter),off=djNormalizeOffset(d.beatOffset||0,p),phase=v3PhaseFraction(M),cur=d.audio.currentTime||0,beatFloat=(cur-off)/p,beatIndex=Math.round(beatFloat-phase);d.audio.currentTime=clamp(off+(beatIndex+phase)*p,0,d.audio.duration||0)}
+  setStatus(true,'BEAT SYNC',`DECK ${letter} → MASTER ${M} · ${target.toFixed(2)} BPM`);drawDeckZoom(letter,true);refreshDeckUi(letter)
+};
+
+var v29SetDeckLoop=setDeckLoop;
+setDeckLoop=function(letter){const d=djDecks[letter],beats=Number($(`#deck${letter}Loop`).value)||0;d.manualLoopActive=false;d.loopBeats=beats;if(beats){d.loopStart=v3SnapTime(letter,d.audio.currentTime||0);setStatus(true,currentLang==='de'?'Auto-Loop gesetzt':'Auto loop set',`DECK ${letter} · ${beats} Beats`)}};
+
+var v29HotCueAction=hotCueAction;
+hotCueAction=function(letter,index){const d=djDecks[letter];if(!d?.item)return;const v=d.hotCues[index];if(Number.isFinite(v)){d.audio.currentTime=v3SnapTime(letter,v);setStatus(true,`HOT CUE ${index+1}`,`${fmtDeckTime(v)} · DECK ${letter}`)}else{d.hotCues[index]=v3SnapTime(letter,d.audio.currentTime||0);persistDeckMeta(letter);renderHotCues(letter);setStatus(true,currentLang==='de'?'Hot Cue gesetzt':'Hot Cue set',`HOT ${index+1} · ${fmtDeckTime(d.hotCues[index])}`)}};
+
+// More informative FLX4 actions, while keeping MIDI Learn generic.
+var v29FlxActionLabel=flxActionLabel;
+flxActionLabel=function(action){const m=action.match(/^([AB])\.hot([1-8])$/);if(m)return `Deck ${m[1]} Hot Cue ${m[2]}`;return v29FlxActionLabel(action)};
+
+function v3BindControls(){
+  $('#masterDeckA')?.addEventListener('click',()=>v3SetMaster('A'));$('#masterDeckB')?.addEventListener('click',()=>v3SetMaster('B'));$('#globalQuantize')?.addEventListener('click',v3ToggleGlobalQuantize);
+  for(const L of ['A','B']){
+    const d=djDecks[L];d.hotCues=v3Pad8(d.hotCues);d.quantize=true;d.key=d.key||'—';d.phrases=d.phrases||[];
+    $(`#deck${L}Master`)?.addEventListener('click',()=>v3SetMaster(L));$(`#deck${L}Quantize`)?.addEventListener('click',()=>v3SetQuantize(L,!d.quantize));$(`#deck${L}LoopIn`)?.addEventListener('click',()=>v3LoopIn(L));$(`#deck${L}LoopOut`)?.addEventListener('click',()=>v3LoopOut(L));$(`#deck${L}Reloop`)?.addEventListener('click',()=>v3Reloop(L));
+    $(`#deck${L}KeySelect`)?.addEventListener('change',async e=>{d.key=e.target.value; if(d.item){d.item.key=d.key;await saveDjItem(d.item);renderDjLibrary()}refreshDeckUi(L)});
+    document.querySelectorAll(`[data-beatjump^="${L}:"]`).forEach(b=>b.addEventListener('click',()=>v3BeatJump(L,Number(b.dataset.beatjump.split(':')[1]))));
+    v3RenderPhrases(L);v3SetQuantize(L,true);
+  }
+  v3SetMaster('A');renderDjLibrary();refreshDeckUi('A');refreshDeckUi('B');
+}
+
+function v3Ticker(){for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)&&d.audio.currentTime>=d.manualLoopOut-.012)d.audio.currentTime=d.manualLoopIn;refreshDeckUi(L)}requestAnimationFrame(v3Ticker)}
+
+function refreshV3Labels(){
+  const de=currentLang==='de';const cols=$$('.dj-library-columns span'),names=de?['TITEL','BPM','TONART','LÄNGE','AKTION']:['TITLE','BPM','KEY','LENGTH','ACTION'];cols.forEach((x,i)=>x.textContent=names[i]||x.textContent);for(const L of ['A','B']){if($(`#deck${L}Analyze`))$(`#deck${L}Analyze`).textContent=de?'⚡ TRACK ANALYSE':'⚡ TRACK ANALYSIS';const q=$(`#deck${L}Quantize`);if(q)q.textContent=djDecks[L].quantize?(de?'QUANTIZE AN':'QUANTIZE ON'):(de?'QUANTIZE AUS':'QUANTIZE OFF');v3RenderPhrases(L)}const g=$('#globalQuantize');if(g)g.textContent=nevoV3.globalQuantize?(de?'QUANTIZE AN':'QUANTIZE ON'):(de?'QUANTIZE AUS':'QUANTIZE OFF');renderDjLibrary()}
+var v29SetLanguageV3=setLanguage;setLanguage=function(lang){v29SetLanguageV3(lang);refreshV3Labels()};
+
+v3BindControls();refreshV3Labels();v3Ticker();
