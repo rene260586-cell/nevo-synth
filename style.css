@@ -14,3 +14,31 @@ body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}button,input
 .lang-btn.active{background:linear-gradient(#1b3445,#0e1f2b);color:var(--cyan);box-shadow:0 0 16px rgba(84,216,255,.12)}
 @media(max-width:1100px){.topbar,.hero,.footer-panel{flex-direction:column;align-items:stretch}.status-card{min-width:0}.preset-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.app-shell{padding:9px}.panel{padding:14px}.transport{justify-content:flex-start}.preset-grid{grid-template-columns:repeat(2,1fr)}.macro-grid,.knob-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}.section-head{align-items:flex-start;flex-direction:column}.right-controls,.arranger-actions,.seq-controls{justify-content:flex-start}.steps{grid-template-columns:repeat(8,minmax(38px,1fr))}.seq-row{grid-template-columns:1fr}.timeline-row,.track-row{grid-template-columns:126px minmax(1152px,1fr)}.playhead{left:126px}.track-label{padding:7px}.arranger-scroll{min-height:430px}}
+
+/* v2.2 Keyboard play feel */
+.keyboard-panel{overflow:hidden}
+.keyboard-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin:0 0 14px}
+.keyboard-control-group,.keyboard-option{min-height:58px;border:1px solid rgba(129,170,201,.18);border-radius:15px;background:linear-gradient(#101b27,#081018);padding:8px 10px}
+.keyboard-control-group{display:flex;align-items:center;gap:10px}
+.control-label{font-size:10px;color:var(--muted);font-weight:950;letter-spacing:.11em}
+.segmented{display:flex;gap:4px;padding:3px;border-radius:11px;background:#050b11;border:1px solid rgba(119,166,201,.18)}
+.mode-btn{min-height:36px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:#8194a8;font-weight:950;font-size:11px;letter-spacing:.05em}
+.mode-btn.active{background:linear-gradient(#1a3b4b,#0d2531);color:var(--cyan);box-shadow:0 0 16px rgba(84,216,255,.14)}
+.keyboard-option{display:flex;align-items:center;gap:10px;color:var(--muted)}
+.keyboard-option strong{color:var(--text);min-width:28px}
+.keyboard-option.on{border-color:rgba(98,245,139,.5);box-shadow:0 0 18px rgba(98,245,139,.1)}
+.octave-control{min-width:160px;justify-content:space-between}
+.octave-buttons{display:flex;align-items:center;gap:8px}.octave-buttons .btn{min-width:38px;padding:0}.octave-buttons strong{min-width:28px;text-align:center;color:var(--text)}
+.key.sustained{background:linear-gradient(#f8ffff,#9fe6ff);box-shadow:inset 0 0 0 3px rgba(84,216,255,.55),0 0 34px rgba(84,216,255,.55),0 0 60px rgba(255,181,94,.13);color:#0e2630}
+.key.black.sustained{background:linear-gradient(#4dbfe8,#0b536e);box-shadow:inset 0 0 0 2px rgba(255,255,255,.25),0 0 34px rgba(84,216,255,.58);color:white}
+.key.releasing{animation:key-release-glow var(--release-ms,460ms) ease-out forwards}
+@keyframes key-release-glow{0%{filter:brightness(1.25);box-shadow:0 0 34px rgba(98,245,139,.55),0 0 60px rgba(84,216,255,.18)}100%{filter:brightness(1);box-shadow:none}}
+@media(max-width:760px){.keyboard-controls{display:grid;grid-template-columns:1fr 1fr}.keyboard-control-group,.keyboard-option{min-width:0}.octave-control{min-width:0}.mode-btn{padding:0 8px}.keyboard-option{justify-content:center}}
+
+/* v2.3 keyboard-to-arranger recording */
+.keyboard-record-hint{display:flex;align-items:center;gap:9px;margin:-2px 0 12px;padding:9px 11px;border:1px solid rgba(255,85,119,.17);border-radius:13px;background:rgba(255,85,119,.045);color:var(--muted);font-size:11px;line-height:1.4}
+.keyboard-record-hint .record-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#7a4c58;box-shadow:0 0 0 4px rgba(255,85,119,.04)}
+body.note-recording .keyboard-record-hint{color:#ffe5ec;border-color:rgba(255,85,119,.45);background:rgba(255,85,119,.09)}
+body.note-recording .keyboard-record-hint .record-dot{background:#ff5577;box-shadow:0 0 16px rgba(255,85,119,.8),0 0 0 5px rgba(255,85,119,.09)}
+.clip.midi-clip{background-image:linear-gradient(180deg,rgba(98,245,139,.13),rgba(84,216,255,.07)),repeating-linear-gradient(90deg,transparent 0,transparent 17px,rgba(255,255,255,.035) 18px);}
+.clip-note-count{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:999px;background:rgba(98,245,139,.12);color:#a8ffc1;font-size:9px;font-weight:900;vertical-align:1px}

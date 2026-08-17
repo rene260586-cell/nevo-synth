@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v2.1</title>
+  <title>NÉVO Studio v2.3</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v2.1</span></div>
+        <div class="brand-sub">STUDIO <span>v2.3</span></div>
       </div>
 
       <div class="transport">
@@ -143,11 +143,41 @@
         <div id="knobGrid" class="knob-grid"></div>
       </section>
 
-      <section class="panel glass">
+      <section class="panel glass keyboard-panel">
         <div class="section-head">
           <div><div class="eyebrow amber" data-i18n="keyboard">KLAVIATUR</div><h2 data-i18n="playKeys">Spielen</h2></div>
-          <div class="hint" data-i18n="keyboardHint">Passende Töne leuchten zur gewählten Tonart. Halte eine Taste gedrückt: Der Ton hält genauso lange.</div>
+          <div class="hint" data-i18n="keyboardHint">Wähle zwischen direktem Spiel und natürlichem Ausklang. Gedrückte Tasten leuchten solange der Ton aktiv ist.</div>
         </div>
+
+        <div class="keyboard-controls">
+          <div class="keyboard-control-group" data-help="playMode">
+            <span class="control-label" data-i18n="playStyle">SPIELART</span>
+            <div class="segmented">
+              <button id="modeDirect" class="mode-btn" type="button" data-i18n="directMode">DIREKT</button>
+              <button id="modeNatural" class="mode-btn active" type="button" data-i18n="naturalMode">NATÜRLICH</button>
+            </div>
+          </div>
+
+          <button id="sustainBtn" class="btn keyboard-option" type="button" data-help="sustain">
+            <span data-i18n="sustainPedal">SUSTAIN</span>
+            <strong id="sustainState">AUS</strong>
+          </button>
+
+          <div class="keyboard-control-group octave-control">
+            <span class="control-label" data-i18n="octave">OKTAVE</span>
+            <div class="octave-buttons">
+              <button id="octaveDown" class="btn small" type="button">−</button>
+              <strong id="octaveValue">0</strong>
+              <button id="octaveUp" class="btn small" type="button">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="keyboard-record-hint">
+          <span class="record-dot"></span>
+          <span data-i18n="keyboardRecordHint">Wenn oben AUFNEHMEN aktiv ist, wird dein Klavierspiel zusätzlich als verschiebbarer Noten-Clip im Arranger gespeichert.</span>
+        </div>
+
         <div id="keyboard" class="keyboard"></div>
       </section>
 
