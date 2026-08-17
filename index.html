@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NÉVO Synth" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>NÉVO Synth Lab v1.2</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-main">NÉVO</div>
+        <div class="brand-sub">SYNTH LAB <span>v1.2</span></div>
+      </div>
+      <div class="transport">
+        <button id="audioBtn" class="btn primary">AUDIO START</button>
+        <button id="installBtn" class="btn install-btn">⬇ INSTALLIEREN</button>
+        <button id="playBtn" class="btn">▶ PLAY</button>
+        <button id="stopBtn" class="btn">■ STOP</button>
+        <button id="recBtn" class="btn danger">● REC</button>
+        <label class="bpm-box">BPM <input id="bpm" type="number" min="60" max="220" value="150"></label>
+        <button id="saveBtn" class="btn">SAVE</button>
+        <button id="loadBtn" class="btn">LOAD</button>
+        <button id="exportBtn" class="btn">EXPORT WAV</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel hero-panel">
+        <div>
+          <div class="section-kicker">TOUCH MODE</div>
+          <h1>Große Regler. Leicht verstellen. Sofort hören.</h1>
+          <p>Finger einfach nach oben/unten ziehen. Doppeltippen setzt den Regler zurück. Lange drücken öffnet die exakte Eingabe. Installiert läuft die App im Vollbild und nach dem ersten Laden auch offline.</p>
+        </div>
+        <div class="status-wrap">
+          <div id="statusDot" class="status-dot"></div>
+          <div><strong id="statusText">Audio noch nicht gestartet</strong><small id="statusSub">Tippe auf AUDIO START</small></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><div class="section-kicker">SYNTH</div><h2>Sound</h2></div>
+          <label class="select-wrap">WAVE
+            <select id="waveform">
+              <option value="sawtooth" selected>Saw</option>
+              <option value="square">Square</option>
+              <option value="triangle">Triangle</option>
+              <option value="sine">Sine</option>
+            </select>
+          </label>
+        </div>
+        <div id="knobGrid" class="knob-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><div class="section-kicker">KEYBOARD</div><h2>Spielen</h2></div>
+          <div class="hint">PC: A W S E D F T G Y H U J K</div>
+        </div>
+        <div id="keyboard" class="keyboard"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><div class="section-kicker">16 STEP</div><h2>Loop Sequencer</h2></div>
+          <div class="seq-controls">
+            <label>ROOT
+              <select id="rootNote">
+                <option>C2</option><option>C#2</option><option>D2</option><option>D#2</option><option>E2</option><option>F2</option><option>F#2</option><option>G2</option><option>G#2</option><option>A2</option><option>A#2</option><option>B2</option>
+                <option selected>C3</option><option>C#3</option><option>D3</option><option>D#3</option><option>E3</option><option>F3</option><option>F#3</option><option>G3</option><option>G#3</option><option>A3</option><option>A#3</option><option>B3</option>
+              </select>
+            </label>
+            <button id="clearSeq" class="btn small">CLEAR</button>
+            <button id="fillSeq" class="btn small">DEMO</button>
+          </div>
+        </div>
+        <div class="seq-table">
+          <div class="track-row"><div class="track-name">SYNTH</div><div id="synthSteps" class="steps"></div></div>
+          <div class="track-row"><div class="track-name">KICK</div><div id="kickSteps" class="steps"></div></div>
+        </div>
+      </section>
+
+      <section class="panel footer-panel">
+        <div>
+          <div class="section-kicker">PROJECT</div>
+          <h2>Nächste Ausbaustufe</h2>
+          <p>Arranger, mehrere Spuren, Audio-Clips, Piano Roll, Automation, Mixer, Sample Editor und bessere Effekte.</p>
+        </div>
+        <div class="project-actions">
+          <button id="downloadProjectBtn" class="btn">PROJECT JSON</button>
+          <label class="btn file-btn">IMPORT JSON<input id="importProject" type="file" accept="application/json"></label>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.error));
+    }
+  </script>
+</body>
+</html>
