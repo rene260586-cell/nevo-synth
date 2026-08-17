@@ -27,7 +27,8 @@ const helpTextDE = {
   sustain:['SUSTAIN','Sustain hält losgelassene Töne weiter. Schalte Sustain wieder aus, damit die gehaltenen Töne natürlich ausklingen.'],
   piano:['PIANO-ROLL','Hier bearbeitest du einen aufgenommenen Noten-Clip. Tippe ins Raster, um eine Note zu setzen. Ziehe die Note zum Verschieben und ihren rechten Rand zum Verlängern.'],
   library:['VORLAGEN & LOOP-BIBLIOTHEK','Hier findest du fertige Demo-Songs und einzelne Song-Bausteine. VORSCHAU spielt einen Loop kurz vor. HINZUFÜGEN legt ihn als Block in die passende Spur. Verlängerst du den Block, wiederholt er sich automatisch.'],
-  libraryLoop:['FERTIGER LOOP','Ein fertiger Loop ist ein sofort nutzbarer Baustein. Du kannst ihn als Grundlage nehmen, verschieben, verlängern, loopen, duplizieren und danach mit deinen eigenen Elementen kombinieren.']
+  libraryLoop:['FERTIGER LOOP','Ein fertiger Loop ist ein sofort nutzbarer Baustein. Du kannst ihn als Grundlage nehmen, verschieben, verlängern, loopen, duplizieren und danach mit deinen eigenen Elementen kombinieren.'],
+  djPlayer:['NÉVO PLAYER','Hier kannst du fertige Songs wie auf DJ-Decks laden, vorhören, cueen, Tempo anpassen, zwischen Deck A und B blenden und einen Song direkt in den Arranger übernehmen.']
 };
 
 const helpTextEN = {
@@ -49,7 +50,8 @@ const helpTextEN = {
   sustain:['SUSTAIN','Sustain keeps released notes sounding. Turn Sustain off again to let held notes fade naturally.'],
   piano:['PIANO ROLL','Edit a recorded note clip here. Tap the grid to add a note. Drag a note to move it and drag its right edge to change its length.'],
   library:['TEMPLATES & LOOP LIBRARY','Find ready-made demo songs and individual song building blocks here. PREVIEW auditions a loop. ADD places it as a block on the matching track. Extending the block repeats it automatically.'],
-  libraryLoop:['READY LOOP','A ready loop is a song building block you can use immediately. Move it, extend it, loop it, duplicate it and combine it with your own material.']
+  libraryLoop:['READY LOOP','A ready loop is a song building block you can use immediately. Move it, extend it, loop it, duplicate it and combine it with your own material.'],
+  djPlayer:['NÉVO PLAYER','Load finished songs onto DJ-style decks, audition them, set cues, change tempo, crossfade between Deck A and B, and send a song directly into the arranger.']
 };
 
 const I18N = {
@@ -65,7 +67,7 @@ const I18N = {
     audioInactive:'Audio noch nicht gestartet', audioInactiveSub:'Tippe auf AUDIO STARTEN', audioActive:'Audio aktiv', audioActiveSub:'Arranger und Instrumente sind bereit.', songRunning:'Song läuft', songStopped:'Song gestoppt.',
     recording:'Aufnahme läuft', recordingSub:'Master-Ausgang wird aufgenommen.', recordingSaved:'Aufnahme gespeichert', recordingSavedSub:'Datei wurde erstellt.', noteClipSaved:'Noten-Clip erstellt', noteClipSavedSub:'Dein Klavierspiel liegt jetzt als Block im Arranger.', wavExporting:'WAV Export', wavExportingSub:'Der aktuelle 16-Schritt-Groove wird gerendert …', wavDone:'WAV fertig', wavDoneSub:'Groove wurde exportiert.',
     imported:'Audio importiert', projectSaved:'Projekt gespeichert', projectSavedSub:'Automatische Sicherung im Browser aktualisiert.', noProject:'Noch kein Projekt gespeichert.', projectImported:'Projekt importiert', invalidProject:'Ungültige Projektdatei.',
-    helpModeOn:'Hilfe-Modus aktiv', helpModeOff:'Hilfe-Modus aus', helpModeOnSub:'Tippe oder halte Elemente für Erklärungen.', helpModeOffSub:'Normale Bedienung.', preset:'Preset', languageChanged:'Sprache: Deutsch', pianoRoll:'PIANO-ROLL', pianoSub:'Tippe ins Raster für eine Note. Ziehe eine Note zum Verschieben. Ziehe ihren rechten Rand zum Verlängern.', preview:'▶ VORSCHAU', snap:'RASTER', deleteNote:'NOTE LÖSCHEN', clearNotes:'ALLE NOTEN LÖSCHEN', editNotes:'NOTEN BEARBEITEN', pianoLongHelp:'Langes Drücken auf einen Noten-Clip öffnet ebenfalls diesen Editor.', stepsWord:'Schritte', noNoteSelected:'Keine Note ausgewählt.', templatesEyebrow:'VORLAGEN & LOOPS', templatesTitle:'Fertige Beats als Startpunkt', templatesText:'Eine Vorlage laden und sofort hören – oder einzelne Kick-, Bass-, Drum-, Acid-, Synth-, Melodie-, Vocal- und FX-Blöcke in deinen eigenen Song setzen.', demoSongs:'DEMO-SONGS', demoSongsHint:'Komplette 16-Takt-Grundlagen zum Zerlegen und Umbauen.', loopLibrary:'LOOP-BIBLIOTHEK', loopLibraryHint:'Vorschau anhören oder als verlängerbaren Block in den Arranger legen.', audition:'▶ VORSCHAU', addLoop:'+ HINZUFÜGEN', templateLoad:'VORLAGE LADEN', allLoops:'ALLE', templateLoaded:'Vorlage geladen', loopAdded:'Loop hinzugefügt', loopPreview:'Loop-Vorschau', overwriteQuestion:'Aktuelles Arrangement durch diese Vorlage ersetzen?', emptyTemplate:'LEER STARTEN'
+    helpModeOn:'Hilfe-Modus aktiv', helpModeOff:'Hilfe-Modus aus', helpModeOnSub:'Tippe oder halte Elemente für Erklärungen.', helpModeOffSub:'Normale Bedienung.', preset:'Preset', languageChanged:'Sprache: Deutsch', pianoRoll:'PIANO-ROLL', pianoSub:'Tippe ins Raster für eine Note. Ziehe eine Note zum Verschieben. Ziehe ihren rechten Rand zum Verlängern.', preview:'▶ VORSCHAU', snap:'RASTER', deleteNote:'NOTE LÖSCHEN', clearNotes:'ALLE NOTEN LÖSCHEN', editNotes:'NOTEN BEARBEITEN', pianoLongHelp:'Langes Drücken auf einen Noten-Clip öffnet ebenfalls diesen Editor.', stepsWord:'Schritte', noNoteSelected:'Keine Note ausgewählt.', templatesEyebrow:'VORLAGEN & LOOPS', templatesTitle:'Fertige Beats als Startpunkt', templatesText:'Eine Vorlage laden und sofort hören – oder einzelne Kick-, Bass-, Drum-, Acid-, Synth-, Melodie-, Vocal- und FX-Blöcke in deinen eigenen Song setzen.', demoSongs:'DEMO-SONGS', demoSongsHint:'Komplette 16-Takt-Grundlagen zum Zerlegen und Umbauen.', loopLibrary:'LOOP-BIBLIOTHEK', loopLibraryHint:'Vorschau anhören oder als verlängerbaren Block in den Arranger legen.', audition:'▶ VORSCHAU', addLoop:'+ HINZUFÜGEN', templateLoad:'VORLAGE LADEN', allLoops:'ALLE', templateLoaded:'Vorlage geladen', loopAdded:'Loop hinzugefügt', loopPreview:'Loop-Vorschau', overwriteQuestion:'Aktuelles Arrangement durch diese Vorlage ersetzen?', emptyTemplate:'LEER STARTEN', djEyebrow:'NÉVO PLAYER', djTitle:'Fertige Songs abspielen & mixen', djText:'Lade deine fertigen WAV/MP3-Dateien, spiele sie wie auf einem DJ-Deck und ziehe sie bei Bedarf direkt in den Arranger.', djImport:'+ SONGS LADEN', djLibrary:'PLAYER-BIBLIOTHEK', djLibraryHint:'Song auswählen und auf Deck A oder B laden.', djEmpty:'Noch keine Songs geladen.', djSetCue:'CUE SETZEN', djKeyLock:'TONHALTE AN', djTrackBpm:'TRACK BPM', djPitch:'TEMPO', djVolume:'LAUTSTÄRKE', djLoop:'LOOP', djAddArranger:'→ IN ARRANGER', djCrossfader:'CROSSFADER', djLoaded:'Song geladen', djAddedArranger:'Song im Arranger', audioEditorHint:'Tippe in die Wellenform, um den Schnitt-Cursor zu setzen. Ziehe START/ENDE zum Trimmen. Fade-Regler bestimmen Ein- und Ausblendung.'
   },
   en:{
     audioStart:'START AUDIO', audioOn:'AUDIO ON', play:'▶ PLAY', stop:'■ STOP', record:'● RECORD', stopRecord:'■ STOP REC', bpm:'BPM', save:'SAVE', load:'LOAD', exportWav:'EXPORT WAV', help:'? HELP',
@@ -79,7 +81,7 @@ const I18N = {
     audioInactive:'Audio not started', audioInactiveSub:'Tap START AUDIO', audioActive:'Audio active', audioActiveSub:'Arranger and instruments are ready.', songRunning:'Song playing', songStopped:'Song stopped.',
     recording:'Recording', recordingSub:'The master output is being recorded.', recordingSaved:'Recording saved', recordingSavedSub:'File created.', noteClipSaved:'Note clip created', noteClipSavedSub:'Your keyboard performance is now a block in the arranger.', wavExporting:'WAV Export', wavExportingSub:'Rendering the current 16-step groove …', wavDone:'WAV ready', wavDoneSub:'Groove exported.',
     imported:'Audio imported', projectSaved:'Project saved', projectSavedSub:'Browser autosave updated.', noProject:'No saved project yet.', projectImported:'Project imported', invalidProject:'Invalid project file.',
-    helpModeOn:'Help Mode on', helpModeOff:'Help Mode off', helpModeOnSub:'Tap or hold elements for explanations.', helpModeOffSub:'Normal controls.', preset:'Preset', languageChanged:'Language: English', pianoRoll:'PIANO ROLL', pianoSub:'Tap the grid to add a note. Drag a note to move it. Drag its right edge to change its length.', preview:'▶ PREVIEW', snap:'SNAP', deleteNote:'DELETE NOTE', clearNotes:'DELETE ALL NOTES', editNotes:'EDIT NOTES', pianoLongHelp:'Long-pressing a note clip also opens this editor.', stepsWord:'steps', noNoteSelected:'No note selected.', templatesEyebrow:'TEMPLATES & LOOPS', templatesTitle:'Ready beats as a starting point', templatesText:'Load a template and hear it immediately – or place individual kick, bass, drum, acid, synth, melody, vocal and FX blocks into your own song.', demoSongs:'DEMO SONGS', demoSongsHint:'Complete 16-bar foundations to take apart and rebuild.', loopLibrary:'LOOP LIBRARY', loopLibraryHint:'Preview a loop or place it into the arranger as an extendable block.', audition:'▶ PREVIEW', addLoop:'+ ADD', templateLoad:'LOAD TEMPLATE', allLoops:'ALL', templateLoaded:'Template loaded', loopAdded:'Loop added', loopPreview:'Loop preview', overwriteQuestion:'Replace the current arrangement with this template?', emptyTemplate:'START EMPTY'
+    helpModeOn:'Help Mode on', helpModeOff:'Help Mode off', helpModeOnSub:'Tap or hold elements for explanations.', helpModeOffSub:'Normal controls.', preset:'Preset', languageChanged:'Language: English', pianoRoll:'PIANO ROLL', pianoSub:'Tap the grid to add a note. Drag a note to move it. Drag its right edge to change its length.', preview:'▶ PREVIEW', snap:'SNAP', deleteNote:'DELETE NOTE', clearNotes:'DELETE ALL NOTES', editNotes:'EDIT NOTES', pianoLongHelp:'Long-pressing a note clip also opens this editor.', stepsWord:'steps', noNoteSelected:'No note selected.', templatesEyebrow:'TEMPLATES & LOOPS', templatesTitle:'Ready beats as a starting point', templatesText:'Load a template and hear it immediately – or place individual kick, bass, drum, acid, synth, melody, vocal and FX blocks into your own song.', demoSongs:'DEMO SONGS', demoSongsHint:'Complete 16-bar foundations to take apart and rebuild.', loopLibrary:'LOOP LIBRARY', loopLibraryHint:'Preview a loop or place it into the arranger as an extendable block.', audition:'▶ PREVIEW', addLoop:'+ ADD', templateLoad:'LOAD TEMPLATE', allLoops:'ALL', templateLoaded:'Template loaded', loopAdded:'Loop added', loopPreview:'Loop preview', overwriteQuestion:'Replace the current arrangement with this template?', emptyTemplate:'START EMPTY', djEyebrow:'NÉVO PLAYER', djTitle:'Play & mix finished songs', djText:'Load finished WAV/MP3 files, play them on DJ-style decks and send them directly into the arranger when you want to edit them.', djImport:'+ LOAD SONGS', djLibrary:'PLAYER LIBRARY', djLibraryHint:'Choose a song and load it to Deck A or B.', djEmpty:'No songs loaded yet.', djSetCue:'SET CUE', djKeyLock:'KEY LOCK ON', djTrackBpm:'TRACK BPM', djPitch:'TEMPO', djVolume:'VOLUME', djLoop:'LOOP', djAddArranger:'→ TO ARRANGER', djCrossfader:'CROSSFADER', djLoaded:'Song loaded', djAddedArranger:'Song added to arranger', audioEditorHint:'Tap the waveform to set the cut cursor. Drag START/END to trim. Fade sliders control fade-in and fade-out.'
   }
 };
 let currentLang = localStorage.getItem('nevoLanguage') || 'de';
@@ -170,7 +172,7 @@ function applyLanguageToUI(rebuild=true){
   }
   if(rebuild){buildMacros(false);buildKnobs();renderTracks();renderDemoTemplates();renderLoopLibrary();if(pianoClip)renderPianoRoll()}
 }
-function setLanguage(lang){currentLang=lang==='en'?'en':'de';applyLanguageToUI(true);setStatus(audioReady,t('languageChanged'),currentLang==='de'?'Die App ist jetzt auf Deutsch.':'The app is now in English.')}
+function setLanguage(lang){currentLang=lang==='en'?'en':'de';applyLanguageToUI(true);setStatus(audioReady,t('languageChanged'),currentLang==='de'?'Die App ist jetzt auf Deutsch.':'The app is now in English.');setTimeout(()=>{try{renderDjLibrary();refreshAllDeckUi()}catch{}},0)}
 
 const params = {
   volume:{label:'LAUTSTÄRKE',labelEn:'VOLUME',color:'green',min:0,max:1,value:.78,def:.78,step:.01,fmt:v=>Math.round(v*100)+'%',help:'clip'},
@@ -276,6 +278,7 @@ const tracks = [
   {id:'fx',name:'FX',nameDe:'EFFEKTE',nameEn:'FX',color:'#9bb7ca',type:'fx',mute:false,solo:false,clips:[{id:uid(),start:7,len:1,name:'Riser',nameDe:'Anstieg',nameEn:'Riser',loop:false},{id:uid(),start:15,len:1,name:'Down FX',nameDe:'Abwärts-FX',nameEn:'Down FX',loop:false}]}
 ];
 const audioBuffers = new Map();
+const arrangerAudioSources = new Set();
 
 let ctx,master,filter,driveNode,dryGain,delay,delayFeedback,delayWet,convolver,reverbWet,mediaDest,analyser,noiseBuffer;
 let voices=new Map(),audioReady=false,isPlaying=false,seqTimer=null,nextStepTime=0,globalStep=0,recorder=null,recChunks=[],meterRAF=null;
@@ -460,7 +463,17 @@ function buildTimeline(){const t=$('#timeline');if(!t)return;t.innerHTML='';t.st
 function anySolo(){return tracks.some(t=>t.solo)}
 function trackAudible(track){return !track.mute&&(!anySolo()||track.solo)}
 function activeClip(track,bar){return track.clips.find(c=>bar>=c.start&&bar<c.start+c.len)}
-function clipHelp(track,clip){const actions=[];if(Array.isArray(clip.notes))actions.push({label:t('editNotes'),run:()=>openPianoRoll(track,clip)});actions.push({label:clip.loop?t('loopOff'):t('loopOn'),run:()=>{clip.loop=!clip.loop;renderTracks()}},{label:t('duplicate'),run:()=>{const copy={...clip,id:uid(),start:clamp(clip.start+clip.len,0,TOTAL_BARS-1),notes:Array.isArray(clip.notes)?clip.notes.map(n=>({...n})):clip.notes};copy.len=Math.min(copy.len,TOTAL_BARS-copy.start);track.clips.push(copy);renderTracks()}},{label:t('delete'),run:()=>{track.clips=track.clips.filter(c=>c.id!==clip.id);renderTracks()}});showHelp(Array.isArray(clip.notes)?'piano':'clip',actions)}
+function clipHelp(track,clip){
+  const actions=[];
+  if(Array.isArray(clip.notes))actions.push({label:t('editNotes'),run:()=>openPianoRoll(track,clip)});
+  if(track.type==='audio'&&clip.audioId)actions.push({label:currentLang==='de'?'AUDIO BEARBEITEN':'EDIT AUDIO',run:()=>openAudioEditor(track,clip)});
+  actions.push(
+    {label:clip.loop?t('loopOff'):t('loopOn'),run:()=>{clip.loop=!clip.loop;renderTracks()}},
+    {label:t('duplicate'),run:()=>{const copy={...clip,id:uid(),start:clamp(clip.start+clip.len,0,TOTAL_BARS-1),notes:Array.isArray(clip.notes)?clip.notes.map(n=>({...n})):clip.notes};copy.len=Math.min(copy.len,TOTAL_BARS-copy.start);track.clips.push(copy);renderTracks()}},
+    {label:t('delete'),run:()=>{track.clips=track.clips.filter(c=>c.id!==clip.id);renderTracks()}}
+  );
+  showHelp(Array.isArray(clip.notes)?'piano':'clip',actions)
+}
 function renderTracks(){const list=$('#trackList');list.innerHTML='';tracks.forEach(track=>{const row=document.createElement('div');row.className='track-row';const lab=document.createElement('div');lab.className='track-label';lab.innerHTML=`<span class="track-color" style="color:${track.color};background:${track.color}"></span><div class="track-meta"><strong>${localName(track)}</strong><small>${track.type==='fx'?t('effects'):track.type.toUpperCase()}</small></div><button class="track-btn mute ${track.mute?'on':''}">M</button><button class="track-btn solo ${track.solo?'on':''}">S</button>`;row.appendChild(lab);const lane=document.createElement('div');lane.className='track-lane';lane.dataset.track=track.id;row.appendChild(lane);lab.querySelector('.mute').onclick=e=>{e.stopPropagation();track.mute=!track.mute;renderTracks()};lab.querySelector('.solo').onclick=e=>{e.stopPropagation();track.solo=!track.solo;renderTracks()};longPress(lab,()=>showHelp('arranger'));
     lane.addEventListener('click',e=>{if(e.target!==lane)return;const r=lane.getBoundingClientRect(),bar=clamp(Math.floor((e.clientX-r.left)/BAR_W),0,TOTAL_BARS-1);track.clips.push({id:uid(),start:bar,len:2,name:track.name+' Clip',nameDe:localName(track)+' '+t('clipSuffix'),nameEn:(track.nameEn||track.name)+' Clip',loop:true});renderTracks()});
     track.clips.forEach(clip=>lane.appendChild(makeClip(track,clip,lane)));
@@ -468,12 +481,19 @@ function renderTracks(){const list=$('#trackList');list.innerHTML='';tracks.forE
   })}
 function makeClip(track,clip,lane){
   const el=document.createElement('div');
-  el.className='clip'+(clip.loop?' looped':'')+(clip.notes?' midi-clip':'');
+  const isAudio=track.type==='audio'&&clip.audioId;
+  el.className='clip'+(clip.loop?' looped':'')+(clip.notes?' midi-clip':'')+(isAudio?' audio-clip':'');
   el.style.color=track.color;
   el.style.left=clip.start*BAR_W+'px';
   el.style.width=Math.max(BAR_W,clip.len*BAR_W-4)+'px';
-  el.innerHTML=`<div><strong>${localName(clip)}${clip.notes?`<span class="clip-note-count">${clip.notes.length} ${currentLang==='de'?'NOTEN':'NOTES'}</span>`:''}${clip.loopKey?'<span class="clip-note-count library-badge">LOOP</span>':''}</strong><small>${barText(clip.len)}</small></div>${clip.notes?'<button class="clip-edit" type="button" aria-label="Edit">✎</button>':''}<span class="resize-handle"></span>`;
+  const editButton=clip.notes?'<button class="clip-edit" type="button" aria-label="Edit">✎</button>':isAudio?'<button class="clip-edit audio-edit" type="button" aria-label="Audio Edit">✂</button>':'';
+  const wave=isAudio?'<canvas class="clip-waveform" width="800" height="100"></canvas>':'';
+  el.innerHTML=`${wave}<div class="${isAudio?'clip-text':''}"><strong>${localName(clip)}${clip.notes?`<span class="clip-note-count">${clip.notes.length} ${currentLang==='de'?'NOTEN':'NOTES'}</span>`:''}${clip.loopKey?'<span class="clip-note-count library-badge">LOOP</span>':''}</strong><small>${barText(clip.len)}</small></div>${editButton}<span class="resize-handle"></span>`;
   if(clip.notes){const edit=el.querySelector('.clip-edit');edit.onclick=e=>{e.stopPropagation();openPianoRoll(track,clip)}}
+  if(isAudio){
+    const edit=el.querySelector('.audio-edit');edit.onclick=e=>{e.stopPropagation();openAudioEditor(track,clip)};
+    setTimeout(()=>{const buffer=audioBuffers.get(clip.audioId),canvas=el.querySelector('.clip-waveform');if(buffer&&canvas)drawBufferWaveform(buffer,canvas,track.color,clip.trimStart||0,clip.trimEnd||buffer.duration)},0);
+  }
   let mode=null,sx=0,start=0,len=0,moved=false;
   el.addEventListener('pointerdown',e=>{
     if(e.target.closest('.clip-edit'))return;
@@ -557,13 +577,29 @@ function grooveIntoArranger(){const start=Math.max(0,Number($('#loopStart').valu
 function stepDur(){return 60/Number($('#bpm').value)/4}
 function swingOffset(local){return local%2?stepDur()*(Number($('#swing').value)/100)*.5:0}
 function scheduleTrack(track,bar,local,t){if(!trackAudible(track))return;const c=activeClip(track,bar);if(!c)return;const root=$('#keySelect').value;if(c.loopKey&&LOOP_LIBRARY[c.loopKey]){const item=LOOP_LIBRARY[c.loopKey],sourceSteps=Math.max(1,c.sourceSteps||item.bars*16);let rel=(bar-c.start)*16+local;if(c.loop)rel=((rel%sourceSteps)+sourceSteps)%sourceSteps;if(!c.loop&&rel>=sourceSteps)return;scheduleLibraryItem(item,rel,t,stepDur());return}switch(track.type){case'kick':if(kickPattern[local])kick(t);break;case'perc':if(hatPattern[local])hat(t,local===14);break;case'synth':if(synthPattern[local])startVoice(transpose(root,12),t,stepDur()*.65,{amp:.18,width:12});break;case'bass':if([0,3,6,10,12,14].includes(local))startVoice(transpose(root,-12+(local===10?3:0)),t,stepDur()*.55,{wave:'sawtooth',amp:.2,width:2,attack:.004,release:.12});break;case'acid':if([2,5,7,10,14].includes(local))startVoice(transpose(root,[0,3,7,10,12][[2,5,7,10,14].indexOf(local)]),t,stepDur()*.38,{wave:'sawtooth',amp:.14,width:1,attack:.003,release:.08});break;case'melody':if(synthPattern[local])startVoice(transpose(root,12),t,stepDur()*.7,{wave:'triangle',amp:.14,width:8});break;case'vocal':if([6,14].includes(local))vocalChop(t,transpose(root,12),false);break;case'fx':if(local===0)fxNoise(t);break;case'midi':{if(c&&Array.isArray(c.notes)){const sourceSteps=Math.max(1,c.sourceSteps||c.len*16);let rel=(bar-c.start)*16+local;if(c.loop)rel=((rel%sourceSteps)+sourceSteps)%sourceSteps;if(!c.loop&&rel>=sourceSteps)break;c.notes.forEach(n=>{if(Math.round(n.startStep)===rel)startVoice(n.note,t,Math.max(.03,n.durationSteps*stepDur()),{amp:.28,width:params.width.value})})}break}case'audio':if(local===0){if(c&&c.audioId&&bar===c.start)playImportedAudio(c,t)}break}}
-function playImportedAudio(clip,t){const buffer=audioBuffers.get(clip.audioId);if(!buffer)return;const src=ctx.createBufferSource(),g=ctx.createGain();src.buffer=buffer;src.loop=clip.loop;src.connect(g);g.connect(master);g.gain.value=.75;src.start(t);const maxDur=Math.min(MAX_SONG_SECONDS,clip.len*stepDur()*16);try{src.stop(t+maxDur)}catch{}}
+function playImportedAudio(clip,t){
+  const buffer=audioBuffers.get(clip.audioId);if(!buffer)return;
+  const src=ctx.createBufferSource(),g=ctx.createGain();
+  const trimStart=clamp(Number(clip.trimStart)||0,0,Math.max(0,buffer.duration-.01));
+  const trimEnd=clamp(Number(clip.trimEnd)||buffer.duration,trimStart+.01,buffer.duration);
+  const segmentDur=Math.max(.01,trimEnd-trimStart);
+  const maxDur=Math.min(MAX_SONG_SECONDS,clip.len*stepDur()*16);
+  const totalDur=clip.loop?maxDur:Math.min(segmentDur,maxDur);
+  const gain=clamp(Number(clip.gain??1),0,1.5),fadeIn=clamp(Number(clip.fadeIn)||0,0,totalDur/2),fadeOut=clamp(Number(clip.fadeOut)||0,0,totalDur/2);
+  src.buffer=buffer;src.connect(g);g.connect(master);src.loop=!!clip.loop;
+  if(src.loop){src.loopStart=trimStart;src.loopEnd=trimEnd;src.start(t,trimStart);try{src.stop(t+totalDur)}catch{}}
+  else{src.start(t,trimStart,totalDur)}
+  if(fadeIn>0){g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(gain,t+fadeIn)}else g.gain.setValueAtTime(gain,t);
+  if(fadeOut>0){const fs=Math.max(t,t+totalDur-fadeOut);g.gain.setValueAtTime(gain,fs);g.gain.linearRampToValueAtTime(.0001,t+totalDur)}
+  arrangerAudioSources.add(src);src.onended=()=>arrangerAudioSources.delete(src);
+}
+
 function markStep(local,t){setTimeout(()=>{$$('.step').forEach(x=>x.classList.remove('playing'));$$('.steps').forEach(r=>r.children[local]?.classList.add('playing'))},Math.max(0,(t-ctx.currentTime)*1000))}
 function updatePlayhead(bar,local,t){const pos=bar+local/16;setTimeout(()=>{const offset=(window.innerWidth<=760?126:150),left=offset+(pos*BAR_W);$('#playhead').style.left=left+'px';updateSongTimeLabel(bar,local);const sc=$('#arrangerScroll');if(sc){const target=pos*BAR_W;const viewLeft=sc.scrollLeft,viewRight=viewLeft+sc.clientWidth-offset;if(target>viewRight-120||target<viewLeft+30)sc.scrollTo({left:Math.max(0,target-180),behavior:'smooth'})}},Math.max(0,(t-ctx.currentTime)*1000))}
 function scheduleStep(global,t){const bar=Math.floor(global/16),local=global%16,st=t+swingOffset(local);tracks.forEach(tr=>scheduleTrack(tr,bar,local,st));markStep(local,st);updatePlayhead(bar,local,st)}
 function scheduler(){const loopStart=(Number($('#loopStart').value)-1)*16,loopEnd=Number($('#loopEnd').value)*16;while(nextStepTime<ctx.currentTime+.12){scheduleStep(globalStep,nextStepTime);nextStepTime+=stepDur();globalStep++;if(globalStep>=loopEnd)globalStep=loopStart}}
 async function play(){await initAudio();if(groovePlaying)stopGrooveOnly();if(isPlaying)return;isPlaying=true;globalStep=(Number($('#loopStart').value)-1)*16;nextStepTime=ctx.currentTime+.06;scheduler();seqTimer=setInterval(scheduler,25);$('#playBtn').classList.add('primary');$('#arrPlayBtn')?.classList.add('playing');$('#arrBottomPlayBtn')?.classList.add('playing');$('#playhead').classList.add('on');updateSongTimeLabel();setStatus(true,t('songRunning'),`${$('#bpm').value} BPM · ${t('loop')} ${$('#loopStart').value}–${$('#loopEnd').value}`)}
-function stop(){isPlaying=false;clearInterval(seqTimer);seqTimer=null;$$('.step').forEach(x=>x.classList.remove('playing'));$('#playBtn').classList.remove('primary');$('#arrPlayBtn')?.classList.remove('playing');$('#arrBottomPlayBtn')?.classList.remove('playing');$('#playhead').classList.remove('on');updateSongTimeLabel();if(audioReady)setStatus(true,t('audioActive'),t('songStopped'))}
+function stop(){isPlaying=false;clearInterval(seqTimer);seqTimer=null;arrangerAudioSources.forEach(src=>{try{src.stop()}catch{}});arrangerAudioSources.clear();$$('.step').forEach(x=>x.classList.remove('playing'));$('#playBtn').classList.remove('primary');$('#arrPlayBtn')?.classList.remove('playing');$('#arrBottomPlayBtn')?.classList.remove('playing');$('#playhead').classList.remove('on');updateSongTimeLabel();if(audioReady)setStatus(true,t('audioActive'),t('songStopped'))}
 
 const presets={
  driving:{bpm:150,swing:18,cutoff:5200,drive:.22,reverb:.08,delay:.1},hypnotic:{bpm:147,swing:24,cutoff:3900,drive:.14,reverb:.2,delay:.2},acid:{bpm:154,swing:14,cutoff:7600,drive:.26,reverb:.1,delay:.22},minimal:{bpm:146,swing:20,cutoff:4600,drive:.12,reverb:.08,delay:.12},raw:{bpm:152,swing:10,cutoff:6800,drive:.38,reverb:.06,delay:.08}
@@ -571,7 +607,7 @@ const presets={
 function applyPreset(name){const p=presets[name];$('#bpm').value=p.bpm;refreshSongLengthLimit(true);$('#swing').value=p.swing;$('#swingValue').textContent=p.swing+'%';params.cutoff.value=p.cutoff;params.drive.value=p.drive;params.reverb.value=p.reverb;params.delay.value=p.delay;Object.values(params).forEach(x=>x.render?.());updateAudioParams();$$('.preset-card').forEach(x=>x.classList.toggle('active',x.dataset.preset===name));setStatus(audioReady,`${t('preset')}: ${presetCopy[name]?.[currentLang]?.[0]||name.toUpperCase()}`,`${p.bpm} BPM · ${t('swing')} ${p.swing}%`)}
 $$('.preset-card').forEach(b=>b.onclick=()=>applyPreset(b.dataset.preset));
 
-function projectData(){return{version:2.6,language:currentLang,keyboardPlayMode,sustainPedal,keyboardOctave,bpm:Number($('#bpm').value),loopStart:Number($('#loopStart').value),loopEnd:Number($('#loopEnd').value),songLengthPreset:$('#songLengthPreset')?.value||'16',waveform:$('#waveform').value,key:$('#keySelect').value,safeNotes,swing:Number($('#swing').value),params:Object.fromEntries(Object.entries(params).map(([k,p])=>[k,p.value])),macros:Object.fromEntries(Object.entries(macros).map(([k,p])=>[k,p.value])),patterns:{synth:[...synthPattern],kick:[...kickPattern],hat:[...hatPattern]},tracks:tracks.map(t=>({...t,clips:t.clips.map(c=>({...c,audioId:c.audioId?null:undefined}))}))}}
+function projectData(){return{version:2.7,language:currentLang,keyboardPlayMode,sustainPedal,keyboardOctave,bpm:Number($('#bpm').value),loopStart:Number($('#loopStart').value),loopEnd:Number($('#loopEnd').value),songLengthPreset:$('#songLengthPreset')?.value||'16',waveform:$('#waveform').value,key:$('#keySelect').value,safeNotes,swing:Number($('#swing').value),params:Object.fromEntries(Object.entries(params).map(([k,p])=>[k,p.value])),macros:Object.fromEntries(Object.entries(macros).map(([k,p])=>[k,p.value])),patterns:{synth:[...synthPattern],kick:[...kickPattern],hat:[...hatPattern]},tracks:tracks.map(t=>({...t,clips:t.clips.map(c=>({...c,audioId:c.audioId?null:undefined}))}))}}
 function applyProject(d){if(!d)return;if(d.language)setLanguage(d.language);if(d.keyboardPlayMode)keyboardPlayMode=d.keyboardPlayMode==='direct'?'direct':'natural';if(typeof d.sustainPedal==='boolean')sustainPedal=d.sustainPedal;if(Number.isFinite(Number(d.keyboardOctave)))keyboardOctave=clamp(Number(d.keyboardOctave),-2,2);$('#bpm').value=d.bpm||150;refreshSongLengthLimit(false);if(d.loopStart)$('#loopStart').value=String(clamp(Number(d.loopStart),1,TOTAL_BARS));if(d.loopEnd)$('#loopEnd').value=String(clamp(Number(d.loopEnd),1,TOTAL_BARS));if(d.songLengthPreset&&$('#songLengthPreset'))$('#songLengthPreset').value=d.songLengthPreset;updateSongTimeLabel();$('#waveform').value=d.waveform||'sawtooth';$('#keySelect').value=d.key||'D3';safeNotes=d.safeNotes!==false;$('#safeNotesBtn').classList.toggle('on',safeNotes);$('#safeNotesBtn').textContent=safeNotes?t('safeOn'):t('safeOff');$('#swing').value=d.swing??20;$('#swingValue').textContent=$('#swing').value+'%';if(d.params)Object.entries(d.params).forEach(([k,v])=>{if(params[k]){params[k].value=clamp(Number(v),params[k].min,params[k].max);params[k].render?.()}});if(d.macros)Object.entries(d.macros).forEach(([k,v])=>{if(macros[k]){macros[k].value=clamp(Number(v),macros[k].min,macros[k].max);macros[k].render?.()}});if(d.patterns){['synth','kick','hat'].forEach(n=>{const arr=n==='synth'?synthPattern:n==='kick'?kickPattern:hatPattern;if(Array.isArray(d.patterns[n]))d.patterns[n].slice(0,16).forEach((v,i)=>arr[i]=!!v)})}if(Array.isArray(d.tracks)){tracks.length=0;d.tracks.forEach(t=>tracks.push({...t,clips:(t.clips||[]).map(c=>({...c,id:c.id||uid()}))}))}buildSteps();renderTracks();buildKeyboard();refreshSafeNotes();updateKeyboardControls();updateAudioParams()}
 function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1200)}
 
@@ -597,7 +633,7 @@ async function toggleRecord(){
 function encodeWav(buffer){const nCh=buffer.numberOfChannels,rate=buffer.sampleRate,len=buffer.length*nCh*2+44,ab=new ArrayBuffer(len),view=new DataView(ab);let p=0;const str=s=>{for(let i=0;i<s.length;i++)view.setUint8(p++,s.charCodeAt(i))},u16=v=>{view.setUint16(p,v,true);p+=2},u32=v=>{view.setUint32(p,v,true);p+=4};str('RIFF');u32(len-8);str('WAVE');str('fmt ');u32(16);u16(1);u16(nCh);u32(rate);u32(rate*nCh*2);u16(nCh*2);u16(16);str('data');u32(len-44);const ch=[];for(let c=0;c<nCh;c++)ch.push(buffer.getChannelData(c));for(let i=0;i<buffer.length;i++)for(let c=0;c<nCh;c++){let s=clamp(ch[c][i],-1,1);view.setInt16(p,s<0?s*0x8000:s*0x7fff,true);p+=2}return ab}
 async function exportWav(){await initAudio();setStatus(true,t('wavExporting'),t('wavExportingSub'));const bpm=Number($('#bpm').value),sd=60/bpm/4,total=sd*16+2,sr=44100,off=new OfflineAudioContext(2,Math.ceil(total*sr),sr),out=off.createGain();out.gain.value=params.volume.value;out.connect(off.destination);const synth=(note,t)=>{const o=off.createOscillator(),g=off.createGain();o.type=$('#waveform').value;o.frequency.value=noteFreq(note);o.connect(g);g.connect(out);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+sd*.7);o.start(t);o.stop(t+sd*.75)},kk=t=>{const o=off.createOscillator(),g=off.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.16);o.connect(g);g.connect(out);g.gain.setValueAtTime(.7,t);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.start(t);o.stop(t+.3)};for(let i=0;i<16;i++){const t=.05+i*sd+(i%2?sd*(Number($('#swing').value)/100)*.5:0);if(kickPattern[i])kk(t);if(synthPattern[i])synth($('#keySelect').value,t)}const r=await off.startRendering();downloadBlob(new Blob([encodeWav(r)],{type:'audio/wav'}),'NEVO-groove.wav');setStatus(true,t('wavDone'),t('wavDoneSub'))}
 
-$('#audioImport').onchange=async e=>{const f=e.target.files[0];if(!f)return;await initAudio();const arr=await f.arrayBuffer(),buf=await ctx.decodeAudioData(arr.slice(0)),audioId=uid();audioBuffers.set(audioId,buf);let tr=tracks.find(t=>t.type==='audio');if(!tr){tr={id:'audio-'+uid(),name:'AUDIO',color:'#ffffff',type:'audio',mute:false,solo:false,clips:[]};tracks.push(tr)}const barDur=60/Number($('#bpm').value)*4,len=clamp(Math.ceil(Math.min(buf.duration,MAX_SONG_SECONDS)/barDur),1,TOTAL_BARS);tr.clips.push({id:uid(),start:0,len,name:f.name.replace(/\.[^.]+$/,''),loop:false,audioId});renderTracks();setStatus(true,t('imported'),`${f.name} · ${buf.duration.toFixed(1)} s`);e.target.value=''};
+$('#audioImport').onchange=async e=>{const f=e.target.files[0];if(!f)return;await initAudio();const arr=await f.arrayBuffer(),buf=await ctx.decodeAudioData(arr.slice(0)),audioId=uid();audioBuffers.set(audioId,buf);let tr=tracks.find(t=>t.type==='audio');if(!tr){tr={id:'audio-'+uid(),name:'AUDIO',color:'#ffffff',type:'audio',mute:false,solo:false,clips:[]};tracks.push(tr)}const barDur=60/Number($('#bpm').value)*4,len=clamp(Math.ceil(Math.min(buf.duration,MAX_SONG_SECONDS)/barDur),1,TOTAL_BARS);tr.clips.push({id:uid(),start:0,len,name:f.name.replace(/\.[^.]+$/,''),loop:false,audioId,trimStart:0,trimEnd:Math.min(buf.duration,MAX_SONG_SECONDS),fadeIn:0,fadeOut:0,gain:1});renderTracks();setStatus(true,t('imported'),`${f.name} · ${buf.duration.toFixed(1)} s`);e.target.value=''};
 $('#addTrackBtn').onclick=()=>{tracks.push({id:'track-'+uid(),name:'SYNTH '+(tracks.length+1),nameDe:'SYNTH '+(tracks.length+1),nameEn:'SYNTH '+(tracks.length+1),color:'#54d8ff',type:'synth',mute:false,solo:false,clips:[]});renderTracks()};
 $('#audioBtn').onclick=initAudio;$('#playBtn').onclick=play;$('#stopBtn').onclick=()=>{stop();stopGrooveOnly()};$('#recBtn').onclick=toggleRecord;$('#exportBtn').onclick=exportWav;
 if($('#arrPlayBtn'))$('#arrPlayBtn').onclick=play;if($('#arrStopBtn'))$('#arrStopBtn').onclick=()=>{stop();stopGrooveOnly()};if($('#arrBottomPlayBtn'))$('#arrBottomPlayBtn').onclick=play;if($('#arrBottomStopBtn'))$('#arrBottomStopBtn').onclick=()=>{stop();stopGrooveOnly()};if($('#groovePlayBtn'))$('#groovePlayBtn').onclick=playGrooveOnly;if($('#grooveStopBtn'))$('#grooveStopBtn').onclick=stopGrooveOnly;if($('#grooveToArrangerBtn'))$('#grooveToArrangerBtn').onclick=grooveIntoArranger;
@@ -631,3 +667,126 @@ $('#pianoClose').onclick=closePianoRoll;$('#pianoModal').addEventListener('point
 
 refreshSongLengthLimit(false);renderDemoTemplates();renderLoopLibrary();buildMacros();buildKnobs();buildKeyboard();buildSteps();updateKeyboardControls();applyLanguageToUI(true);applyPreset('driving');if(!audioReady)setStatus(false,t('audioInactive'),t('audioInactiveSub'));
 setInterval(()=>{try{localStorage.setItem('nevoStudioAutosave',JSON.stringify(projectData()))}catch{}},15000);
+
+// ===== v2.7: AUDIO-WELLENFORM / AUDIO-EDITOR =====
+function drawBufferWaveform(buffer,canvas,color='#54d8ff',trimStart=0,trimEnd=null){
+  if(!buffer||!canvas)return;
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),rect=canvas.getBoundingClientRect();
+  const cssW=Math.max(160,Math.round(rect.width||canvas.width||800)),cssH=Math.max(60,Math.round(rect.height||canvas.height||100));
+  canvas.width=Math.round(cssW*dpr);canvas.height=Math.round(cssH*dpr);
+  const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,cssW,cssH);
+  const data=buffer.getChannelData(0),duration=buffer.duration,end=trimEnd==null?duration:trimEnd;
+  c.fillStyle='rgba(255,255,255,.025)';c.fillRect(0,0,cssW,cssH);
+  c.strokeStyle=color;c.lineWidth=1.1;c.globalAlpha=.9;c.beginPath();
+  const samples=Math.max(1,Math.floor(data.length/cssW));
+  for(let x=0;x<cssW;x++){
+    const i0=x*samples,i1=Math.min(data.length,i0+samples);let lo=1,hi=-1;
+    for(let i=i0;i<i1;i++){const v=data[i];if(v<lo)lo=v;if(v>hi)hi=v}
+    const y1=(1-hi)*cssH/2,y2=(1-lo)*cssH/2;c.moveTo(x+.5,y1);c.lineTo(x+.5,y2);
+  }
+  c.stroke();c.globalAlpha=1;
+  if(duration>0&&(trimStart>0||end<duration)){
+    c.fillStyle='rgba(0,0,0,.46)';c.fillRect(0,0,cssW*(trimStart/duration),cssH);c.fillRect(cssW*(end/duration),0,cssW*(1-end/duration),cssH)
+  }
+}
+
+let audioEditTrack=null,audioEditClip=null,audioEditPreviewSource=null,audioEditCursor=0;
+function audioEditBuffer(){return audioEditClip?audioBuffers.get(audioEditClip.audioId):null}
+function stopAudioEditPreview(){if(audioEditPreviewSource){try{audioEditPreviewSource.stop()}catch{}audioEditPreviewSource=null}}
+function openAudioEditor(track,clip){
+  const buffer=audioBuffers.get(clip.audioId);if(!buffer)return;
+  audioEditTrack=track;audioEditClip=clip;
+  clip.trimStart=clamp(Number(clip.trimStart)||0,0,Math.max(0,buffer.duration-.01));
+  clip.trimEnd=clamp(Number(clip.trimEnd)||buffer.duration,clip.trimStart+.01,buffer.duration);
+  clip.fadeIn=Number(clip.fadeIn)||0;clip.fadeOut=Number(clip.fadeOut)||0;clip.gain=Number(clip.gain??1);
+  audioEditCursor=clip.trimStart;
+  $('#audioEditorTitle').textContent=localName(clip);$('#audioEditorModal').classList.remove('hidden');
+  $('#audioFadeIn').value=clip.fadeIn;$('#audioFadeOut').value=clip.fadeOut;$('#audioClipGain').value=clip.gain;
+  $('#audioLoopToggleBtn').classList.toggle('on',!!clip.loop);$('#audioLoopToggleBtn').textContent=clip.loop?(currentLang==='de'?'LOOP AN':'LOOP ON'):(currentLang==='de'?'LOOP AUS':'LOOP OFF');
+  setTimeout(()=>{drawBufferWaveform(buffer,$('#audioEditorWaveform'),'#54d8ff');updateAudioEditorVisuals()},20)
+}
+function closeAudioEditor(){stopAudioEditPreview();$('#audioEditorModal').classList.add('hidden');audioEditTrack=null;audioEditClip=null;renderTracks()}
+function updateAudioEditorVisuals(){
+  const buffer=audioEditBuffer();if(!buffer||!audioEditClip)return;const d=buffer.duration,s=audioEditClip.trimStart,e=audioEditClip.trimEnd,len=e-s;
+  const sp=s/d*100,ep=e/d*100,cp=clamp(audioEditCursor/d*100,0,100);
+  $('#audioTrimStartHandle').style.left=`calc(${sp}% - 2px)`;$('#audioTrimEndHandle').style.left=`calc(${ep}% - 22px)`;
+  $('#audioTrimShadeLeft').style.width=sp+'%';$('#audioTrimShadeRight').style.width=(100-ep)+'%';$('#audioCutCursor').style.left=cp+'%';
+  const fi=Math.min(audioEditClip.fadeIn,len/2),fo=Math.min(audioEditClip.fadeOut,len/2);audioEditClip.fadeIn=fi;audioEditClip.fadeOut=fo;
+  $('#audioFadeInVisual').style.left=sp+'%';$('#audioFadeInVisual').style.width=(fi/d*100)+'%';$('#audioFadeOutVisual').style.right=(100-ep)+'%';$('#audioFadeOutVisual').style.width=(fo/d*100)+'%';
+  $('#audioStartReadout').textContent=s.toFixed(2)+' s';$('#audioEndReadout').textContent=e.toFixed(2)+' s';$('#audioLengthReadout').textContent=len.toFixed(2)+' s';$('#audioCursorReadout').textContent=audioEditCursor.toFixed(2)+' s';
+  $('#audioFadeInValue').textContent=fi.toFixed(2)+' s';$('#audioFadeOutValue').textContent=fo.toFixed(2)+' s';$('#audioClipGainValue').textContent=Math.round(audioEditClip.gain*100)+'%';
+  $('#audioFadeIn').max=Math.max(.01,len/2);$('#audioFadeOut').max=Math.max(.01,len/2)
+}
+async function previewAudioEdit(){
+  const buffer=audioEditBuffer();if(!buffer||!audioEditClip)return;await initAudio();stopAudioEditPreview();
+  const src=ctx.createBufferSource(),g=ctx.createGain(),s=audioEditClip.trimStart,e=audioEditClip.trimEnd,d=e-s,gain=audioEditClip.gain,fi=Math.min(audioEditClip.fadeIn,d/2),fo=Math.min(audioEditClip.fadeOut,d/2);
+  src.buffer=buffer;src.connect(g);g.connect(master);src.loop=!!audioEditClip.loop;if(src.loop){src.loopStart=s;src.loopEnd=e}
+  const t0=ctx.currentTime+.02;if(fi>0){g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(gain,t0+fi)}else g.gain.setValueAtTime(gain,t0);
+  if(!src.loop&&fo>0){g.gain.setValueAtTime(gain,t0+d-fo);g.gain.linearRampToValueAtTime(.0001,t0+d)}
+  src.start(t0,s);if(!src.loop)src.stop(t0+d);audioEditPreviewSource=src;src.onended=()=>{if(audioEditPreviewSource===src)audioEditPreviewSource=null}
+}
+function splitAudioAtCursor(){
+  const buffer=audioEditBuffer(),clip=audioEditClip,track=audioEditTrack;if(!buffer||!clip||!track)return;
+  const cut=clamp(audioEditCursor,clip.trimStart+.05,clip.trimEnd-.05);if(!(cut>clip.trimStart&&cut<clip.trimEnd))return;
+  const barDur=barDurationSeconds(),leftDur=cut-clip.trimStart,rightDur=clip.trimEnd-cut,leftBars=Math.max(1,Math.ceil(leftDur/barDur)),rightBars=Math.max(1,Math.ceil(rightDur/barDur));
+  const oldEnd=clip.trimEnd;clip.trimEnd=cut;clip.len=Math.min(leftBars,TOTAL_BARS-clip.start);clip.fadeOut=0;
+  const copy={...clip,id:uid(),start:clamp(clip.start+clip.len,0,TOTAL_BARS-1),len:Math.min(rightBars,Math.max(1,TOTAL_BARS-(clip.start+clip.len))),trimStart:cut,trimEnd:oldEnd,fadeIn:0,name:localName(clip)+' B',nameDe:(clip.nameDe||clip.name)+' B',nameEn:(clip.nameEn||clip.name)+' B'};
+  if(copy.start<TOTAL_BARS)track.clips.push(copy);closeAudioEditor();renderTracks()
+}
+function bindAudioEditor(){
+  if(!$('#audioEditorModal'))return;
+  $('#audioEditorClose').onclick=closeAudioEditor;$('#audioApplyBtn').onclick=closeAudioEditor;$('#audioPreviewBtn').onclick=previewAudioEdit;$('#audioStopPreviewBtn').onclick=stopAudioEditPreview;$('#audioSplitBtn').onclick=splitAudioAtCursor;
+  $('#audioLoopToggleBtn').onclick=()=>{if(!audioEditClip)return;audioEditClip.loop=!audioEditClip.loop;$('#audioLoopToggleBtn').classList.toggle('on',audioEditClip.loop);$('#audioLoopToggleBtn').textContent=audioEditClip.loop?(currentLang==='de'?'LOOP AN':'LOOP ON'):(currentLang==='de'?'LOOP AUS':'LOOP OFF')};
+  $('#audioResetEditsBtn').onclick=()=>{const b=audioEditBuffer();if(!b||!audioEditClip)return;audioEditClip.trimStart=0;audioEditClip.trimEnd=b.duration;audioEditClip.fadeIn=0;audioEditClip.fadeOut=0;audioEditClip.gain=1;audioEditCursor=0;$('#audioFadeIn').value=0;$('#audioFadeOut').value=0;$('#audioClipGain').value=1;updateAudioEditorVisuals()};
+  $('#audioFadeIn').oninput=e=>{if(audioEditClip){audioEditClip.fadeIn=Number(e.target.value);updateAudioEditorVisuals()}};$('#audioFadeOut').oninput=e=>{if(audioEditClip){audioEditClip.fadeOut=Number(e.target.value);updateAudioEditorVisuals()}};$('#audioClipGain').oninput=e=>{if(audioEditClip){audioEditClip.gain=Number(e.target.value);updateAudioEditorVisuals()}};
+  const wrap=$('#audioWaveEditorWrap');wrap.addEventListener('pointerdown',e=>{if(!audioEditClip||e.target.closest('.audio-trim-handle'))return;const b=audioEditBuffer(),r=wrap.getBoundingClientRect();audioEditCursor=clamp((e.clientX-r.left)/r.width,0,1)*b.duration;updateAudioEditorVisuals()});
+  const bindHandle=(el,key)=>{let active=false;el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();active=true;el.setPointerCapture(e.pointerId)});el.addEventListener('pointermove',e=>{if(!active||!audioEditClip)return;const b=audioEditBuffer(),r=wrap.getBoundingClientRect(),v=clamp((e.clientX-r.left)/r.width,0,1)*b.duration;if(key==='trimStart')audioEditClip.trimStart=clamp(v,0,audioEditClip.trimEnd-.05);else audioEditClip.trimEnd=clamp(v,audioEditClip.trimStart+.05,b.duration);audioEditCursor=clamp(audioEditCursor,audioEditClip.trimStart,audioEditClip.trimEnd);updateAudioEditorVisuals()});const end=()=>active=false;el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)};
+  bindHandle($('#audioTrimStartHandle'),'trimStart');bindHandle($('#audioTrimEndHandle'),'trimEnd');
+}
+
+// ===== v2.7: NÉVO PLAYER / DJ-DECKS =====
+const djLibrary=[];
+function makeDjDeck(letter){
+  const audio=new Audio();audio.preload='auto';audio.preservesPitch=true;audio.mozPreservesPitch=true;audio.webkitPreservesPitch=true;
+  return {letter,audio,item:null,source:null,gainNode:null,cue:0,keyLock:true,loopBeats:0,loopStart:0,buffer:null}
+}
+const djDecks={A:makeDjDeck('A'),B:makeDjDeck('B')};
+function fmtDeckTime(sec){sec=Math.max(0,Number(sec)||0);const m=Math.floor(sec/60),s=Math.floor(sec%60),d=Math.floor((sec%1)*10);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${d}`}
+async function ensureDeckConnected(deck){await initAudio();if(!deck.source){deck.source=ctx.createMediaElementSource(deck.audio);deck.gainNode=ctx.createGain();deck.source.connect(deck.gainNode);deck.gainNode.connect(master)}updateCrossfaderGains()}
+async function ensureDjItemBuffer(item){if(item.buffer)return item.buffer;await initAudio();const arr=await item.file.arrayBuffer();item.buffer=await ctx.decodeAudioData(arr.slice(0));item.duration=item.buffer.duration;renderDjLibrary();return item.buffer}
+function renderDjLibrary(){
+  const box=$('#djLibraryList');if(!box)return;if(!djLibrary.length){box.innerHTML=`<div class="dj-empty">${t('djEmpty')}</div>`;return}
+  box.innerHTML='';djLibrary.forEach((item,i)=>{const el=document.createElement('div');el.className='dj-lib-item';el.innerHTML=`<div><strong>${item.name}</strong><small>${item.duration?fmtDeckTime(item.duration):((item.file.size/1048576).toFixed(1)+' MB')}</small></div><div class="dj-lib-actions"><button class="btn small">A</button><button class="btn small">B</button></div>`;const [a,b]=el.querySelectorAll('button');a.onclick=()=>loadItemToDeck(item,'A');b.onclick=()=>loadItemToDeck(item,'B');box.appendChild(el)})
+}
+async function loadItemToDeck(item,letter){
+  const deck=djDecks[letter];await ensureDeckConnected(deck);const buffer=await ensureDjItemBuffer(item);deck.item=item;deck.buffer=buffer;deck.cue=0;deck.loopBeats=0;deck.loopStart=0;deck.audio.pause();deck.audio.src=item.url;deck.audio.currentTime=0;deck.audio.load();
+  const guessed=(item.name.match(/(?:^|\D)(1[2-8]\d)(?:\D|$)/)||[])[1];const bpm=guessed?Number(guessed):Number($('#bpm').value)||150;$(`#deck${letter}Bpm`).value=bpm;$(`#deck${letter}Pitch`).value=0;deck.audio.playbackRate=1;
+  $(`#deck${letter}Title`).textContent=item.name;$(`#deck${letter}Duration`).textContent=fmtDeckTime(buffer.duration);$(`#deck${letter}Time`).textContent='00:00.0';$(`#deck${letter}Playhead`).style.left='0%';$(`#deck${letter}Loop`).value='0';
+  drawBufferWaveform(buffer,$(`#deck${letter}Wave`),letter==='A'?'#54d8ff':'#ffb55e');refreshDeckUi(letter);setStatus(true,t('djLoaded'),`${item.name} → DECK ${letter}`)
+}
+function refreshDeckUi(letter){const d=djDecks[letter];const play=$(`#deck${letter}Play`),key=$(`#deck${letter}KeyLock`);if(play)play.textContent=d.audio&&!d.audio.paused?'❚❚ PAUSE':'▶ PLAY';if(key){key.classList.toggle('on',d.keyLock);key.textContent=currentLang==='de'?(d.keyLock?'TONHALTE AN':'TONHALTE AUS'):(d.keyLock?'KEY LOCK ON':'KEY LOCK OFF')}const st=$(`#deck${letter}Status`);if(st)st.textContent=d.item?(d.audio.paused?'READY':'PLAY'):'EMPTY'}
+function refreshAllDeckUi(){refreshDeckUi('A');refreshDeckUi('B');for(const L of ['A','B']){const sel=$(`#deck${L}Loop`);if(sel&&sel.options.length){sel.options[0].textContent=currentLang==='de'?'AUS':'OFF'}}}
+async function toggleDeck(letter){const d=djDecks[letter];if(!d.item)return;await ensureDeckConnected(d);if(d.audio.paused){try{await d.audio.play()}catch(e){console.warn(e)}}else d.audio.pause();refreshDeckUi(letter)}
+function stopDeck(letter){const d=djDecks[letter];d.audio.pause();try{d.audio.currentTime=0}catch{}refreshDeckUi(letter)}
+function cueDeck(letter){const d=djDecks[letter];if(!d.item)return;d.audio.pause();d.audio.currentTime=clamp(d.cue,0,d.audio.duration||0);refreshDeckUi(letter)}
+function setDeckCue(letter){const d=djDecks[letter];if(!d.item)return;d.cue=d.audio.currentTime;setStatus(true,currentLang==='de'?'Cue gesetzt':'Cue set',`DECK ${letter} · ${fmtDeckTime(d.cue)}`)}
+function updateDeckRate(letter){const d=djDecks[letter],pct=Number($(`#deck${letter}Pitch`).value)||0;d.audio.playbackRate=clamp(1+pct/100,.5,2);$(`#deck${letter}PitchValue`).textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%'}
+function syncDeck(letter){const trackBpm=clamp(Number($(`#deck${letter}Bpm`).value)||150,60,220),masterBpm=clamp(Number($('#bpm').value)||150,60,220),pct=clamp((masterBpm/trackBpm-1)*100,-16,16);$(`#deck${letter}Pitch`).value=pct.toFixed(1);updateDeckRate(letter);setStatus(true,'SYNC',`DECK ${letter}: ${trackBpm} → ${masterBpm} BPM`)}
+function toggleDeckKeyLock(letter){const d=djDecks[letter];d.keyLock=!d.keyLock;d.audio.preservesPitch=d.keyLock;d.audio.mozPreservesPitch=d.keyLock;d.audio.webkitPreservesPitch=d.keyLock;refreshDeckUi(letter)}
+function setDeckLoop(letter){const d=djDecks[letter],beats=Number($(`#deck${letter}Loop`).value)||0;d.loopBeats=beats;if(beats){d.loopStart=d.audio.currentTime;setStatus(true,currentLang==='de'?'Deck-Loop gesetzt':'Deck loop set',`DECK ${letter} · ${beats} beats`)}}
+function updateCrossfaderGains(){const x=Number($('#djCrossfader')?.value||0),theta=(x+1)*Math.PI/4,a=Math.cos(theta),b=Math.sin(theta);for(const [L,f] of [['A',a],['B',b]]){const d=djDecks[L],vol=Number($(`#deck${L}Volume`)?.value||.9);if(d.gainNode)d.gainNode.gain.setTargetAtTime(vol*f,ctx?.currentTime||0,.01)}}
+function deckSeekFromWave(letter,e){const d=djDecks[letter];if(!d.item||!Number.isFinite(d.audio.duration))return;const wrap=e.currentTarget,r=wrap.getBoundingClientRect(),ratio=clamp((e.clientX-r.left)/r.width,0,1);d.audio.currentTime=ratio*d.audio.duration}
+async function addDeckToArranger(letter){
+  const d=djDecks[letter];if(!d.item)return;const buffer=await ensureDjItemBuffer(d.item),audioId=uid();audioBuffers.set(audioId,buffer);let tr=tracks.find(t=>t.type==='audio');if(!tr){tr={id:'audio-'+uid(),name:'AUDIO',nameDe:'AUDIO',nameEn:'AUDIO',color:'#ffffff',type:'audio',mute:false,solo:false,clips:[]};tracks.push(tr)}
+  const start=clamp(Number($('#loopStart').value||1)-1,0,TOTAL_BARS-1),barDur=barDurationSeconds(),len=clamp(Math.ceil(Math.min(buffer.duration,MAX_SONG_SECONDS)/barDur),1,TOTAL_BARS-start);tr.clips.push({id:uid(),start,len,name:d.item.name.replace(/\.[^.]+$/,''),loop:false,audioId,trimStart:0,trimEnd:Math.min(buffer.duration,MAX_SONG_SECONDS),fadeIn:0,fadeOut:0,gain:1});renderTracks();setStatus(true,t('djAddedArranger'),`${d.item.name} · ${len} ${len===1?t('barOne'):t('barMany')}`);document.querySelector('.arranger-panel')?.scrollIntoView({behavior:'smooth',block:'start'})
+}
+function startDjTicker(){
+  const tick=()=>{for(const L of ['A','B']){const d=djDecks[L];if(d.item){const dur=d.audio.duration||d.buffer?.duration||0,cur=d.audio.currentTime||0;$(`#deck${L}Time`).textContent=fmtDeckTime(cur);$(`#deck${L}Duration`).textContent=fmtDeckTime(dur);$(`#deck${L}Playhead`).style.left=(dur?clamp(cur/dur*100,0,100):0)+'%';if(d.loopBeats&&dur){const bpm=clamp(Number($(`#deck${L}Bpm`).value)||150,60,220),loopEnd=d.loopStart+d.loopBeats*60/bpm;if(cur>=loopEnd-.02){d.audio.currentTime=d.loopStart}}refreshDeckUi(L)}}requestAnimationFrame(tick)};requestAnimationFrame(tick)
+}
+function bindDjPlayer(){
+  if(!$('#djImport'))return;$('#djImport').onchange=e=>{for(const f of [...e.target.files]){djLibrary.push({id:uid(),file:f,name:f.name,url:URL.createObjectURL(f),buffer:null,duration:0})}renderDjLibrary();e.target.value=''};
+  for(const L of ['A','B']){$(`#deck${L}Play`).onclick=()=>toggleDeck(L);$(`#deck${L}Stop`).onclick=()=>stopDeck(L);$(`#deck${L}Cue`).onclick=()=>cueDeck(L);$(`#deck${L}SetCue`).onclick=()=>setDeckCue(L);$(`#deck${L}Sync`).onclick=()=>syncDeck(L);$(`#deck${L}KeyLock`).onclick=()=>toggleDeckKeyLock(L);$(`#deck${L}Pitch`).oninput=()=>updateDeckRate(L);$(`#deck${L}Volume`).oninput=updateCrossfaderGains;$(`#deck${L}Loop`).onchange=()=>setDeckLoop(L);$(`#deck${L}AddArranger`).onclick=()=>addDeckToArranger(L);document.querySelector(`.dj-wave-wrap[data-deck="${L}"]`).onclick=e=>deckSeekFromWave(L,e);djDecks[L].audio.addEventListener('play',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('pause',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('ended',()=>refreshDeckUi(L))}
+  $('#djCrossfader').oninput=updateCrossfaderGains;longPress($('.dj-panel'),()=>showHelp('djPlayer'));renderDjLibrary();refreshAllDeckUi();startDjTicker()
+}
+
+bindAudioEditor();bindDjPlayer();
