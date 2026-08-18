@@ -458,7 +458,7 @@ body.nevo-scrolling .ambient{display:none!important}
 @media(max-width:760px){.flx4-fx-channel-box{align-items:stretch;flex-direction:column}.flx4-fx-channel-box>span{align-self:flex-start}.v406-beatfx-grid{grid-template-columns:repeat(2,1fr)!important}.v406-beatfx-grid>label{grid-column:1/-1!important}.flx4-fx-center-readout{order:3}.v406-beatfx-grid #flxFxOn{order:6}}
 
 /* =========================================================
-   NÉVO Studio v4.1.0 — compact FLX4 performance workspace
+   NÉVO Studio v4.1.1 — compact FLX4 performance workspace
    ========================================================= */
 .v410-hidden-fxmenu{display:none!important}
 .flx4-fx-channel-segments{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%}
@@ -631,4 +631,60 @@ body.nevo-scrolling .ambient{display:none!important}
   body.flx-compact-mode .flx4-browser-knob .browse-center b{font-size:7px}
   body.flx-compact-mode .flx4-browser-knob .browse-center small{font-size:4px;white-space:normal;line-height:1.05}
   body.flx-compact-mode .flx4-browser-knob .sub{min-height:18px;font-size:5px;padding:1px 3px}
+}
+
+
+/* ===== v4.1.1: deck info in jogs + compact loops + playlist-first browser ===== */
+.flx4-stack-row{grid-template-columns:1fr!important}
+.flx4-stack-id{display:none!important}
+.flx4-wave-deck-tag{position:absolute;z-index:8;left:7px;top:6px;display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:rgba(3,9,14,.76);border:1px solid rgba(255,255,255,.16);font-size:11px;font-weight:1000;pointer-events:none}
+.deck-a .flx4-wave-deck-tag{color:#54d8ff}.deck-b .flx4-wave-deck-tag{color:#ffb55e}
+
+.flx4-jog-center.flx4-jog-info{inset:24%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px;text-align:center;overflow:hidden}
+.flx4-jog-info .flx4-jog-deck{font-size:18px;line-height:1;font-weight:1000;margin:0}
+.flx4-jog-info>strong{font-size:12px;line-height:1.05;color:#f6fbff;white-space:nowrap}
+.flx4-jog-info>small{display:block;max-width:95%;font-size:6px;line-height:1.1;color:#93a7b6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
+.flx4-jog-badges{display:flex;gap:3px;justify-content:center;min-height:14px}
+.flx4-jog-badges em{font-style:normal;font-size:5px;font-weight:1000;letter-spacing:.06em;padding:2px 4px;border-radius:5px;border:1px solid rgba(255,255,255,.12);color:#607381;opacity:.45}
+.flx4-jog-badges em.on{opacity:1;color:#071019;background:#54d8ff;border-color:#54d8ff;box-shadow:0 0 10px rgba(84,216,255,.25)}
+.flx4-b .flx4-jog-badges em.on{background:#ffb55e;border-color:#ffb55e;color:#160d04;box-shadow:0 0 10px rgba(255,181,94,.25)}
+.flx4-jog-info>i{font-style:normal;font-size:5px;color:#718695;white-space:nowrap}
+
+.flx4-loop-compact{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:-1px 0 5px;min-height:28px}
+.flx4-loop-compact button,.flx4-loop-compact em{min-height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid rgba(255,255,255,.11);background:#071019;color:#8598a7;font-size:6px;font-weight:1000;font-style:normal;padding:4px 8px;white-space:nowrap}
+.flx4-loop-compact.active button{color:#171009;background:#ffb55e;border-color:#ffb55e;box-shadow:0 0 12px rgba(255,181,94,.16)}
+.flx4-loop-compact em.has-memory{color:#ffd18a;border-color:rgba(255,179,92,.34)}
+
+.flx4-browser-top.flx4-browser-top-compact{display:grid;grid-template-columns:auto 28px minmax(90px,1fr) 28px auto auto auto;gap:3px;align-items:center;margin:0 0 5px}
+.flx4-browser-top-compact>button{min-height:27px!important;border-radius:7px!important;padding:3px 7px!important;font-size:6px!important}
+.flx4-browser-top-compact .browse-center-compact{aspect-ratio:auto!important;border-radius:7px!important;background:#0a151f!important;box-shadow:none!important;display:flex!important;align-items:center;justify-content:center;gap:8px;padding:3px 8px!important;min-height:27px!important}
+.flx4-browser-top-compact .browse-center-compact b{font-size:7px!important;letter-spacing:.08em}
+.flx4-browser-top-compact .browse-center-compact small{font-size:5px!important;color:#8da2b2!important;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0!important}
+.flx4-browser-panel{max-height:300px!important;margin:4px 0 7px!important}
+.flx4-browser-list{max-height:238px!important}
+.flx4-browser-panel.expanded{max-height:430px!important}
+.flx4-browser-panel.expanded .flx4-browser-list{max-height:368px!important}
+
+body.flx-compact-mode .flx4-stack-row{grid-template-columns:1fr!important}
+body.flx-compact-mode .flx4-stack-wavewrap{height:46px}
+body.flx-compact-mode .flx4-jog{width:126px;max-width:48%}
+body.flx-compact-mode .flx4-jog-center.flx4-jog-info{inset:21%;padding:5px;gap:1px}
+body.flx-compact-mode .flx4-jog-info .flx4-jog-deck{font-size:13px}
+body.flx-compact-mode .flx4-jog-info>strong{font-size:9px}
+body.flx-compact-mode .flx4-jog-info>small{font-size:5px}
+body.flx-compact-mode .flx4-jog-badges em{font-size:4px;padding:1px 3px}
+body.flx-compact-mode .flx4-jog-info>i{font-size:4px}
+body.flx-compact-mode .flx4-loop-compact{margin:0 0 2px;min-height:22px}
+body.flx-compact-mode .flx4-loop-compact button,body.flx-compact-mode .flx4-loop-compact em{min-height:21px;font-size:5px;padding:2px 5px}
+body.flx-compact-mode .flx4-browser-top.flx4-browser-top-compact{grid-template-columns:auto 23px minmax(70px,1fr) 23px auto auto auto;gap:2px;margin-bottom:2px}
+body.flx-compact-mode .flx4-browser-top-compact>button{min-height:21px!important;padding:2px 4px!important;font-size:5px!important}
+body.flx-compact-mode .flx4-browser-panel{max-height:190px!important;padding:3px!important}
+body.flx-compact-mode .flx4-browser-list{max-height:154px!important}
+body.flx-compact-mode .flx4-browser-panel.expanded{max-height:260px!important}
+body.flx-compact-mode .flx4-browser-panel.expanded .flx4-browser-list{max-height:224px!important}
+
+@media(max-width:760px){
+  .flx4-browser-top.flx4-browser-top-compact{grid-template-columns:auto 28px minmax(90px,1fr) 28px auto;}
+  .flx4-browser-top-compact .browse-sub{grid-column:auto;}
+  .flx4-browser-panel{max-height:260px!important}.flx4-browser-list{max-height:200px!important}
 }

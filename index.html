@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v4.1.0</title>
+  <title>NÉVO Studio v4.1.1</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v4.1.0</span></div>
+        <div class="brand-sub">STUDIO <span>v4.1.1</span></div>
       </div>
 
       <div class="transport">
@@ -133,7 +133,7 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v4.1.0</strong>
+            <strong>DDJ-FLX4 MODUS · v4.1.1</strong>
             <span>Performance-Ansicht: zwei Decks, Browser, Mixer und Beat FX kompakt zusammen. Beat FX folgt jetzt der echten FLX4-Logik: CH SELECT 1/2/1&2 · FX SELECT vor/zurück mit SHIFT · BEAT ◀/▶ ändert die Beat-Länge.</span>
           </div>
 
@@ -143,20 +143,10 @@
               <label>ZOOM <select id="flxWaveBeats"><option value="2">2 BEATS</option><option value="4">4 BEATS</option><option value="6">6 BEATS</option><option value="8" selected>8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select></label>
             </div>
             <div class="flx4-stack-row deck-a" data-flx-stack="A">
-              <div class="flx4-stack-id">
-                <b>A</b><span id="flxAStackTitle">Kein Song</span><small id="flxAStackMeta">— BPM · 00:00.0</small>
-                <div class="flx4-stack-badges"><em id="flxAMasterBadge">MASTER</em><em id="flxASyncBadge">SYNC</em><em id="flxAPlayBadge">PLAY</em></div>
-                <div class="flx4-stack-readout"><span><i>BPM</i><strong id="flxALiveBpm">—</strong></span><span><i>TAKT</i><strong id="flxABar">—</strong></span><span><i>BEAT</i><strong id="flxABeat">—</strong></span><span><i>PHASE</i><strong id="flxAPhaseMs">—</strong></span></div>
-              </div>
-              <div class="flx4-stack-wavewrap" data-flx-stack-seek="A"><canvas id="flxAStackWave" width="1600" height="160"></canvas><div id="flxAStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxAPhaseNeedle"></i></div><b id="flxAGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
+              <div class="flx4-stack-wavewrap" data-stack-deck="A" data-flx-stack-seek="A"><span class="flx4-wave-deck-tag">A</span><canvas id="flxAStackWave" width="1600" height="160"></canvas><div id="flxAStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxAPhaseNeedle"></i></div><b id="flxAGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
             </div>
             <div class="flx4-stack-row deck-b" data-flx-stack="B">
-              <div class="flx4-stack-id">
-                <b>B</b><span id="flxBStackTitle">Kein Song</span><small id="flxBStackMeta">— BPM · 00:00.0</small>
-                <div class="flx4-stack-badges"><em id="flxBMasterBadge">MASTER</em><em id="flxBSyncBadge">SYNC</em><em id="flxBPlayBadge">PLAY</em></div>
-                <div class="flx4-stack-readout"><span><i>BPM</i><strong id="flxBLiveBpm">—</strong></span><span><i>TAKT</i><strong id="flxBBar">—</strong></span><span><i>BEAT</i><strong id="flxBBeat">—</strong></span><span><i>PHASE</i><strong id="flxBPhaseMs">—</strong></span></div>
-              </div>
-              <div class="flx4-stack-wavewrap" data-flx-stack-seek="B"><canvas id="flxBStackWave" width="1600" height="160"></canvas><div id="flxBStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxBPhaseNeedle"></i></div><b id="flxBGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
+              <div class="flx4-stack-wavewrap" data-stack-deck="B" data-flx-stack-seek="B"><span class="flx4-wave-deck-tag">B</span><canvas id="flxBStackWave" width="1600" height="160"></canvas><div id="flxBStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxBPhaseNeedle"></i></div><b id="flxBGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
             </div>
           </section>
 
@@ -171,16 +161,18 @@
                 <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="A.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="A.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
                 <button class="flx4-sync" data-flx-action="A.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxATempoRange">±16%</em></button>
               </div>
-              <div class="flx4-loop-strip" data-loop-strip="A">
-                <span>LOOP-LÄNGE</span><button data-flx-action="A.loopHalf" type="button">½×</button>
-                <select id="flxALoopSize" data-loop-size="A"><option value="1">1 BEAT</option><option value="2">2 BEATS</option><option value="3">3 BEATS</option><option value="4" selected>4 BEATS</option><option value="6">6 BEATS</option><option value="8">8 BEATS</option><option value="12">12 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
-                <button data-flx-action="A.loopDouble" type="button">2×</button><b id="flxALoopState">LOOP AUS</b><em id="flxAMemoryState">MEM 0</em>
-              </div>
+              <div class="flx4-loop-compact" data-loop-strip="A"><button id="flxALoopState" data-flx-action="A.loop4exit" type="button">LOOP AUS</button><em id="flxAMemoryState">MEM 0</em></div>
               <div class="flx4-deck-body">
                 <div class="flx4-pitch-column">
                   <label>TEMPO <b id="flxAPitchVal">0.0%</b><input id="flxAPitch" data-flx-action="A.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
                 </div>
-                <div id="flxAJog" class="flx4-jog" data-flx-action="A.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>A</span><small>JOG</small></div></div>
+                <div id="flxAJog" class="flx4-jog" data-flx-action="A.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center flx4-jog-info">
+                  <span class="flx4-jog-deck">A</span>
+                  <strong id="flxAJogBpm">— BPM</strong>
+                  <small id="flxAJogTitle">Kein Song</small>
+                  <div class="flx4-jog-badges"><em id="flxAJogMaster">MASTER</em><em id="flxAJogSync">SYNC</em></div>
+                  <i id="flxAJogBeat">TAKT — · BEAT —</i>
+                </div></div>
               </div>
               <div class="flx4-shift-row"><button data-flx-action="A.shift" class="flx4-shift" type="button">SHIFT</button></div>
               <div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY/PAUSE</button></div>
@@ -195,10 +187,14 @@
             </section>
 
             <section class="flx4-mixer-section v34-mixer">
-              <div class="flx4-browser-top">
+              <div class="flx4-browser-top flx4-browser-top-compact">
                 <button data-flx-action="library.loadA" type="button">LOAD A</button>
-                <div class="flx4-browser-knob"><button data-flx-action="library.prev" type="button">◀</button><button class="browse-center" data-flx-action="library.open" type="button"><b>BROWSE</b><small>DREHEN = TITEL · DRÜCKEN = LISTE</small></button><button data-flx-action="library.next" type="button">▶</button><small id="flxBrowseTitle">BIBLIOTHEK</small><button class="sub" data-flx-action="library.back" type="button">BACK</button><button class="sub" data-flx-action="library.view" type="button">VIEW</button></div>
+                <button class="browse-nav" data-flx-action="library.prev" type="button">◀</button>
+                <button class="browse-center browse-center-compact" data-flx-action="library.open" type="button"><b>BROWSE</b><small id="flxBrowseTitle">BIBLIOTHEK</small></button>
+                <button class="browse-nav" data-flx-action="library.next" type="button">▶</button>
                 <button data-flx-action="library.loadB" type="button">LOAD B</button>
+                <button class="browse-sub" data-flx-action="library.back" type="button">BACK</button>
+                <button class="browse-sub" data-flx-action="library.view" type="button">VIEW</button>
               </div>
               <div id="flxBrowserPanel" class="flx4-browser-panel">
                 <div class="flx4-browser-panel-head"><span id="flxBrowserFocus">TRACKS</span><b id="flxBrowserCrate">ALLE SONGS</b><small id="flxBrowserCount">0 / 0</small></div>
@@ -274,13 +270,15 @@
                 <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="B.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="B.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
                 <button class="flx4-sync" data-flx-action="B.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxBTempoRange">±16%</em></button>
               </div>
-              <div class="flx4-loop-strip" data-loop-strip="B">
-                <span>LOOP-LÄNGE</span><button data-flx-action="B.loopHalf" type="button">½×</button>
-                <select id="flxBLoopSize" data-loop-size="B"><option value="1">1 BEAT</option><option value="2">2 BEATS</option><option value="3">3 BEATS</option><option value="4" selected>4 BEATS</option><option value="6">6 BEATS</option><option value="8">8 BEATS</option><option value="12">12 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
-                <button data-flx-action="B.loopDouble" type="button">2×</button><b id="flxBLoopState">LOOP AUS</b><em id="flxBMemoryState">MEM 0</em>
-              </div>
+              <div class="flx4-loop-compact" data-loop-strip="B"><button id="flxBLoopState" data-flx-action="B.loop4exit" type="button">LOOP AUS</button><em id="flxBMemoryState">MEM 0</em></div>
               <div class="flx4-deck-body">
-                <div id="flxBJog" class="flx4-jog" data-flx-action="B.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>B</span><small>JOG</small></div></div>
+                <div id="flxBJog" class="flx4-jog" data-flx-action="B.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center flx4-jog-info">
+                  <span class="flx4-jog-deck">B</span>
+                  <strong id="flxBJogBpm">— BPM</strong>
+                  <small id="flxBJogTitle">Kein Song</small>
+                  <div class="flx4-jog-badges"><em id="flxBJogMaster">MASTER</em><em id="flxBJogSync">SYNC</em></div>
+                  <i id="flxBJogBeat">TAKT — · BEAT —</i>
+                </div></div>
                 <div class="flx4-pitch-column">
                   <label>TEMPO <b id="flxBPitchVal">0.0%</b><input id="flxBPitch" data-flx-action="B.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
                 </div>
