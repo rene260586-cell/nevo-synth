@@ -1472,3 +1472,42 @@ body.flx-compact-mode .flx4-controller>.flx4-side-mapper .flx4-rotary-stack labe
   transition:transform 34ms linear;
 }
 body.flx-compact-mode .flx4-rotary:after{transform-origin:50% 9px!important}
+
+
+/* ===== v4.2.3: compact deck feature strip (RANGE / SLIP / Q / MT) ===== */
+.flx4-deck-options{
+  display:grid;
+  grid-template-columns:minmax(54px,1.45fr) repeat(3,minmax(38px,.72fr));
+  gap:5px;
+  margin:4px 0 2px;
+  align-items:stretch;
+}
+.flx4-deck-option{
+  min-width:0;
+  min-height:27px;
+  padding:3px 6px;
+  border:1px solid rgba(120,164,196,.28);
+  border-radius:8px;
+  background:linear-gradient(180deg,rgba(17,31,43,.96),rgba(8,18,27,.96));
+  color:#dfe9f2;
+  font:800 9px/1 system-ui,sans-serif;
+  letter-spacing:.04em;
+  touch-action:manipulation;
+  user-select:none;
+}
+.flx4-deck-option small{display:block;font-size:6px;line-height:1;margin-bottom:2px;color:#8299aa}
+.flx4-deck-option b{font-size:8px}
+.flx4-deck-option.active{
+  border-color:rgba(82,214,255,.78);
+  color:#71e5ff;
+  box-shadow:0 0 0 1px rgba(82,214,255,.12) inset,0 0 12px rgba(82,214,255,.10);
+}
+.flx4-b .flx4-deck-option.active{
+  border-color:rgba(255,181,94,.85);
+  color:#ffc27a;
+  box-shadow:0 0 0 1px rgba(255,181,94,.12) inset,0 0 12px rgba(255,181,94,.10);
+}
+@media (max-width:1100px){
+  .flx4-deck-options{grid-template-columns:minmax(48px,1.3fr) repeat(3,minmax(34px,.7fr));gap:3px}
+  .flx4-deck-option{padding:2px 4px;font-size:8px;min-height:25px}
+}

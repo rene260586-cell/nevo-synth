@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.2',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.3',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2810,3 +2810,117 @@ v421JogSearch=function(letter,delta){const r=v422OldSearch(letter,delta);v422For
 
 v422RefreshMixerVisuals();
 console.info('NÉVO v4.2.2: mixer rotaries follow MIDI + adaptive jog rotation/waveform follow active');
+
+
+// ===== v4.2.3: deck touch controls — tempo range / SLIP / Q / MT =====
+// These compact controls are available on both decks and work with mouse or touch.
+// RANGE cycles ±6 / ±10 / ±16 / WIDE. Q is deck Quantize. MT is Master Tempo
+// (pitch/key preservation). SLIP currently follows the jog/scratch timeline: while
+// scratching the audible position can move, but on release playback returns to the
+// position the track would have reached in the background.
+
+const nevoV423={
+  slip:{A:false,B:false},
+  slipAnchor:{A:null,B:null}
+};
+
+function v423SetSlip(letter,on){
+  nevoV423.slip[letter]=!!on;
+  const b=$(`#flx${letter}Slip`);
+  if(b){b.classList.toggle('active',!!on);b.setAttribute('aria-pressed',on?'true':'false')}
+  setStatus(true,'SLIP',`DECK ${letter} · ${on?'AN':'AUS'}`);
+}
+function v423ToggleSlip(letter){v423SetSlip(letter,!nevoV423.slip[letter])}
+
+function v423RefreshDeckOptionUi(letter){
+  const d=djDecks?.[letter];if(!d)return;
+  const range=v38TempoRangeLabel(letter);
+  const mini=$(`#flx${letter}TempoRangeMini`);if(mini)mini.textContent=range;
+  const syncRange=$(`#flx${letter}TempoRange`);if(syncRange)syncRange.textContent=range;
+
+  const slip=$(`#flx${letter}Slip`);
+  if(slip){slip.classList.toggle('active',!!nevoV423.slip[letter]);slip.setAttribute('aria-pressed',nevoV423.slip[letter]?'true':'false')}
+
+  const q=$(`#flx${letter}QuantizeMini`);
+  if(q){q.classList.toggle('active',!!d.quantize);q.setAttribute('aria-pressed',d.quantize?'true':'false');q.title=d.quantize?'Quantize an':'Quantize aus'}
+
+  const mt=$(`#flx${letter}MasterTempo`);
+  if(mt){mt.classList.toggle('active',!!d.keyLock);mt.setAttribute('aria-pressed',d.keyLock?'true':'false');mt.title=d.keyLock?'Master Tempo an':'Master Tempo aus'}
+}
+
+function v423ToggleQuantize(letter){
+  const d=djDecks?.[letter];if(!d)return;
+  v3SetQuantize(letter,!d.quantize);
+  v423RefreshDeckOptionUi(letter);
+  setStatus(true,'QUANTIZE',`DECK ${letter} · ${d.quantize?'AN':'AUS'}`);
+}
+function v423ToggleMasterTempo(letter){
+  toggleDeckKeyLock(letter);
+  v423RefreshDeckOptionUi(letter);
+  setStatus(true,'MASTER TEMPO',`DECK ${letter} · ${djDecks[letter].keyLock?'AN':'AUS'}`);
+}
+
+// Final FLX action layer so the new buttons can also be MIDI-learn targets.
+const v423OldTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  let m=String(action||'').match(/^([AB])\.(tempoRange|slip|quantize)$/);
+  if(m){
+    const L=m[1],kind=m[2];
+    if(kind==='tempoRange'){v38CycleTempoRange(L);v423RefreshDeckOptionUi(L);return}
+    if(kind==='slip')return v423ToggleSlip(L);
+    if(kind==='quantize')return v423ToggleQuantize(L);
+  }
+  const r=v423OldTrigger(action);
+  m=String(action||'').match(/^([AB])\.keylock$/);
+  if(m)v423RefreshDeckOptionUi(m[1]);
+  return r;
+};
+
+const v423OldActionLabel=flxActionLabel;
+flxActionLabel=function(action){
+  const map={
+    'A.tempoRange':'Deck A Tempo Range','B.tempoRange':'Deck B Tempo Range',
+    'A.slip':'Deck A Slip','B.slip':'Deck B Slip',
+    'A.quantize':'Deck A Quantize','B.quantize':'Deck B Quantize',
+    'A.keylock':'Deck A Master Tempo','B.keylock':'Deck B Master Tempo'
+  };
+  return map[action]||v423OldActionLabel(action);
+};
+
+// SLIP support for platter touch/scratch. The normal playback timeline keeps
+// advancing virtually while the platter is held; releasing returns there.
+const v423OldJogTouch=v421JogTouch;
+v421JogTouch=function(letter,on,searchTouch=false){
+  const d=djDecks?.[letter],slip=!!nevoV423.slip[letter];
+  if(!searchTouch&&on&&slip&&d?.item&&!d.audio.paused){
+    nevoV423.slipAnchor[letter]={
+      time:Number(d.audio.currentTime)||0,
+      started:performance.now(),
+      rate:v421JogBaseRate(letter)
+    };
+  }
+  const r=v423OldJogTouch(letter,on,searchTouch);
+  if(!searchTouch&&!on&&slip&&d?.item){
+    const a=nevoV423.slipAnchor[letter];
+    if(a){
+      const dur=d.audio.duration||d.buffer?.duration||0;
+      const expected=a.time+Math.max(0,(performance.now()-a.started)/1000)*(Number(a.rate)||1);
+      try{d.audio.currentTime=clamp(expected,0,dur||0)}catch{}
+      nevoV423.slipAnchor[letter]=null;
+      try{v422ForceDeckPositionUi(letter)}catch{}
+    }
+  }
+  return r;
+};
+
+// Also keep the compact buttons in sync when other code/hardware changes Q/MT/range.
+const v423OldRefreshFlx=refreshFlx4Ui;
+refreshFlx4Ui=function(){
+  const r=v423OldRefreshFlx();
+  v423RefreshDeckOptionUi('A');v423RefreshDeckOptionUi('B');
+  return r;
+};
+
+// RANGE is controlled by the dedicated deck button to avoid accidental BEAT SYNC taps.
+for(const L of ['A','B'])v423RefreshDeckOptionUi(L);
+console.info('NÉVO v4.2.3: RANGE / SLIP / Q / MT touch controls active on both decks');
