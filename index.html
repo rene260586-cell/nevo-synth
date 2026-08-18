@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.7</title>
+  <title>NÉVO Studio v3.8</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.7</span></div>
+        <div class="brand-sub">STUDIO <span>v3.8</span></div>
       </div>
 
       <div class="transport">
@@ -129,8 +129,8 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v3.7</strong>
-            <span>Performance-Pads sind jetzt vollständig: HOT CUE / PAD FX1 / BEAT JUMP / SAMPLER und mit SHIFT die zweite Ebene KEYBOARD / PAD FX2 / BEAT LOOP / KEY SHIFT. MIDI LEARN weiter erst ganz am Ende komplett belegen.</span>
+            <strong>DDJ-FLX4 MODUS · v3.8</strong>
+            <span>Browser/LOAD, Instant Doubles, Smart CFX, Smart Fader und Tempo-Range sind jetzt aktiv. MIDI LEARN weiterhin erst ganz am Ende komplett belegen.</span>
           </div>
 
           <section class="flx4-parallel-wave" aria-label="Parallele Deck-Wellenformen">
@@ -157,7 +157,7 @@
                 <button data-flx-action="A.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
                 <button data-flx-action="A.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
                 <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="A.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="A.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
-                <button class="flx4-sync" data-flx-action="A.sync" type="button"><b>BEAT</b><small>SYNC</small></button>
+                <button class="flx4-sync" data-flx-action="A.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxATempoRange">±16%</em></button>
               </div>
               <div class="flx4-loop-strip" data-loop-strip="A">
                 <span>LOOP-LÄNGE</span><button data-flx-action="A.loopHalf" type="button">½×</button>
@@ -185,8 +185,13 @@
             <section class="flx4-mixer-section v34-mixer">
               <div class="flx4-browser-top">
                 <button data-flx-action="library.loadA" type="button">LOAD A</button>
-                <div class="flx4-browser-knob"><button data-flx-action="library.prev" type="button">◀</button><b>BROWSE</b><button data-flx-action="library.next" type="button">▶</button><small id="flxBrowseTitle">BIBLIOTHEK</small><button class="sub" data-flx-action="library.back" type="button">BACK</button><button class="sub" data-flx-action="library.view" type="button">VIEW</button></div>
+                <div class="flx4-browser-knob"><button data-flx-action="library.prev" type="button">◀</button><button class="browse-center" data-flx-action="library.open" type="button"><b>BROWSE</b><small>DRÜCKEN</small></button><button data-flx-action="library.next" type="button">▶</button><small id="flxBrowseTitle">BIBLIOTHEK</small><button class="sub" data-flx-action="library.back" type="button">BACK</button><button class="sub" data-flx-action="library.view" type="button">VIEW</button></div>
                 <button data-flx-action="library.loadB" type="button">LOAD B</button>
+              </div>
+              <div id="flxBrowserPanel" class="flx4-browser-panel">
+                <div class="flx4-browser-panel-head"><span id="flxBrowserFocus">TRACKS</span><b id="flxBrowserCrate">ALLE SONGS</b><small id="flxBrowserCount">0 / 0</small></div>
+                <div class="flx4-browser-columns"><span>TITEL</span><span>BPM</span><span>KEY</span><span>LÄNGE</span></div>
+                <div id="flxBrowserList" class="flx4-browser-list"><div class="flx4-browser-empty">Noch keine Songs geladen.</div></div>
               </div>
               <div class="flx4-mixer-brand"><strong>NÉVO</strong><span>FLX4 CONTROL</span></div>
               <div class="flx4-mixer-columns">
@@ -206,7 +211,7 @@
                   <label class="flx4-master-knob">MIC LEVEL<input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
                   <label class="flx4-master-knob">HEADPHONES MIX<input data-flx-action="headphones.mix" type="range" min="0" max="1" step="0.01" value="0.5"></label>
                   <label class="flx4-master-knob">CUE LEVEL<input data-flx-action="cue.level" type="range" min="0" max="1" step="0.01" value="0.75"></label>
-                  <div class="flx4-smart-row"><button data-flx-action="smart.cfx" type="button">SMART CFX</button><button data-flx-action="smart.fader" type="button">SMART FADER</button></div>
+                  <div class="flx4-smart-row"><button data-flx-action="smart.cfx" type="button">SMART CFX<small id="flxSmartCfxState">P1 · AUS</small></button><button data-flx-action="smart.fader" type="button">SMART FADER<small id="flxSmartFaderState">P1 · AUS</small></button></div>
                   <div class="flx4-mid-buttons"><button data-flx-action="A.keylock" type="button">KEY LOCK A</button><button data-flx-action="B.keylock" type="button">KEY LOCK B</button></div>
                   <div class="flx4-mid-buttons v31"><button data-flx-action="A.synclock" type="button">SYNC LOCK A</button><button data-flx-action="B.synclock" type="button">SYNC LOCK B</button></div>
                   <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small><em>Erst Ziel anklicken, dann Hardware bewegen.</em></div>
@@ -252,7 +257,7 @@
                 <button data-flx-action="B.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
                 <button data-flx-action="B.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
                 <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="B.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="B.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
-                <button class="flx4-sync" data-flx-action="B.sync" type="button"><b>BEAT</b><small>SYNC</small></button>
+                <button class="flx4-sync" data-flx-action="B.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxBTempoRange">±16%</em></button>
               </div>
               <div class="flx4-loop-strip" data-loop-strip="B">
                 <span>LOOP-LÄNGE</span><button data-flx-action="B.loopHalf" type="button">½×</button>
