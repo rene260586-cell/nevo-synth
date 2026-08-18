@@ -759,3 +759,43 @@ body.flx-compact-mode .flx4-controller{grid-template-columns:minmax(275px,1.04fr
   body.flx-compact-mode .flx4-browser-panel{min-height:220px!important}
   body.flx-compact-mode .flx4-browser-panel.expanded{min-height:280px!important}
 }
+
+
+/* ===== v4.1.4: restore v4.1.2 layout + slim rotary mapping beside center ===== */
+.flx4-mapping-drawer{display:none!important}
+.flx4-center-workspace{display:grid;grid-template-columns:82px minmax(0,1fr) 82px;gap:7px;align-items:start;margin-top:4px}
+.flx4-center-core{min-width:0;display:grid;gap:5px}
+.flx4-side-mapper{min-width:0;border:1px solid rgba(255,255,255,.075);border-radius:11px;background:#071019;padding:6px 5px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.flx4-rotary-stack{display:grid;grid-template-columns:1fr;gap:5px;width:100%}
+.flx4-rotary-stack label{display:grid;grid-template-columns:25px 1fr;align-items:center;gap:4px;font-size:5.5px;font-weight:950;color:#cbd8e1;letter-spacing:.05em}
+.flx4-side-mapper.deck-a .flx4-rotary-stack label{color:#83e7ff}
+.flx4-side-mapper.deck-b .flx4-rotary-stack label{color:#ffd09a}
+.flx4-rotary{justify-self:center;width:31px;height:31px;min-height:31px;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:radial-gradient(circle at 37% 30%,#405366,#192531 58%,#080d12 72%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),0 4px 9px rgba(0,0,0,.34);position:relative}
+.flx4-rotary:after{content:'';position:absolute;left:50%;top:4px;width:2px;height:9px;border-radius:2px;background:#f6f9fb;transform:translateX(-50%)}
+.flx4-side-mapper.deck-a .flx4-rotary{box-shadow:inset 0 0 0 1px rgba(84,216,255,.16),0 4px 9px rgba(0,0,0,.34)}
+.flx4-side-mapper.deck-b .flx4-rotary{box-shadow:inset 0 0 0 1px rgba(255,181,94,.16),0 4px 9px rgba(0,0,0,.34)}
+.flx4-rotary-stack input[data-flx-action]{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+.flx4-channel-cue.v414-cue{width:100%;min-height:28px;padding:3px 4px;border-radius:8px;font-size:7px;font-weight:1000}
+.v414-channel-fader{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;font-size:5px;font-weight:950;color:#879aa9}
+.v414-channel-fader input{writing-mode:vertical-lr;direction:rtl;height:72px;width:28px;accent-color:#54d8ff}
+.flx4-side-mapper.deck-b .v414-channel-fader input{accent-color:#ffb55e}
+.v414-utility-mapping{margin-top:1px;border:1px solid rgba(255,255,255,.06);border-radius:7px;background:#070c11}
+.v414-utility-mapping summary{cursor:pointer;list-style:none;text-align:center;padding:4px 6px;font-size:5px;font-weight:900;color:#7f92a2;letter-spacing:.06em}
+.v414-utility-mapping summary::-webkit-details-marker{display:none}
+.v414-utility-grid{padding:5px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.v414-utility-grid label{display:flex;flex-direction:column;gap:1px;font-size:4.6px;font-weight:900;color:#98a8b5;text-align:center}
+.v414-utility-grid input{width:100%;height:10px}
+.v414-utility-grid button{min-height:22px;padding:2px 3px;font-size:4.8px}
+.v414-utility-grid .flx4-midi-card{grid-column:1/-1;padding:3px;font-size:4.8px}
+.flx4-center-core .flx4-beatfx{margin-top:0}
+.flx4-center-core .flx4-cross{margin-top:1px}
+.flx4-center-core .flx-reset{display:none!important}
+body.flx-compact-mode .flx4-center-workspace{grid-template-columns:72px minmax(0,1fr) 72px;gap:5px}
+body.flx-compact-mode .flx4-side-mapper{padding:4px 3px;gap:4px;border-radius:8px}
+body.flx-compact-mode .flx4-rotary-stack{gap:3px}
+body.flx-compact-mode .flx4-rotary-stack label{grid-template-columns:21px 1fr;font-size:4.7px;gap:2px}
+body.flx-compact-mode .flx4-rotary{width:25px;height:25px;min-height:25px}
+body.flx-compact-mode .flx4-rotary:after{top:3px;height:7px}
+body.flx-compact-mode .flx4-channel-cue.v414-cue{min-height:22px;font-size:5.5px}
+body.flx-compact-mode .v414-channel-fader input{height:58px}
+@media(max-width:1050px){.flx4-center-workspace{grid-template-columns:70px minmax(0,1fr) 70px}.flx4-rotary{width:26px;height:26px;min-height:26px}.flx4-rotary-stack label{grid-template-columns:20px 1fr;font-size:4.6px}}
