@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.0',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.1',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2514,7 +2514,7 @@ v414BindRotaryTargets();
 console.info('NÉVO v4.1.4: rotary mixer mapping sidebars loaded');
 
 
-// ===== v4.2.0: compact vertical Beat FX rail + real Level/Depth screen knob =====
+// ===== v4.2.1: compact vertical Beat FX rail + real Level/Depth screen knob =====
 function v415RefreshFxLevelKnob(){
   const knob=document.getElementById('flxFxLevelKnob');if(!knob)return;
   const v=Math.max(0,Math.min(1,Number(nevoV34?.fx?.level)||0));
@@ -2546,4 +2546,123 @@ flxSetContinuous=function(action,norm,fromMidi=false){const r=v415OldSetContinuo
 const v415OldRefreshFx=v34RefreshFx;
 v34RefreshFx=function(){const r=v415OldRefreshFx();v415RefreshFxLevelKnob();return r};
 v415BindFxLevelKnob();setTimeout(v415BindFxLevelKnob,300);v415RefreshFxLevelKnob();
-console.info('NÉVO v4.2.0: compact vertical Beat FX rail active');
+console.info('NÉVO v4.2.1: compact vertical Beat FX rail active');
+
+// ===== v4.2.1: native DDJ-FLX4 jogwheel engine =====
+// The FLX4 jogs are handled directly from their native MIDI messages instead of MIDI Learn.
+// This keeps scratch / bend / fast-search independent from the user's saved button mappings.
+const nevoV421Jog={
+  A:{touch:false,searchTouch:false,wasPlaying:false,bendTimer:0,vinyl:true,announced:false},
+  B:{touch:false,searchTouch:false,wasPlaying:false,bendTimer:0,vinyl:true,announced:false}
+};
+const V421_JOG_TICKS_PER_REV=720;
+const V421_JOG_REV_SECONDS=60/(33+1/3); // ~1.8 s per revolution
+const V421_SCRATCH_SEC_PER_TICK=V421_JOG_REV_SECONDS/V421_JOG_TICKS_PER_REV;
+
+function v421JogBaseRate(letter){
+  const pct=Number($(`#deck${letter}Pitch`)?.value)||0;
+  return clamp(1+pct/100,.5,2);
+}
+function v421JogDeck(letter){return djDecks?.[letter]||null}
+function v421JogClass(letter,on,kind='touch'){
+  const el=$(`#flx${letter}Jog`);if(!el)return;
+  el.classList.toggle('jog-touching',kind==='touch'&&!!on);
+  el.classList.toggle('jog-searching',kind==='search'&&!!on);
+}
+function v421RefreshVinylUi(letter){
+  const st=nevoV421Jog[letter],el=$(`#flx${letter}Jog`);if(el)el.classList.toggle('vinyl-on',!!st.vinyl);
+}
+function v421ToggleVinyl(letter){
+  const st=nevoV421Jog[letter];st.vinyl=!st.vinyl;v421RefreshVinylUi(letter);
+  setStatus(true,'JOG / VINYL',`DECK ${letter} · ${st.vinyl?'VINYL / SCRATCH AN':'JOG / PITCH BEND'}`);
+}
+function v421RestoreJogRate(letter){
+  const st=nevoV421Jog[letter],d=v421JogDeck(letter);if(!d?.audio)return;
+  if(st.bendTimer){clearTimeout(st.bendTimer);st.bendTimer=0}
+  if(!st.touch&&!st.searchTouch)d.audio.playbackRate=v421JogBaseRate(letter);
+}
+function v421JogTouch(letter,on,searchTouch=false){
+  const d=v421JogDeck(letter),st=nevoV421Jog[letter];if(!d?.item)return;
+  if(searchTouch){st.searchTouch=!!on;v421JogClass(letter,on,'search');if(!on)v421RestoreJogRate(letter);return}
+  if(on&&!st.touch){
+    st.touch=true;st.wasPlaying=!d.audio.paused;v421JogClass(letter,true,'touch');
+    if(st.vinyl&&st.wasPlaying)d.audio.pause();
+  }else if(!on&&st.touch){
+    st.touch=false;v421JogClass(letter,false,'touch');v421RestoreJogRate(letter);
+    if(st.vinyl&&st.wasPlaying){try{const p=d.audio.play();p?.catch?.(()=>{})}catch{}}
+    st.wasPlaying=false;refreshDeckUi(letter);
+  }
+}
+function v421JogScratch(letter,delta){
+  const d=v421JogDeck(letter);if(!d?.item||!delta)return;
+  const dur=d.audio.duration||d.buffer?.duration||0;
+  try{d.audio.currentTime=clamp((d.audio.currentTime||0)+delta*V421_SCRATCH_SEC_PER_TICK,0,dur||0)}catch{}
+  drawDeckZoom(letter,false);v34DrawStack?.(letter,false);
+}
+function v421JogBend(letter,delta){
+  const d=v421JogDeck(letter),st=nevoV421Jog[letter];if(!d?.item||!delta)return;
+  if(d.audio.paused){
+    const dur=d.audio.duration||d.buffer?.duration||0;
+    try{d.audio.currentTime=clamp((d.audio.currentTime||0)+delta*.006,0,dur||0)}catch{}
+    return;
+  }
+  const base=v421JogBaseRate(letter),bend=clamp(delta*.0075,-.32,.32);
+  d.audio.playbackRate=clamp(base*(1+bend),.25,3);
+  if(st.bendTimer)clearTimeout(st.bendTimer);
+  st.bendTimer=setTimeout(()=>{st.bendTimer=0;if(!st.touch&&!st.searchTouch)d.audio.playbackRate=v421JogBaseRate(letter)},72);
+}
+function v421JogSearch(letter,delta){
+  const d=v421JogDeck(letter);if(!d?.item||!delta)return;
+  const dur=d.audio.duration||d.buffer?.duration||0;
+  try{d.audio.currentTime=clamp((d.audio.currentTime||0)+delta*.085,0,dur||0)}catch{}
+  drawDeckZoom(letter,false);v34DrawStack?.(letter,false);
+}
+function v421IsFlx4Input(e){
+  const name=String(e?.currentTarget?.name||e?.target?.name||'').toUpperCase();
+  // Some browsers expose a generic MIDI input name. If a name is present and clearly
+  // not an FLX4, don't steal CCs from another controller.
+  return !name||name.includes('FLX4')||name.includes('DDJ-FLX4');
+}
+function v421HandleNativeJogMidi(e){
+  if(!v421IsFlx4Input(e))return false;
+  const raw=e.data||[];if(raw.length<3)return false;
+  const status=raw[0]||0,type=status&0xF0,ch=status&0x0F,control=raw[1]||0,value=raw[2]||0;
+  if(ch!==0&&ch!==1)return false;
+  const letter=ch===0?'A':'B',st=nevoV421Jog[letter];
+  // Native FLX4 jog CCs: side=0x21, platter/scratch=0x22, platter/bend=0x23,
+  // SHIFT fast-search=0x29. Center value is 64: below=reverse, above=forward.
+  if(type===0xB0&&(control===0x21||control===0x22||control===0x23||control===0x29)){
+    const parsed=flxMidiMessageKey(raw);updateFlxMidiMonitor(raw,parsed.key,parsed.norm);
+    const delta=value-64;if(!delta)return true;
+    if(!st.announced){st.announced=true;flxStatus(`DDJ-FLX4 Jog ${letter} automatisch erkannt`,'connected')}
+    if(control===0x29)return v421JogSearch(letter,delta),true;
+    if(control===0x21||control===0x23)return v421JogBend(letter,delta),true;
+    if(control===0x22){
+      if(st.vinyl&&st.touch)v421JogScratch(letter,delta);else v421JogBend(letter,delta);
+      return true;
+    }
+  }
+  // Platter touch: Note 0x36. SHIFT-touch / high-speed mode: Note 0x67.
+  if((type===0x90||type===0x80)&&(control===0x36||control===0x67)){
+    const parsed=flxMidiMessageKey(raw);updateFlxMidiMonitor(raw,parsed.key,parsed.norm);
+    const on=type===0x90&&value>0;
+    v421JogTouch(letter,on,control===0x67);return true;
+  }
+  return false;
+}
+
+// Native jog handling is intentionally the final MIDI layer so it cannot be overwritten
+// by an older user mapping or by the generic MIDI-learn system.
+const v421OldMidiHandler=handleFlxMidiMessage;
+handleFlxMidiMessage=function(e){if(v421HandleNativeJogMidi(e))return;return v421OldMidiHandler(e)};
+
+// FLX4 convention: SHIFT + OUT toggles Jog/Vinyl mode. Normal OUT remains loop-out.
+const v421OldTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  const m=String(action||'').match(/^([AB])\.loopOut$/);
+  if(m&&nevoV34?.shift?.[m[1]])return v421ToggleVinyl(m[1]);
+  return v421OldTrigger(action);
+};
+
+for(const L of ['A','B'])v421RefreshVinylUi(L);
+console.info('NÉVO v4.2.1: native DDJ-FLX4 jogwheel scratch / pitch-bend / fast-search enabled');
