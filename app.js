@@ -873,7 +873,19 @@ async function analyzeDjItem(item,showStatus=true){
   try{const buffer=await ensureDjItemBuffer(item),r=analyzeBpmBuffer(buffer);item.bpm=r.bpm||item.bpm||150;item.beatOffset=r.beatOffset||0;item.confidence=r.confidence||0;item.duration=buffer.duration;item.analyzing=false;await saveDjItem(item);renderDjLibrary();for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){djDecks[L].detectedBpm=item.bpm;djDecks[L].beatOffset=item.beatOffset;$(`#deck${L}Bpm`).value=item.bpm;refreshDeckUi(L);drawDeckOverview(L);drawDeckZoom(L,true)}if(showStatus)setStatus(true,currentLang==='de'?'Analyse fertig':'Analysis ready',`${item.bpm.toFixed(1)} BPM · ${Math.round(item.confidence*100)}%`);return r}catch(e){item.analyzing=false;console.warn(e);renderDjLibrary();return null}
 }
 function queueDjAnalysis(item){djAnalysisQueue=djAnalysisQueue.then(()=>analyzeDjItem(item,false)).catch(()=>null);return djAnalysisQueue}
-async function ensureDjItemBuffer(item){if(item.buffer)return item.buffer;await initAudio();const blob=item.file||item.blob;if(!blob)throw new Error('Audio file missing');const arr=await blob.arrayBuffer();item.buffer=await ctx.decodeAudioData(arr.slice(0));item.duration=item.buffer.duration;if(!item.title)item.title=cleanDjTitle(item.name);renderDjLibrary();return item.buffer}
+async function ensureDjItemBuffer(item){
+  if(!item)throw new Error('Audio item missing');
+  if(item.buffer){try{v425BuildWaveCache(item.buffer)}catch{}return item.buffer}
+  if(item._decodePromise)return item._decodePromise;
+  item._decodePromise=(async()=>{
+    await initAudio();const blob=item.file||item.blob;if(!blob)throw new Error('Audio file missing');
+    const arr=await blob.arrayBuffer(),buffer=await ctx.decodeAudioData(arr.slice(0));
+    item.buffer=buffer;item.duration=buffer.duration;if(!item.title)item.title=cleanDjTitle(item.name);
+    try{v425BuildWaveCache(buffer)}catch{}
+    return buffer;
+  })();
+  try{return await item._decodePromise}finally{item._decodePromise=null}
+}
 
 function renderDjLibrary(){
   const box=$('#djLibraryList');if(!box)return;const q=($('#djLibrarySearch')?.value||'').trim().toLowerCase(),items=djLibrary.filter(item=>!q||`${item.title||''} ${item.name||''}`.toLowerCase().includes(q)).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));if(!items.length){box.innerHTML=`<div class="dj-empty">${djLibrary.length?(currentLang==='de'?'Keine Treffer.':'No matches.'):t('djEmpty')}</div>`;return}
@@ -907,7 +919,12 @@ function setLanguage(lang){currentLang=lang==='en'?'en':'de';applyLanguageToUI(t
 async function clearDjLibraryAll(){if(!confirm(currentLang==='de'?'Player-Bibliothek wirklich leeren?':'Clear the player library?'))return;for(const d of Object.values(djDecks)){d.audio.pause();d.item=null;d.buffer=null;d.hotCues=[null,null,null,null,null,null,null,null]}for(const item of djLibrary){try{if(item.url)URL.revokeObjectURL(item.url)}catch{}}djLibrary.splice(0);await clearDjDb();renderDjLibrary();refreshAllDeckUi();setStatus(audioReady,currentLang==='de'?'Bibliothek geleert':'Library cleared','')}
 function bindDjPlayer(){
   if(!$('#djImport'))return;
-  $('#djImport').onchange=async e=>{const files=[...e.target.files];for(const f of files){const item={id:uid()+Date.now().toString(36),file:f,blob:f,name:f.name,title:cleanDjTitle(f.name),url:URL.createObjectURL(f),buffer:null,duration:0,bpm:0,beatOffset:0,confidence:0,key:'—',phrases:[],hotCues:[null,null,null,null,null,null,null,null],cue:0,addedAt:Date.now()};djLibrary.push(item);await saveDjItem(item);queueDjAnalysis(item)}renderDjLibrary();e.target.value=''};
+  $('#djImport').onchange=e=>{
+    const files=[...e.target.files],added=[];
+    for(const f of files){const item={id:uid()+Date.now().toString(36)+Math.random().toString(36).slice(2,5),file:f,blob:f,name:f.name,title:cleanDjTitle(f.name),url:URL.createObjectURL(f),buffer:null,duration:0,bpm:0,beatOffset:0,confidence:0,key:'—',phrases:[],hotCues:[null,null,null,null,null,null,null,null],cue:0,addedAt:Date.now(),v425AnalysisQueued:true};djLibrary.push(item);added.push(item)}
+    renderDjLibrary();e.target.value='';
+    for(const item of added){saveDjItem(item).catch(()=>{});queueDjAnalysis(item)}
+  };
   $('#djLibrarySearch').oninput=renderDjLibrary;$('#djAnalyzeAll').onclick=()=>{for(const item of djLibrary)queueDjAnalysis(item)};$('#djClearLibrary').onclick=clearDjLibraryAll;
   for(const L of ['A','B']){
     $(`#deck${L}Play`).onclick=()=>toggleDeck(L);$(`#deck${L}Stop`).onclick=()=>stopDeck(L);$(`#deck${L}Cue`).onclick=()=>cueDeck(L);$(`#deck${L}SetCue`).onclick=()=>setDeckCue(L);$(`#deck${L}Sync`).onclick=()=>syncDeck(L);$(`#deck${L}Analyze`).onclick=()=>djDecks[L].item&&analyzeDjItem(djDecks[L].item,true);$(`#deck${L}KeyLock`).onclick=()=>toggleDeckKeyLock(L);$(`#deck${L}Pitch`).oninput=()=>updateDeckRate(L);$(`#deck${L}Volume`).oninput=updateCrossfaderGains;$(`#deck${L}Loop`).onchange=()=>setDeckLoop(L);$(`#deck${L}AddArranger`).onclick=()=>addDeckToArranger(L);$(`#deck${L}GridMinus`).onclick=()=>nudgeBeatgrid(L,-.01);$(`#deck${L}GridPlus`).onclick=()=>nudgeBeatgrid(L,.01);$(`#deck${L}GridHere`).onclick=()=>gridHere(L);$(`#deck${L}TapBpm`).onclick=()=>tapBpm(L);$(`#deck${L}Bpm`).onchange=()=>{const d=djDecks[L],v=djDeckBpm(L);d.detectedBpm=v;if(d.item){d.item.bpm=v;persistDeckMeta(L)}drawDeckOverview(L);drawDeckZoom(L,true);refreshDeckUi(L)};document.querySelectorAll(`.dj-wave-wrap[data-deck="${L}"]`).forEach(w=>w.onclick=e=>deckSeekFromWave(L,e));document.querySelectorAll(`.hotcue[data-deck="${L}"]`).forEach(bindHotCueButton);djDecks[L].audio.addEventListener('play',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('pause',()=>refreshDeckUi(L));djDecks[L].audio.addEventListener('ended',()=>refreshDeckUi(L))
@@ -1038,7 +1055,7 @@ function refreshFlx4Ui(){
   }
   if($('#flxCrossfader')&&document.activeElement!==$('#flxCrossfader'))$('#flxCrossfader').value=$('#djCrossfader')?.value||0;
 }
-function startFlxTicker(){let last=0;const tick=ts=>{if(!window.__nevoScrolling&&ts-last>80){last=ts;refreshFlx4Ui()}requestAnimationFrame(tick)};requestAnimationFrame(tick)}
+function startFlxTicker(){let last=0;const tick=ts=>{if(!window.__nevoScrolling&&ts-last>40){last=ts;refreshFlx4Ui()}requestAnimationFrame(tick)};requestAnimationFrame(tick)}
 
 function flxMidiMessageKey(data){
   const status=data[0]||0,type=status&0xF0,ch=status&0x0F,d1=data[1]||0,d2=data[2]||0;
@@ -1047,7 +1064,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.4',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.5',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -1442,12 +1459,12 @@ v3AnalyzeTrack=v32AnalyzeTrack;analyzeDjItem=v32AnalyzeTrack;
 // Persist v3.2 library metadata without changing the existing IndexedDB schema.
 saveDjItem=async function(item){
   const db=await openDjDb();if(!db||!item)return;const blob=item.blob||item.file;if(!blob)return;
-  const row={id:item.id,name:item.name,title:item.title||cleanDjTitle(item.name),artist:item.artist||'',crate:item.crate||'',rating:clamp(Number(item.rating)||0,0,5),comment:item.comment||'',bpm:Number(item.bpm)||0,duration:Number(item.duration)||0,beatOffset:Number(item.beatOffset)||0,confidence:Number(item.confidence)||0,analysisProfile:item.analysisProfile||'',key:item.key||'—',phrases:Array.isArray(item.phrases)?item.phrases:[],hotCues:Array.isArray(item.hotCues)?item.hotCues:[null,null,null,null,null,null,null,null],cue:Number(item.cue)||0,blob,type:blob.type||'audio/*',addedAt:item.addedAt||Date.now()};
+  const row={id:item.id,name:item.name,title:item.title||cleanDjTitle(item.name),artist:item.artist||'',crate:item.crate||'',rating:clamp(Number(item.rating)||0,0,5),comment:item.comment||'',bpm:Number(item.bpm)||0,duration:Number(item.duration)||0,beatOffset:Number(item.beatOffset)||0,confidence:Number(item.confidence)||0,analysisProfile:item.analysisProfile||'',key:item.key||'—',phrases:Array.isArray(item.phrases)?item.phrases:[],hotCues:Array.isArray(item.hotCues)?item.hotCues:[null,null,null,null,null,null,null,null],cue:Number(item.cue)||0,wave32:item.v425Wave32||null,blob,type:blob.type||'audio/*',addedAt:item.addedAt||Date.now()};
   try{await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readwrite');tx.objectStore(DJ_DB_STORE).put(row);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch(e){console.warn('DJ library save failed',e)}
 };
 async function v32MergePersistedMeta(){
   const db=await openDjDb();if(!db)return;let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),r=tx.objectStore(DJ_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return}
-  for(const row of rows){const item=djLibrary.find(x=>x.id===row.id);if(!item)continue;item.artist=row.artist||item.artist||'';item.crate=row.crate||item.crate||'';item.rating=Number(row.rating)||item.rating||0;item.comment=row.comment||item.comment||'';item.analysisProfile=row.analysisProfile||item.analysisProfile||''}
+  for(const row of rows){const item=djLibrary.find(x=>x.id===row.id);if(!item)continue;item.artist=row.artist||item.artist||'';item.crate=row.crate||item.crate||'';item.rating=Number(row.rating)||item.rating||0;item.comment=row.comment||item.comment||'';item.analysisProfile=row.analysisProfile||item.analysisProfile||'';item.v425Wave32=row.wave32||item.v425Wave32||null}
   renderDjLibrary();v32RefreshCrateOptions()
 }
 
@@ -2095,7 +2112,7 @@ console.info('NÉVO v4.0.2 scroll fix active: browser rebuild removed from FLX t
       if(!force){
         try{updateDeckZoomWindow(letter)}catch{}
         if(d.audio?.paused)return; // a paused deck does not need continuous repaint
-        if(now-(d._v403ZoomPaint||0)<180)return;
+        if(now-(d._v403ZoomPaint||0)<50)return;
         d._v403ZoomPaint=now;
       }
       return baseDrawDeckZoom(letter,force);
@@ -2112,7 +2129,7 @@ console.info('NÉVO v4.0.2 scroll fix active: browser rebuild removed from FLX t
       const now=performance.now();
       if(!force){
         if(d?.audio?.paused && d?._v403StackPaint)return;
-        if(now-(d?._v403StackPaint||0)<160)return;
+        if(now-(d?._v403StackPaint||0)<45)return;
         if(d)d._v403StackPaint=now;
       }
       return baseDrawStack(letter,force);
@@ -2926,102 +2943,138 @@ for(const L of ['A','B'])v423RefreshDeckOptionUi(L);
 console.info('NÉVO v4.2.4: RANGE / SLIP / Q / MT touch controls active on both decks');
 
 
-// ===== v4.2.4: library waveform previews + comparison helpers =====
-// Every track in the FLX4 browser gets a compact colored waveform preview.
-// The same color logic as the deck waveform is used so visual comparison is
-// meaningful before a track is loaded. Subtle 4-bar markers appear after BPM
-// analysis, making phrase density and arrangement structure easier to compare.
-const v424MiniWaveObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries=>{
-  for(const entry of entries){
-    if(!entry.isIntersecting)continue;
-    const canvas=entry.target,item=canvas._v424Item;
-    v424MiniWaveObserver.unobserve(canvas);
-    if(item)v424EnsureMiniWave(canvas,item);
-  }
-},{root:null,rootMargin:'180px 0px',threshold:.01}) : null;
-
-function v424BuildMiniWave(buffer,bins=180){
-  if(!buffer)return null;
-  const data=buffer.getChannelData(0),len=data.length,out=new Array(bins);
+// ===== v4.2.5: 32-BEAT TRUE MINI WAVES + INSTANT/FLUID WAVE PIPELINE =====
+// The library preview is now a real 32-beat excerpt using the same waveform
+// statistics, colors and beat grid as the large parallel deck waveform.
+// Analysis/decode work is cached once so live deck waveforms can repaint quickly.
+const v425WaveCache=new WeakMap();
+function v425BuildWaveCache(buffer){
+  if(!buffer)return null;let cached=v425WaveCache.get(buffer);if(cached)return cached;
+  const data=buffer.getChannelData(0),len=data.length;
+  const bins=clamp(Math.round((buffer.duration||1)*52),4096,16384);
+  const peak=new Uint8Array(bins),mean=new Uint8Array(bins),zero=new Uint8Array(bins);
   for(let x=0;x<bins;x++){
-    const i0=Math.floor(x/bins*len),i1=Math.max(i0+1,Math.floor((x+1)/bins*len));
-    out[x]=djColumnStats(data,i0,Math.min(len,i1));
+    const i0=Math.floor(x/bins*len),i1=Math.max(i0+1,Math.floor((x+1)/bins*len)),st=djColumnStats(data,i0,Math.min(len,i1));
+    peak[x]=clamp(Math.round((st.peak||0)*255),0,255);mean[x]=clamp(Math.round((st.mean||0)*255),0,255);zero[x]=clamp(Math.round((st.z||0)*255),0,255);
   }
-  return out;
+  cached={duration:buffer.duration||0,bins,peak,mean,zero};v425WaveCache.set(buffer,cached);return cached
 }
-function v424DrawMiniWave(canvas,item){
-  if(!canvas?.isConnected||!item)return;
-  const rect=canvas.getBoundingClientRect(),w=Math.max(90,Math.round(rect.width||180)),h=Math.max(14,Math.round(rect.height||18));
-  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
-  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+function v425CacheStats(cache,startSec,endSec,x,width){
+  const dur=Math.max(.001,cache.duration||1),a=clamp(startSec/dur,0,1),b=clamp(endSec/dur,0,1);
+  let i0=Math.floor((a+(b-a)*x/width)*cache.bins),i1=Math.ceil((a+(b-a)*(x+1)/width)*cache.bins);
+  i0=clamp(i0,0,cache.bins-1);i1=clamp(Math.max(i0+1,i1),i0+1,cache.bins);
+  let pk=0,m=0,z=0,n=0;const stride=Math.max(1,Math.floor((i1-i0)/8));
+  for(let i=i0;i<i1;i+=stride){pk=Math.max(pk,cache.peak[i]);m+=cache.mean[i];z+=cache.zero[i];n++}
+  return {peak:pk/255,mean:(n?m/n:0)/255,z:(n?z/n:0)/255}
+}
+function v425PaintWaveBackground(c,w,h){
+  const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#020609');bg.addColorStop(.5,'#07141d');bg.addColorStop(1,'#020609');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  c.fillStyle='rgba(255,255,255,.025)';c.fillRect(0,h/2-1,w,2)
+}
+function v425PaintGrid(c,w,h,start,end,bpm,offset,labels=true){
+  bpm=Number(bpm)||0;if(!(bpm>0)||!(end>start))return;const period=60/bpm,off=djNormalizeOffset(Number(offset)||0,period);
+  let n=Math.ceil((start-off)/period);for(let tt=off+n*period;tt<=end+.0001;tt+=period,n++){
+    const x=(tt-start)/(end-start)*w,beat=((n%4)+4)%4+1,strong=beat===1;
+    c.strokeStyle=strong?'rgba(255,181,94,.34)':'rgba(255,255,255,.11)';c.lineWidth=strong?1.3:1;c.beginPath();c.moveTo(Math.round(x)+.5,0);c.lineTo(Math.round(x)+.5,h);c.stroke();
+    if(labels&&w>150&&h>=15){c.fillStyle=strong?'rgba(255,205,145,.78)':'rgba(215,231,240,.46)';c.font=`${Math.max(5,Math.min(7,h*.34))}px system-ui`;c.fillText(String(beat),x+2,Math.max(6,h*.32))}
+  }
+}
+// Replace raw per-pixel scans with the precomputed multi-resolution summary.
+const v425RawDrawDjWaveRange=drawDjWaveRange;
+drawDjWaveRange=function(buffer,canvas,startSec=0,endSec=null,letter='A',showGrid=true){
+  if(!buffer||!canvas)return;let cache;try{cache=v425BuildWaveCache(buffer)}catch{};if(!cache)return v425RawDrawDjWaveRange(buffer,canvas,startSec,endSec,letter,showGrid);
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),rect=canvas.getBoundingClientRect(),w=Math.max(220,Math.round(rect.width||900)),h=Math.max(70,Math.round(rect.height||130));
+  if(canvas.width!==Math.round(w*dpr))canvas.width=Math.round(w*dpr);if(canvas.height!==Math.round(h*dpr))canvas.height=Math.round(h*dpr);
   const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
-  const bins=item.v424MiniWave;if(!Array.isArray(bins)||!bins.length)return;
-  const bg=c.createLinearGradient(0,0,w,0);bg.addColorStop(0,'rgba(3,9,14,.88)');bg.addColorStop(.5,'rgba(6,17,25,.94)');bg.addColorStop(1,'rgba(3,9,14,.88)');c.fillStyle=bg;c.fillRect(0,0,w,h);
-  c.fillStyle='rgba(255,255,255,.045)';c.fillRect(0,h/2-.5,w,1);
-  // Phrase/grid aid: one subtle line every 4 bars (16 beats) once BPM is known.
-  const bpm=Number(item.bpm)||0,dur=Number(item.duration)||item.buffer?.duration||0,off=Number(item.beatOffset)||0;
-  if(bpm>0&&dur>0){
-    const period=60/bpm,step=period*16;
-    let t=off;while(t<0)t+=step;while(t-step>=0)t-=step;
-    let n=0;for(;t<=dur;t+=step,n++){
-      if(t<0)continue;const x=t/dur*w;c.strokeStyle=n%2?'rgba(255,255,255,.075)':'rgba(255,181,94,.13)';c.lineWidth=1;c.beginPath();c.moveTo(Math.round(x)+.5,1);c.lineTo(Math.round(x)+.5,h-1);c.stroke();
-    }
-  }
-  const mid=h/2;
-  for(let x=0;x<w;x++){
-    const idx=Math.min(bins.length-1,Math.floor(x/w*bins.length)),st=bins[idx]||{peak:0,mean:0,z:0};
-    const amp=Math.max(.8,Math.min(h*.47,(Number(st.peak)||0)*h*.46));
-    c.strokeStyle=djWaveColor(st,.98);c.lineWidth=1;c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke();
-  }
-  // A small warm/cool tint makes the preview read like the large NEVO waveform.
-  const tint=c.createLinearGradient(0,0,w,0);tint.addColorStop(0,'rgba(84,216,255,.06)');tint.addColorStop(.55,'rgba(177,107,255,.035)');tint.addColorStop(1,'rgba(255,181,94,.055)');c.fillStyle=tint;c.fillRect(0,0,w,h);
+  const dur=buffer.duration,end=clamp(endSec==null?dur:endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001));v425PaintWaveBackground(c,w,h);
+  if(showGrid){const d=djDecks?.[letter],bpm=d?djDeckBpm(letter):0;v425PaintGrid(c,w,h,start,end,bpm,d?.beatOffset||0,true)}
+  const mid=h/2;for(let x=0;x<w;x++){const st=v425CacheStats(cache,start,end,x,w),amp=Math.max(1.5,st.peak*(h*.47));c.strokeStyle=djWaveColor(st,.94);c.lineWidth=1;c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke()}
+  const glow=c.createLinearGradient(0,0,w,0);glow.addColorStop(0,letter==='A'?'rgba(84,216,255,.10)':'rgba(255,181,94,.10)');glow.addColorStop(.5,'rgba(177,107,255,.05)');glow.addColorStop(1,letter==='A'?'rgba(255,181,94,.06)':'rgba(84,216,255,.06)');c.fillStyle=glow;c.fillRect(0,0,w,h)
+};
+function v425Build32BeatPreview(item,buffer){
+  const bpm=Number(item?.bpm)||0;if(!buffer||!(bpm>0))return null;const period=60/bpm,dur=buffer.duration||0;if(!dur)return null;
+  let start=djNormalizeOffset(Number(item.beatOffset)||0,period);if(start>=dur)start=0;let end=Math.min(dur,start+period*32);
+  if(end-start<period*8&&dur>period*8){start=Math.max(0,dur-period*32);end=dur}
+  const cache=v425BuildWaveCache(buffer),cols=256,data=new Array(cols*3);
+  for(let x=0;x<cols;x++){const st=v425CacheStats(cache,start,end,x,cols),o=x*3;data[o]=clamp(Math.round(st.peak*255),0,255);data[o+1]=clamp(Math.round(st.mean*255),0,255);data[o+2]=clamp(Math.round(st.z*255),0,255)}
+  return {v:425,beats:32,start,end,bpm,beatOffset:Number(item.beatOffset)||0,cols,data}
 }
-async function v424EnsureMiniWave(canvas,item){
-  if(!canvas?.isConnected||!item)return;
-  if(item.v424MiniWave){v424DrawMiniWave(canvas,item);return}
-  if(canvas.dataset.loading==='1')return;canvas.dataset.loading='1';
-  try{
-    const buffer=await ensureDjItemBuffer(item);
-    item.v424MiniWave=v424BuildMiniWave(buffer,180);
-    if(canvas.isConnected)v424DrawMiniWave(canvas,item);
-  }catch(e){console.warn('Mini waveform preview failed',e)}finally{if(canvas?.dataset)canvas.dataset.loading='0'}
+function v425PreviewStats(preview,x,width){
+  const cols=preview.cols||Math.floor((preview.data?.length||0)/3),i=clamp(Math.floor(x/Math.max(1,width)*cols),0,Math.max(0,cols-1)),o=i*3,d=preview.data||[];
+  return {peak:(d[o]||0)/255,mean:(d[o+1]||0)/255,z:(d[o+2]||0)/255}
 }
-function v424QueueMiniWave(canvas,item){
-  if(!canvas||!item)return;canvas._v424Item=item;
-  if(v424MiniWaveObserver)v424MiniWaveObserver.observe(canvas);else setTimeout(()=>v424EnsureMiniWave(canvas,item),0);
+function v425DrawMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;const rect=canvas.getBoundingClientRect(),w=Math.max(72,Math.round(rect.width||180)),h=Math.max(13,Math.round(rect.height||17)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);v425PaintWaveBackground(c,w,h);
+  const p=item.v425Wave32;if(!p||!Array.isArray(p.data)||p.v!==425){c.fillStyle='rgba(126,148,164,.68)';c.font=`${Math.max(5,Math.min(7,h*.38))}px system-ui`;c.textAlign='center';c.fillText(item.analyzing||item.v425AnalysisQueued?(currentLang==='de'?'ANALYSE …':'ANALYZING …'):'32 BEATS',w/2,h*.64);c.textAlign='left';return}
+  v425PaintGrid(c,w,h,p.start,p.end,p.bpm,p.beatOffset,true);const mid=h/2;
+  for(let x=0;x<w;x++){const st=v425PreviewStats(p,x,w),amp=Math.max(.7,st.peak*(h*.46));c.strokeStyle=djWaveColor(st,.96);c.lineWidth=1;c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke()}
+  const tint=c.createLinearGradient(0,0,w,0);tint.addColorStop(0,'rgba(84,216,255,.06)');tint.addColorStop(.55,'rgba(177,107,255,.035)');tint.addColorStop(1,'rgba(255,181,94,.055)');c.fillStyle=tint;c.fillRect(0,0,w,h)
 }
-
-// Replace the compact FLX browser renderer with the same browser behavior plus
-// a waveform preview directly after each title. This keeps the row compact and
-// still lets roughly ten tracks remain visible on a laptop screen.
+async function v425PreparePreview(item,persist=true){
+  if(!item||item.analyzing||!(Number(item.bpm)>0))return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;
+  if(item.v425Wave32?.v===425)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.v425Wave32=v425Build32BeatPreview(item,buffer);if(persist&&item.v425Wave32)try{await saveDjItem(item)}catch{};return item.v425Wave32})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false}
+}
+const v425PreviewQueue=[];let v425PreviewBusy=false;
+function v425SchedulePreview(item){
+  if(!item||item.v425Wave32?.v===425||item.analyzing||item.v425PreviewQueued||!(Number(item.bpm)>0))return;
+  item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()
+}
+async function v425PumpPreviewQueue(){
+  if(v425PreviewBusy)return;v425PreviewBusy=true;
+  while(v425PreviewQueue.length){const item=v425PreviewQueue.shift();try{await new Promise(r=>requestAnimationFrame(()=>r()));await v425PreparePreview(item,true)}catch(e){console.warn('32-beat preview failed',e)}finally{item.v425PreviewQueued=false}try{v38RenderBrowser()}catch{}}
+  v425PreviewBusy=false
+}
+// Serial analysis remains deliberate, but every job yields one frame first so
+// import/scroll/touch UI paints immediately instead of feeling stuck.
+queueDjAnalysis=function(item){
+  if(!item)return Promise.resolve(null);item.v425AnalysisQueued=true;try{v38RenderBrowser()}catch{};
+  djAnalysisQueue=djAnalysisQueue.then(async()=>{await new Promise(r=>requestAnimationFrame(()=>r()));return analyzeDjItem(item,false)}).catch(e=>{console.warn(e);return null});
+  return djAnalysisQueue.finally(()=>{item.v425AnalysisQueued=false;try{v38RenderBrowser()}catch{}})
+};
+// One analysis path for every analysis button/auto-analysis. Build the exact
+// 32-beat mini immediately from the already-decoded buffer and redraw loaded decks.
+const v425BaseAnalyzeTrack=v32AnalyzeTrack;
+v32AnalyzeTrack=async function(item,showStatus=true){
+  const r=await v425BaseAnalyzeTrack(item,showStatus);if(!item||item.analyzing)return r;
+  item.v425Wave32=null;try{await v425PreparePreview(item,true)}catch(e){console.warn(e)};
+  for(const L of ['A','B'])if(djDecks[L]?.item?.id===item.id){try{drawDeckOverview(L);drawDeckZoom(L,true);v34DrawStack(L,true);v40RefreshLoopOverlay?.(L)}catch{}}
+  try{v38RenderBrowser()}catch{};return r
+};
+v3AnalyzeTrack=v32AnalyzeTrack;analyzeDjItem=v32AnalyzeTrack;
+// Browser rows are created immediately. No IntersectionObserver and no click/play
+// is required to make the mini canvas appear.
 v38RenderBrowser=function(){
   const panel=$('#flxBrowserPanel'),box=$('#flxBrowserList');if(!panel||!box)return;
   panel.classList.toggle('expanded',!!nevoV38.browserExpanded);panel.classList.toggle('crate-focus',nevoV38.browserFocus==='crates');
-  const focus=$('#flxBrowserFocus'),crate=$('#flxBrowserCrate'),count=$('#flxBrowserCount');
-  if(focus)focus.textContent=nevoV38.browserFocus==='crates'?'PLAYLISTS':(currentLang==='de'?'TRACKS':'TRACKS');
-  if(crate)crate.textContent=v38CrateLabel(nevoV38.browserCrate);
-  box.innerHTML='';
+  const focus=$('#flxBrowserFocus'),crate=$('#flxBrowserCrate'),count=$('#flxBrowserCount');if(focus)focus.textContent=nevoV38.browserFocus==='crates'?'PLAYLISTS':'TRACKS';if(crate)crate.textContent=v38CrateLabel(nevoV38.browserCrate);box.innerHTML='';
   if(nevoV38.browserFocus==='crates'){
     const crates=v38Crates();let idx=Math.max(0,crates.findIndex(x=>x.id===nevoV38.browserCrate));if(count)count.textContent=`${idx+1} / ${crates.length}`;
-    for(const c of crates){const row=document.createElement('button');row.type='button';row.className='flx4-browser-crate'+(c.id===nevoV38.browserCrate?' selected':'');row.innerHTML=`<b>${v38Esc(c.label)}</b><span>${c.id==='all'?djLibrary.length:c.id==='favorites'?djLibrary.filter(x=>(Number(x.rating)||0)>=4).length:djLibrary.filter(x=>(x.crate||'')===c.id.slice(6)).length}</span>`;row.onclick=()=>{nevoV38.browserCrate=c.id;nevoV38.browserCursor=0;v38Save();v38RenderBrowser()};row.ondblclick=()=>{nevoV38.browserFocus='tracks';v38Save();v38RenderBrowser()};box.appendChild(row)}
-    return;
+    for(const c of crates){const row=document.createElement('button');row.type='button';row.className='flx4-browser-crate'+(c.id===nevoV38.browserCrate?' selected':'');row.innerHTML=`<b>${v38Esc(c.label)}</b><span>${c.id==='all'?djLibrary.length:c.id==='favorites'?djLibrary.filter(x=>(Number(x.rating)||0)>=4).length:djLibrary.filter(x=>(x.crate||'')===c.id.slice(6)).length}</span>`;row.onclick=()=>{nevoV38.browserCrate=c.id;nevoV38.browserCursor=0;v38Save();v38RenderBrowser()};row.ondblclick=()=>{nevoV38.browserFocus='tracks';v38Save();v38RenderBrowser()};box.appendChild(row)}return
   }
-  const items=v38BrowserItems();v38ClampCursor();if(count)count.textContent=items.length?`${nevoV38.browserCursor+1} / ${items.length}`:'0 / 0';
-  if(!items.length){box.innerHTML=`<div class="flx4-browser-empty">${currentLang==='de'?'Keine Songs in dieser Auswahl.':'No tracks in this selection.'}</div>`;v31UpdateBrowseTitle();return}
-  items.forEach((item,i)=>{
-    const row=document.createElement('button');row.type='button';row.className='flx4-browser-track v424-wave-row'+(i===nevoV38.browserCursor?' selected':'');row.dataset.id=item.id;
-    row.innerHTML=`<span class="v424-track-main"><span class="v424-track-text"><b>${v38Esc(item.title||cleanDjTitle(item.name))}</b><small>${v38Esc(item.artist||item.name||'')}</small></span><span class="v424-miniwave-shell" title="${currentLang==='de'?'Track-Wellenform':'Track waveform'}"><canvas class="v424-miniwave" width="220" height="32"></canvas></span></span><em>${item.bpm?Number(item.bpm).toFixed(1):'—'}</em><em>${v38Esc(item.key||'—')}</em><em>${item.duration?fmtDeckTime(item.duration):'—'}</em>`;
-    row.onclick=()=>{nevoV38.browserCursor=i;v38Save();v38RenderBrowser()};box.appendChild(row);v424QueueMiniWave(row.querySelector('.v424-miniwave'),item);
+  const items=v38BrowserItems();v38ClampCursor();if(count)count.textContent=items.length?`${nevoV38.browserCursor+1} / ${items.length}`:'0 / 0';if(!items.length){box.innerHTML=`<div class="flx4-browser-empty">${currentLang==='de'?'Keine Songs in dieser Auswahl.':'No tracks in this selection.'}</div>`;v31UpdateBrowseTitle();return}
+  items.forEach((item,i)=>{const row=document.createElement('button');row.type='button';row.className='flx4-browser-track v425-wave-row'+(i===nevoV38.browserCursor?' selected':'');row.dataset.id=item.id;
+    row.innerHTML=`<span class="v425-track-main"><span class="v425-track-text"><b>${v38Esc(item.title||cleanDjTitle(item.name))}</b><small>${v38Esc(item.artist||item.name||'')}</small></span><span class="v425-miniwave-shell" title="32 Beat · ${currentLang==='de'?'analysierte Track-Wellenform':'analyzed track waveform'}"><canvas class="v425-miniwave" width="256" height="32"></canvas></span></span><em>${item.bpm?Number(item.bpm).toFixed(1):'—'}</em><em>${v38Esc(item.key||'—')}</em><em>${item.duration?fmtDeckTime(item.duration):'—'}</em>`;
+    row.onclick=()=>{nevoV38.browserCursor=i;v38Save();v38RenderBrowser()};box.appendChild(row);const cv=row.querySelector('.v425-miniwave');requestAnimationFrame(()=>v425DrawMiniWave(cv,item));if(!item.v425Wave32&&item.bpm&&!item.analyzing)v425SchedulePreview(item)
   });
-  requestAnimationFrame(()=>{const sel=box.querySelector('.selected');if(!sel)return;const top=sel.offsetTop,bottom=top+sel.offsetHeight,viewTop=box.scrollTop,viewBottom=viewTop+box.clientHeight;if(top<viewTop)box.scrollTop=top;else if(bottom>viewBottom)box.scrollTop=Math.max(0,bottom-box.clientHeight)});
-  v31UpdateBrowseTitle();
+  requestAnimationFrame(()=>{const sel=box.querySelector('.selected');if(!sel)return;const top=sel.offsetTop,bottom=top+sel.offsetHeight,viewTop=box.scrollTop,viewBottom=viewTop+box.clientHeight;if(top<viewTop)box.scrollTop=top;else if(bottom>viewBottom)box.scrollTop=Math.max(0,bottom-box.clientHeight)});v31UpdateBrowseTitle()
 };
-
-// Redraw previews after analysis so newly available BPM/bar markers appear.
-const v424OldAnalyzeDjItem=analyzeDjItem;
-analyzeDjItem=async function(item,showStatus=true){const r=await v424OldAnalyzeDjItem(item,showStatus);if(item){item.v424MiniWave=null;v38RenderBrowser()}return r};
-const v424OldV32AnalyzeTrack=v32AnalyzeTrack;
-v32AnalyzeTrack=async function(item,showStatus=true){const r=await v424OldV32AnalyzeTrack(item,showStatus);if(item){item.v424MiniWave=null;v38RenderBrowser()}return r};
-
-v38RenderBrowser();
-console.info('NÉVO v4.2.4: colored mini waveforms + 4-bar comparison guides in track browser');
+// Loading a deck now forces every waveform immediately, even while paused.
+const v425BaseLoadItemToDeck=loadItemToDeck;
+loadItemToDeck=async function(item,letter){
+  await v425BaseLoadItemToDeck(item,letter);try{v425BuildWaveCache(djDecks[letter].buffer);drawDeckOverview(letter);drawDeckZoom(letter,true);v34DrawStack(letter,true);v40RefreshLoopOverlay?.(letter);refreshFlx4Ui()}catch{};return djDecks[letter]
+};
+// Repaint current 32-beat stack at ~25 fps while playing. Cached rendering keeps
+// this cheap and makes jog/seek movement visibly follow the hand instead of lagging.
+let v425LiveWaveLast=0;function v425LiveWaveTicker(ts){
+  if(!window.__nevoScrolling&&ts-v425LiveWaveLast>=40){v425LiveWaveLast=ts;for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&!d.audio.paused)try{v34DrawStack(L,false)}catch{}}}
+  requestAnimationFrame(v425LiveWaveTicker)
+}
+requestAnimationFrame(v425LiveWaveTicker);
+// Existing analyzed tracks from older builds get their 32-beat mini automatically,
+// in the background, with no user click required.
+setTimeout(()=>{for(const item of djLibrary)if(item.bpm&&!item.v425Wave32)v425SchedulePreview(item);v38RenderBrowser()},650);
+setTimeout(()=>{for(const item of djLibrary)if(item.bpm&&!item.v425Wave32)v425SchedulePreview(item);v38RenderBrowser()},1700);
+console.info('NÉVO v4.2.5: true 32-beat minis + immediate decode/analysis UI + cached fluid waveforms active');
