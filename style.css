@@ -1182,3 +1182,132 @@ body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel.expanded .flx4-bro
   .flx4-padmode-buttons button{font-size:4.5px!important}
   .flx4-pads button{min-height:24px!important}
 }
+
+/* ===== v4.1.9: DJ view polish — larger jogs, clearer library, readable labels =====
+   Layout intentionally unchanged from v4.1.8. This pass only improves scale,
+   readability and how efficiently the library uses its available space. */
+
+/* 1) Jogwheels: about 12–14% larger on laptop/desktop without changing the grid. */
+@media (min-width:761px){
+  body.flx-compact-mode .flx4-jog{
+    width:178px!important;
+    max-width:70%!important;
+  }
+  body.flx-compact-mode .flx4-jog-center.flx4-jog-info{
+    inset:19%!important;
+    padding:7px!important;
+  }
+  body.flx-compact-mode .flx4-jog-info .flx4-jog-deck{font-size:17px!important}
+  body.flx-compact-mode .flx4-jog-info>strong{font-size:11px!important}
+  body.flx-compact-mode .flx4-jog-info>small{font-size:6.4px!important}
+  body.flx-compact-mode .flx4-jog-badges em{font-size:5.2px!important}
+  body.flx-compact-mode .flx4-jog-info>i{font-size:5.2px!important}
+}
+@media (min-width:761px) and (max-width:1100px){
+  body.flx-compact-mode .flx4-jog{width:164px!important;max-width:68%!important}
+}
+
+/* 2) Library: slightly larger, clearer rows. Loaded songs flow continuously;
+      only when the visible ~10–11 rows are full does the list itself scroll. */
+body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel{
+  min-height:294px!important;
+  max-height:354px!important;
+  flex:1 1 auto!important;
+}
+body.flx-compact-mode .flx4-mixer-section .flx4-browser-list{
+  max-height:302px!important;
+  overflow-y:auto!important;
+  align-content:start!important;
+}
+body.flx-compact-mode .flx4-browser-track{
+  min-height:28px!important;
+  padding:4px 6px!important;
+  line-height:1.08!important;
+}
+body.flx-compact-mode .flx4-browser-track b{font-size:7.4px!important;line-height:1.1!important}
+body.flx-compact-mode .flx4-browser-track small{font-size:5.5px!important;line-height:1.1!important}
+body.flx-compact-mode .flx4-browser-panel-head{font-size:6px!important}
+body.flx-compact-mode .flx4-browser-columns{font-size:5.5px!important}
+
+/* If there are only a few songs, don't create a second fake/reserved list area.
+   The panel stays stable, while the actual track list grows naturally with songs. */
+.flx4-browser-list:empty{min-height:0!important}
+.flx4-browser-empty{min-height:0!important}
+
+/* 3) The physical-mixer labels stay compact, but are now readable from normal
+      laptop distance. Regler size, CUE buttons and channel faders are unchanged. */
+.flx4-controller>.flx4-side-mapper .flx4-rotary-stack label{
+  font-size:6px!important;
+  font-weight:1000!important;
+  letter-spacing:.015em!important;
+}
+.flx4-controller>.flx4-side-mapper .flx4-rotary-stack label>span{
+  font-size:6px!important;
+  line-height:1!important;
+}
+body.flx-compact-mode .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label,
+body.flx-compact-mode .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label>span{
+  font-size:5.3px!important;
+}
+@media (max-width:1120px) and (min-width:761px){
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label,
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label>span{
+    font-size:5px!important;
+  }
+}
+
+/* 4) Beat FX: same horizontal arrangement, just a little taller and easier to read. */
+.flx4-mixer-section .v415-beatfx-rail{
+  padding:7px 7px!important;
+}
+.flx4-mixer-section .v415-beatfx-heading b{
+  font-size:7.5px!important;
+}
+.flx4-mixer-section .v415-fx-channel-stack button{
+  min-height:30px!important;
+  font-size:7px!important;
+}
+.flx4-mixer-section .v415-fx-select{
+  min-height:34px!important;
+  font-size:7px!important;
+}
+.flx4-mixer-section .v415-fx-beat-controls>button{
+  min-height:34px!important;
+  font-size:12px!important;
+}
+.flx4-mixer-section .v415-fx-beat-controls .flx4-fx-center-readout{
+  min-height:34px!important;
+}
+.flx4-mixer-section .v415-fx-beat-controls .flx4-fx-center-readout small{
+  font-size:4.5px!important;
+}
+.flx4-mixer-section .v415-fx-beat-controls .flx4-fx-center-readout b{
+  font-size:7.2px!important;
+}
+.flx4-mixer-section .v415-fx-knob{
+  width:34px!important;
+  height:34px!important;
+  min-height:34px!important;
+}
+.flx4-mixer-section .v415-fx-on{
+  min-height:34px!important;
+  font-size:7.5px!important;
+  font-weight:1000!important;
+}
+
+/* Keep the phone layout from inheriting oversized laptop labels/jogs. */
+@media (max-width:760px){
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label,
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label>span{
+    font-size:4.4px!important;
+  }
+  body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel,
+  .flx4-mixer-section .flx4-browser-panel{
+    min-height:250px!important;
+    max-height:340px!important;
+  }
+  body.flx-compact-mode .flx4-mixer-section .flx4-browser-list,
+  .flx4-mixer-section .flx4-browser-list{
+    max-height:278px!important;
+  }
+}
