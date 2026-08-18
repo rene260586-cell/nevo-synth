@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.8</title>
+  <title>NÉVO Studio v3.9</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.8</span></div>
+        <div class="brand-sub">STUDIO <span>v3.9</span></div>
       </div>
 
       <div class="transport">
@@ -129,8 +129,8 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v3.8</strong>
-            <span>Browser/LOAD, Instant Doubles, Smart CFX, Smart Fader und Tempo-Range sind jetzt aktiv. MIDI LEARN weiterhin erst ganz am Ende komplett belegen.</span>
+            <strong>DDJ-FLX4 MODUS · v3.9</strong>
+            <span>Live Beat-/Takt-Zähler, Phase-Meter und MASTER/SYNC-Status sitzen jetzt direkt an den parallelen Wellenformen. MIDI LEARN weiterhin erst ganz am Ende komplett belegen.</span>
           </div>
 
           <section class="flx4-parallel-wave" aria-label="Parallele Deck-Wellenformen">
@@ -139,12 +139,20 @@
               <label>ZOOM <select id="flxWaveBeats"><option value="2">2 BEATS</option><option value="4">4 BEATS</option><option value="6">6 BEATS</option><option value="8" selected>8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select></label>
             </div>
             <div class="flx4-stack-row deck-a" data-flx-stack="A">
-              <div class="flx4-stack-id"><b>A</b><span id="flxAStackTitle">Kein Song</span><small id="flxAStackMeta">— BPM · 00:00.0</small></div>
-              <div class="flx4-stack-wavewrap" data-flx-stack-seek="A"><canvas id="flxAStackWave" width="1600" height="160"></canvas><div id="flxAStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i></div>
+              <div class="flx4-stack-id">
+                <b>A</b><span id="flxAStackTitle">Kein Song</span><small id="flxAStackMeta">— BPM · 00:00.0</small>
+                <div class="flx4-stack-badges"><em id="flxAMasterBadge">MASTER</em><em id="flxASyncBadge">SYNC</em><em id="flxAPlayBadge">PLAY</em></div>
+                <div class="flx4-stack-readout"><span><i>BPM</i><strong id="flxALiveBpm">—</strong></span><span><i>TAKT</i><strong id="flxABar">—</strong></span><span><i>BEAT</i><strong id="flxABeat">—</strong></span><span><i>PHASE</i><strong id="flxAPhaseMs">—</strong></span></div>
+              </div>
+              <div class="flx4-stack-wavewrap" data-flx-stack-seek="A"><canvas id="flxAStackWave" width="1600" height="160"></canvas><div id="flxAStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxAPhaseNeedle"></i></div><b id="flxAGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
             </div>
             <div class="flx4-stack-row deck-b" data-flx-stack="B">
-              <div class="flx4-stack-id"><b>B</b><span id="flxBStackTitle">Kein Song</span><small id="flxBStackMeta">— BPM · 00:00.0</small></div>
-              <div class="flx4-stack-wavewrap" data-flx-stack-seek="B"><canvas id="flxBStackWave" width="1600" height="160"></canvas><div id="flxBStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i></div>
+              <div class="flx4-stack-id">
+                <b>B</b><span id="flxBStackTitle">Kein Song</span><small id="flxBStackMeta">— BPM · 00:00.0</small>
+                <div class="flx4-stack-badges"><em id="flxBMasterBadge">MASTER</em><em id="flxBSyncBadge">SYNC</em><em id="flxBPlayBadge">PLAY</em></div>
+                <div class="flx4-stack-readout"><span><i>BPM</i><strong id="flxBLiveBpm">—</strong></span><span><i>TAKT</i><strong id="flxBBar">—</strong></span><span><i>BEAT</i><strong id="flxBBeat">—</strong></span><span><i>PHASE</i><strong id="flxBPhaseMs">—</strong></span></div>
+              </div>
+              <div class="flx4-stack-wavewrap" data-flx-stack-seek="B"><canvas id="flxBStackWave" width="1600" height="160"></canvas><div id="flxBStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxBPhaseNeedle"></i></div><b id="flxBGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
             </div>
           </section>
 

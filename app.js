@@ -1881,3 +1881,42 @@ const v38OldSetLanguage=setLanguage;setLanguage=function(lang){v38OldSetLanguage
 
 function v38Bind(){for(const L of ['A','B']){v38RefreshTempoRange(L);const d=djDecks[L];if(d&&!Number.isFinite(d.v38ManualFilter))d.v38ManualFilter=Number(d.filterValue)||0}v38RefreshSmartUi();v38RenderBrowser();v38Save();setTimeout(()=>{for(const L of ['A','B'])if(djDecks[L]?.source)v38EnsureSmartFx(L).then(()=>v38SmartFxApply(L))},500)}
 v38Bind();
+
+// ===== v3.9: PARALLEL WAVE LIVE BEAT/BAR + PHASE METER =====
+function v39BeatInfo(letter){
+  const d=djDecks[letter];
+  if(!d?.item)return {bar:null,beat:null,index:null,phase:0};
+  const p=djBeatPeriod(letter),off=djNormalizeOffset(d.beatOffset||0,p),cur=d.audio?.currentTime||0;
+  if(!Number.isFinite(p)||p<=0)return {bar:null,beat:null,index:null,phase:0};
+  const raw=(cur-off)/p,index=Math.floor(raw+1e-7),safe=Math.max(0,index),beat=((safe%4)+4)%4+1,bar=Math.floor(safe/4)+1,phase=((raw%1)+1)%1;
+  return {bar,beat,index:safe,phase};
+}
+function v39PhaseDiff(letter){
+  if(!djDecks[letter]?.item)return {beats:0,ms:0,hasMaster:false,locked:false};
+  const M=nevoV3?.masterDeck||'A',master=djDecks[M];
+  if(!master?.item||letter===M)return {beats:0,ms:0,hasMaster:!!master?.item,locked:letter===M};
+  let diff=v3PhaseFraction(letter)-v3PhaseFraction(M);if(diff>.5)diff-=1;if(diff<-.5)diff+=1;
+  const effective=Math.max(1,v3EffectiveBpm(letter)),ms=diff*(60/effective)*1000;
+  return {beats:diff,ms,hasMaster:true,locked:Math.abs(diff)<=.035&&Math.abs(v3EffectiveBpm(letter)-v3EffectiveBpm(M))<=.12};
+}
+function v39SetText(id,value){const el=$(id);if(el)el.textContent=value}
+function v39RefreshStackLive(letter){
+  const d=djDecks[letter],row=document.querySelector(`[data-flx-stack="${letter}"]`),info=v39BeatInfo(letter),phase=v39PhaseDiff(letter),M=nevoV3?.masterDeck||'A',isMaster=letter===M&&!!d?.item,isPlaying=!!d?.item&&!d.audio.paused,isSync=!!nevoV31?.syncLock?.[letter],eff=d?.item?v3EffectiveBpm(letter):0;
+  v39SetText(`#flx${letter}LiveBpm`,d?.item?eff.toFixed(2):'—');v39SetText(`#flx${letter}Bar`,info.bar??'—');v39SetText(`#flx${letter}Beat`,info.beat??'—');
+  const phaseText=!d?.item?'—':isMaster?'MASTER':phase.hasMaster?`${phase.ms>=0?'+':''}${Math.round(phase.ms)} ms`:`${Math.round(info.phase*100)}%`;
+  v39SetText(`#flx${letter}PhaseMs`,phaseText);v39SetText(`#flx${letter}GridReadout`,d?.item?`TAKT ${info.bar} · BEAT ${info.beat}`:'TAKT — · BEAT —');
+  const masterBadge=$(`#flx${letter}MasterBadge`),syncBadge=$(`#flx${letter}SyncBadge`),playBadge=$(`#flx${letter}PlayBadge`);masterBadge?.classList.toggle('on',isMaster);masterBadge?.classList.toggle('master',isMaster);syncBadge?.classList.add('sync');syncBadge?.classList.toggle('on',isSync||phase.locked);syncBadge&&(syncBadge.textContent=phase.locked&&!isMaster?'PHASE LOCK':isSync?'SYNC LOCK':'SYNC');playBadge?.classList.add('play');playBadge?.classList.toggle('on',isPlaying);playBadge&&(playBadge.textContent=isPlaying?'PLAY':'PAUSE');
+  const needle=$(`#flx${letter}PhaseNeedle`);if(needle){let pct=50;if(d?.item&&!isMaster&&phase.hasMaster)pct=clamp(50+phase.beats*80,10,90);needle.style.left=pct+'%';needle.classList.toggle('locked',phase.locked||isMaster)}
+  row?.classList.toggle('master-row',isMaster);row?.classList.toggle('synced-row',phase.locked&&!isMaster);
+}
+// Improve the existing beat overlay: every downbeat also shows its bar number.
+const v39OldBeatOverlay=v34BeatOverlay;
+v34BeatOverlay=function(letter,r){
+  v39OldBeatOverlay(letter,r);const box=$(`#flx${letter}StackBeats`);if(!box)return;const d=djDecks[letter],p=r?.period||djBeatPeriod(letter),off=djNormalizeOffset(d?.beatOffset||0,p);box.querySelectorAll('span.major').forEach(sp=>{const x=parseFloat(sp.style.left)||0,t=r.start+(x/100)*(r.end-r.start),idx=Math.max(0,Math.round((t-off)/p)),bar=Math.floor(idx/4)+1;sp.dataset.bar=`T${bar}`});
+};
+const v39OldRefreshFlx=refreshFlx4Ui;
+refreshFlx4Ui=function(){v39OldRefreshFlx();v39RefreshStackLive('A');v39RefreshStackLive('B')};
+const v39OldSetMaster=v3SetMaster;
+v3SetMaster=function(letter){const r=v39OldSetMaster(letter);v39RefreshStackLive('A');v39RefreshStackLive('B');return r};
+function v39Bind(){v39RefreshStackLive('A');v39RefreshStackLive('B');setTimeout(()=>{v34DrawStack('A',true);v34DrawStack('B',true);v39RefreshStackLive('A');v39RefreshStackLive('B')},350)}
+v39Bind();
