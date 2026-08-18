@@ -2038,3 +2038,73 @@ for(const el of document.querySelectorAll('[data-flx-stack-seek]')){
 
 // ===== v4.0.2: HARD SCROLL FIX =====
 console.info('NÉVO v4.0.2 scroll fix active: browser rebuild removed from FLX ticker');
+
+// ===== v4.0.3: DEDICATED SCROLL SURFACE + RENDER BUDGET =====
+(() => {
+  const shell=document.querySelector('.app-shell');
+  if(!shell)return;
+
+  // The app shell is now the only vertical page scroller. Feed its scroll state
+  // into the existing v4.0.1 render pause so waveforms never compete with scrolling.
+  let endTimer=0;
+  const beginScroll=()=>{
+    window.__nevoScrolling=true;
+    document.body?.classList.add('nevo-scrolling');
+    clearTimeout(endTimer);
+    endTimer=setTimeout(()=>{
+      window.__nevoScrolling=false;
+      document.body?.classList.remove('nevo-scrolling');
+      // Redraw once, after the user has stopped moving the page.
+      try{v34DrawStack('A',true);v34DrawStack('B',true);v40RefreshLoopOverlay('A');v40RefreshLoopOverlay('B')}catch{}
+    },180);
+  };
+  shell.addEventListener('scroll',beginScroll,{passive:true});
+  shell.addEventListener('wheel',beginScroll,{passive:true});
+  shell.addEventListener('touchmove',beginScroll,{passive:true});
+
+  // Move any accidental old window scroll position into the real app scroller.
+  try{
+    const oldY=window.scrollY||document.documentElement.scrollTop||0;
+    if(oldY>0)shell.scrollTop=oldY;
+    window.scrollTo(0,0);
+  }catch{}
+
+  // The zoom waveform used to be repainted many times per second from raw audio.
+  // Keep it responsive, but cap expensive canvas work. The playhead/window itself
+  // can still move between paints.
+  if(typeof drawDeckZoom==='function'){
+    const baseDrawDeckZoom=drawDeckZoom;
+    drawDeckZoom=function(letter,force=false){
+      const d=djDecks?.[letter];
+      if(!d?.buffer)return;
+      if(window.__nevoScrolling&&!force)return;
+      const now=performance.now();
+      if(!force){
+        try{updateDeckZoomWindow(letter)}catch{}
+        if(d.audio?.paused)return; // a paused deck does not need continuous repaint
+        if(now-(d._v403ZoomPaint||0)<180)return;
+        d._v403ZoomPaint=now;
+      }
+      return baseDrawDeckZoom(letter,force);
+    };
+  }
+
+  // Same budget for the parallel FLX waveform. It still follows playback, but no
+  // longer repaints at a rate that can starve wheel/touch input on slower laptops.
+  if(typeof v34DrawStack==='function'){
+    const baseDrawStack=v34DrawStack;
+    v34DrawStack=function(letter,force=false){
+      const d=djDecks?.[letter];
+      if(window.__nevoScrolling&&!force)return;
+      const now=performance.now();
+      if(!force){
+        if(d?.audio?.paused && d?._v403StackPaint)return;
+        if(now-(d?._v403StackPaint||0)<160)return;
+        if(d)d._v403StackPaint=now;
+      }
+      return baseDrawStack(letter,force);
+    };
+  }
+
+  console.info('NÉVO v4.0.3 dedicated app scroller active');
+})();

@@ -412,3 +412,33 @@ body.nevo-scrolling *{scroll-behavior:auto!important}
   .knob,.key,.flx4-jog,.flx4-pads.v34-pads button,.clip{touch-action:pan-y!important}
   .arranger-scroll,.keyboard,.piano-roll-scroll,.flx4-browser-list{overscroll-behavior:auto}
 }
+
+/* ===== v4.0.3: DEDICATED APP SCROLLER =====
+   The browser window is no longer the scrolling surface. NÉVO gets one stable,
+   isolated vertical scroller so live DJ canvases cannot fight page movement. */
+html,body{
+  width:100%;height:100%;min-height:100%;
+  overflow:hidden!important;
+  overscroll-behavior:none;
+}
+body{padding:0!important;min-height:0!important}
+.app-shell{
+  width:100%;max-width:1600px;
+  height:100vh;height:100dvh;
+  overflow-y:scroll!important;
+  overflow-x:hidden!important;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y pinch-zoom!important;
+  scroll-behavior:auto!important;
+  scrollbar-gutter:stable;
+  padding-top:max(12px,env(safe-area-inset-top));
+  padding-bottom:max(12px,env(safe-area-inset-bottom));
+}
+/* Blur over a large, continuously moving surface is expensive on some GPUs. */
+.glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* Nested horizontal editors stay horizontal, while vertical wheel/touch moves the app. */
+.arranger-scroll,.keyboard,.piano-roll-scroll{overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+/* Dedicated browser list may scroll itself only when the pointer is actually over it. */
+.flx4-browser-list{overscroll-behavior:contain}
+body.nevo-scrolling .ambient{display:none!important}
