@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v4.1.4</title>
+  <title>NÉVO Studio v4.1.5</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v4.1.4</span></div>
+        <div class="brand-sub">STUDIO <span>v4.1.5</span></div>
       </div>
 
       <div class="transport">
@@ -133,7 +133,7 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v4.1.4</strong>
+            <strong>DDJ-FLX4 MODUS · v4.1.5</strong>
             <span>Performance-Ansicht: zwei Decks, Browser, Mixer und Beat FX kompakt zusammen. Beat FX folgt jetzt der echten FLX4-Logik: CH SELECT 1/2/1&2 · FX SELECT vor/zurück mit SHIFT · BEAT ◀/▶ ändert die Beat-Länge.</span>
           </div>
 
@@ -216,25 +216,29 @@
                 </aside>
 
                 <div class="flx4-center-core">
-                  <section class="flx4-beatfx v410-beatfx">
-                    <div class="flx4-beatfx-title"><b>BEAT FX</b><span id="flxFxName">ECHO</span><small>CH SELECT: 1 / 2 / 1&amp;2 · FX SELECT = nächster Effekt · SHIFT + FX SELECT = vorheriger Effekt · BEAT ◀/▶ = Beat-Länge · LEVEL/DEPTH · ON/OFF</small></div>
-                    <div class="flx4-fx-channel-box" aria-label="Beat FX Kanalwahl">
-                      <span>CH SELECT</span>
-                      <div class="flx4-fx-channel-segments" id="flxFxChannel">
+                  <section class="flx4-beatfx v410-beatfx v415-beatfx-rail">
+                    <div class="v415-beatfx-heading"><b>BEAT FX</b><span id="flxFxName" hidden>ECHO</span></div>
+                    <div class="v415-fx-vertical">
+                      <span class="v415-fx-label">CH SELECT</span>
+                      <div class="flx4-fx-channel-segments v415-fx-channel-stack" id="flxFxChannel" aria-label="Beat FX Kanalwahl">
                         <button type="button" data-fx-channel="A" data-flx-action="fx.channel1">1</button>
                         <button type="button" data-fx-channel="B" data-flx-action="fx.channel2">2</button>
                         <button type="button" data-fx-channel="AB" data-flx-action="fx.channelBoth">1 &amp; 2</button>
                       </div>
+                      <button class="v415-fx-select" data-flx-action="fx.select" id="flxFxSelectBtn" type="button"><b>FX SELECT</b><small id="flxFxSelectDir">WEITER</small></button>
+                      <div class="v415-fx-beat-controls">
+                        <button data-flx-action="fx.beatDown" id="flxFxPrevBtn" type="button" aria-label="Beat FX kürzer">◀</button>
+                        <div class="flx4-fx-center-readout"><small id="flxFxCenterLabel">BEAT-LÄNGE</small><b id="flxFxBeat">1 BEAT</b></div>
+                        <button data-flx-action="fx.beatUp" id="flxFxNextBtn" type="button" aria-label="Beat FX länger">▶</button>
+                      </div>
+                      <div class="v415-fx-level">
+                        <span>LEVEL / DEPTH</span>
+                        <button id="flxFxLevelKnob" class="v415-fx-knob" data-map-target="fx.level" type="button" aria-label="Beat FX Level Depth"></button>
+                        <input id="flxFxLevelRange" data-flx-action="fx.level" type="range" min="0" max="1" step="0.01" value="0.55" aria-hidden="true" tabindex="-1">
+                      </div>
+                      <button id="flxFxOn" class="v415-fx-on" data-flx-action="fx.on" type="button">ON / OFF<small>SHIFT = RELEASE FX</small></button>
                     </div>
-                    <div class="flx4-beatfx-grid v410-beatfx-grid">
-                      <button data-flx-action="fx.select" id="flxFxSelectBtn" type="button"><b>FX SELECT</b><small id="flxFxSelectDir">WEITER</small></button>
-                      <button data-flx-action="fx.beatDown" id="flxFxPrevBtn" type="button">◀ BEAT</button>
-                      <div class="flx4-fx-center-readout"><small id="flxFxCenterLabel">BEAT-LÄNGE</small><b id="flxFxBeat">1 BEAT</b></div>
-                      <button data-flx-action="fx.beatUp" id="flxFxNextBtn" type="button">BEAT ▶</button>
-                      <label>LEVEL / DEPTH<input data-flx-action="fx.level" type="range" min="0" max="1" step="0.01" value="0.55"></label>
-                      <button id="flxFxOn" data-flx-action="fx.on" type="button">ON/OFF<small>SHIFT = RELEASE FX</small></button>
-                    </div>
-                    <div class="flx4-fx-current"><span>GEWÄHLTER FX</span><strong id="flxFxCurrentName">ECHO</strong><em id="flxFxTempoMode">AUTO BPM</em></div>
+                    <div class="flx4-fx-current v415-fx-hidden-state" aria-hidden="true"><span>FX</span><strong id="flxFxCurrentName">ECHO</strong><em id="flxFxTempoMode">AUTO BPM</em></div>
                     <div id="flxFxMenu" class="flx4-fx-menu v410-hidden-fxmenu" hidden aria-hidden="true"></div>
                   </section>                  <label class="flx4-cross"><span>A</span><input id="flxCrossfader" data-flx-action="crossfader" type="range" min="-1" max="1" step="0.01" value="0"><span>B</span></label>
                   <details class="v414-utility-mapping">

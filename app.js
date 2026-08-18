@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.1.4',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.1.5',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2512,3 +2512,38 @@ function v414BindRotaryTargets(){
 }
 v414BindRotaryTargets();
 console.info('NÉVO v4.1.4: rotary mixer mapping sidebars loaded');
+
+
+// ===== v4.1.5: compact vertical Beat FX rail + real Level/Depth screen knob =====
+function v415RefreshFxLevelKnob(){
+  const knob=document.getElementById('flxFxLevelKnob');if(!knob)return;
+  const v=Math.max(0,Math.min(1,Number(nevoV34?.fx?.level)||0));
+  const angle=-135+(270*v);knob.style.setProperty('--fx-angle',`${angle}deg`);
+}
+function v415SetFxLevelFromDelta(delta){
+  const cur=Math.max(0,Math.min(1,Number(nevoV34?.fx?.level)||0));
+  const next=Math.max(0,Math.min(1,cur+delta));
+  flxSetContinuous('fx.level',next,false);v415RefreshFxLevelKnob();
+}
+function v415BindFxLevelKnob(){
+  const knob=document.getElementById('flxFxLevelKnob'),input=document.getElementById('flxFxLevelRange');if(!knob||!input||knob.dataset.v415Bound)return;
+  knob.dataset.v415Bound='1';let startY=0,startValue=0,pointerId=null;
+  knob.addEventListener('pointerdown',e=>{
+    if(flxState.learn){e.preventDefault();e.stopPropagation();selectFlxLearnTarget(input);return}
+    pointerId=e.pointerId;startY=e.clientY;startValue=Number(nevoV34.fx.level)||0;knob.setPointerCapture?.(e.pointerId);e.preventDefault();
+  });
+  knob.addEventListener('pointermove',e=>{
+    if(pointerId!==e.pointerId)return;const next=Math.max(0,Math.min(1,startValue+(startY-e.clientY)/120));flxSetContinuous('fx.level',next,false);v415RefreshFxLevelKnob();e.preventDefault();
+  });
+  const end=e=>{if(pointerId===e.pointerId){pointerId=null;try{knob.releasePointerCapture?.(e.pointerId)}catch{}}};
+  knob.addEventListener('pointerup',end);knob.addEventListener('pointercancel',end);
+  knob.addEventListener('wheel',e=>{e.preventDefault();v415SetFxLevelFromDelta(e.deltaY<0?.025:-.025)},{passive:false});
+  knob.addEventListener('dblclick',e=>{e.preventDefault();flxSetContinuous('fx.level',.55,false);v415RefreshFxLevelKnob()});
+  v415RefreshFxLevelKnob();
+}
+const v415OldSetContinuous=flxSetContinuous;
+flxSetContinuous=function(action,norm,fromMidi=false){const r=v415OldSetContinuous(action,norm,fromMidi);if(action==='fx.level')v415RefreshFxLevelKnob();return r};
+const v415OldRefreshFx=v34RefreshFx;
+v34RefreshFx=function(){const r=v415OldRefreshFx();v415RefreshFxLevelKnob();return r};
+v415BindFxLevelKnob();setTimeout(v415BindFxLevelKnob,300);v415RefreshFxLevelKnob();
+console.info('NÉVO v4.1.5: compact vertical Beat FX rail active');
