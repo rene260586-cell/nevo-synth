@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v4.1.3</title>
+  <title>NÉVO Studio v4.1.2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v4.1.3</span></div>
+        <div class="brand-sub">STUDIO <span>v4.1.2</span></div>
       </div>
 
       <div class="transport">
@@ -133,7 +133,7 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v4.1.3</strong>
+            <strong>DDJ-FLX4 MODUS · v4.1.2</strong>
             <span>Performance-Ansicht: zwei Decks, Browser, Mixer und Beat FX kompakt zusammen. Beat FX folgt jetzt der echten FLX4-Logik: CH SELECT 1/2/1&2 · FX SELECT vor/zurück mit SHIFT · BEAT ◀/▶ ändert die Beat-Länge.</span>
           </div>
 
@@ -163,7 +163,7 @@
               </div>
               <div class="flx4-loop-compact" data-loop-strip="A"><button id="flxALoopState" data-flx-action="A.loop4exit" type="button">LOOP AUS</button><em id="flxAMemoryState">MEM 0</em></div>
               <div class="flx4-jog-trackline deck-a"><span>A</span><strong id="flxAJogTrackTitle">Kein Song</strong></div>
-              <div class="flx4-deck-body flx4-deck-body-mixer">
+              <div class="flx4-deck-body">
                 <div class="flx4-pitch-column">
                   <label>TEMPO <b id="flxAPitchVal">0.0%</b><input id="flxAPitch" data-flx-action="A.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
                 </div>
@@ -174,15 +174,6 @@
                   <div class="flx4-jog-badges"><em id="flxAJogMaster">MASTER</em><em id="flxAJogSync">SYNC</em></div>
                   <i id="flxAJogBeat">TAKT — · BEAT —</i>
                 </div></div>
-                <div class="flx4-deck-channel-strip deck-a-strip" aria-label="Deck A Mixer">
-                  <label class="flx4-mini-knob"><span>TRIM</span><input data-flx-action="A.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>HI</span><input data-flx-action="A.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>MID</span><input data-flx-action="A.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>LOW</span><input data-flx-action="A.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>CFX</span><input data-flx-action="A.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <button class="flx4-channel-cue flx4-mini-cue" data-flx-action="A.pfl" type="button">CUE 1</button>
-                  <label class="flx4-mini-fader"><span>CH 1</span><input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-                </div>
               </div>
               <div class="flx4-shift-row"><button data-flx-action="A.shift" class="flx4-shift" type="button">SHIFT</button></div>
               <div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY/PAUSE</button></div>
@@ -211,20 +202,41 @@
                 <div class="flx4-browser-columns"><span>TITEL</span><span>BPM</span><span>KEY</span><span>LÄNGE</span></div>
                 <div id="flxBrowserList" class="flx4-browser-list"><div class="flx4-browser-empty">Noch keine Songs geladen.</div></div>
               </div>
-              <details class="flx4-master-map-mini">
-                <summary>MASTER / MIC / HP</summary>
-                <div class="flx4-master-map-grid">
-                  <label>MASTER<input data-flx-action="master.level" type="range" min="0" max="1.25" step="0.01" value="0.85"></label>
-                  <button id="flxMasterCue" class="flx4-master-cue" data-flx-action="master.cue" type="button">CUE MASTER</button>
-                  <label>MIC<input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
-                  <label>HP MIX<input data-flx-action="headphones.mix" type="range" min="0" max="1" step="0.01" value="0.5"></label>
-                  <label>HP LEVEL<input data-flx-action="cue.level" type="range" min="0" max="1" step="0.01" value="0.75"></label>
-                  <button data-flx-action="smart.cfx" type="button">SMART CFX<small id="flxSmartCfxState">P1 · AUS</small></button>
-                  <button data-flx-action="smart.fader" type="button">SMART FADER<small id="flxSmartFaderState">P1 · AUS</small></button>
-                  <button data-flx-action="A.keylock" type="button">KEY LOCK A</button><button data-flx-action="B.keylock" type="button">KEY LOCK B</button>
-                  <button data-flx-action="A.synclock" type="button">SYNC LOCK A</button><button data-flx-action="B.synclock" type="button">SYNC LOCK B</button>
-                  <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small></div>
+              <details class="flx4-mapping-drawer">
+                <summary><b>MIXER / MAPPING</b><small>nur zum Zuweisen · TRIM / HI / MID / LOW / CFX / MASTER / KOPFHÖRER</small></summary>
+                <div class="flx4-mixer-brand"><strong>NÉVO</strong><span>FLX4 CONTROL</span></div>
+                <div class="flx4-mixer-columns">
+                <div class="flx4-channel" data-channel="A">
+                  <label>TRIM<input data-flx-action="A.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>HI<input data-flx-action="A.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>MID<input data-flx-action="A.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>LOW<input data-flx-action="A.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>CFX / FILTER<input data-flx-action="A.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <button class="flx4-channel-cue" data-flx-action="A.pfl" type="button">CUE 1</button>
+                  <label class="flx4-fader">CH 1<input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
+                <div class="flx4-master-column v34-master">
+                  <div class="flx4-control-section-title">MASTER / KOPFHÖRER</div>
+                  <label class="flx4-master-knob flx4-master-emphasis">MASTER LEVEL <small>GESAMTLAUTSTÄRKE</small><input data-flx-action="master.level" type="range" min="0" max="1.25" step="0.01" value="0.85"></label>
+                  <button id="flxMasterCue" class="flx4-master-cue" data-flx-action="master.cue" type="button"><b>CUE</b><small>MASTER</small></button>
+                  <label class="flx4-master-knob">MIC LEVEL <small>MIKROFON</small><input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
+                  <label class="flx4-master-knob">KOPFHÖRER MIX <small>CUE ↔ MASTER</small><input data-flx-action="headphones.mix" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+                  <label class="flx4-master-knob">KOPFHÖRER LEVEL <small>LAUTSTÄRKE</small><input data-flx-action="cue.level" type="range" min="0" max="1" step="0.01" value="0.75"></label>
+                  <div class="flx4-smart-row"><button data-flx-action="smart.cfx" type="button">SMART CFX<small id="flxSmartCfxState">P1 · AUS</small></button><button data-flx-action="smart.fader" type="button">SMART FADER<small id="flxSmartFaderState">P1 · AUS</small></button></div>
+                  <div class="flx4-mid-buttons"><button data-flx-action="A.keylock" type="button">KEY LOCK A</button><button data-flx-action="B.keylock" type="button">KEY LOCK B</button></div>
+                  <div class="flx4-mid-buttons v31"><button data-flx-action="A.synclock" type="button">SYNC LOCK A</button><button data-flx-action="B.synclock" type="button">SYNC LOCK B</button></div>
+                  <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small><em>Erst Ziel anklicken, dann Hardware bewegen.</em></div>
+                </div>
+                <div class="flx4-channel" data-channel="B">
+                  <label>TRIM<input data-flx-action="B.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>HI<input data-flx-action="B.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>MID<input data-flx-action="B.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>LOW<input data-flx-action="B.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>CFX / FILTER<input data-flx-action="B.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <button class="flx4-channel-cue" data-flx-action="B.pfl" type="button">CUE 2</button>
+                  <label class="flx4-fader">CH 2<input data-flx-action="B.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+                </div>
+              </div>
               </details>
               <section class="flx4-beatfx v410-beatfx">
                 <div class="flx4-beatfx-title"><b>BEAT FX</b><span id="flxFxName">ECHO</span><small>CH SELECT: 1 / 2 / 1&amp;2 · FX SELECT = nächster Effekt · SHIFT + FX SELECT = vorheriger Effekt · BEAT ◀/▶ = Beat-Länge · LEVEL/DEPTH · ON/OFF</small></div>
@@ -263,16 +275,7 @@
               </div>
               <div class="flx4-loop-compact" data-loop-strip="B"><button id="flxBLoopState" data-flx-action="B.loop4exit" type="button">LOOP AUS</button><em id="flxBMemoryState">MEM 0</em></div>
               <div class="flx4-jog-trackline deck-b"><span>B</span><strong id="flxBJogTrackTitle">Kein Song</strong></div>
-              <div class="flx4-deck-body flx4-deck-body-mixer">
-                <div class="flx4-deck-channel-strip deck-b-strip" aria-label="Deck B Mixer">
-                  <label class="flx4-mini-knob"><span>TRIM</span><input data-flx-action="B.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>HI</span><input data-flx-action="B.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>MID</span><input data-flx-action="B.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>LOW</span><input data-flx-action="B.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-mini-knob"><span>CFX</span><input data-flx-action="B.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <button class="flx4-channel-cue flx4-mini-cue" data-flx-action="B.pfl" type="button">CUE 2</button>
-                  <label class="flx4-mini-fader"><span>CH 2</span><input data-flx-action="B.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-                </div>
+              <div class="flx4-deck-body">
                 <div id="flxBJog" class="flx4-jog" data-flx-action="B.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center flx4-jog-info">
                   <span class="flx4-jog-deck">B</span>
                   <strong id="flxBJogBpm">— BPM</strong>
