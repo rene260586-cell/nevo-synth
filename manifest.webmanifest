@@ -1,7 +1,7 @@
 {
   "name": "NÉVO Studio",
   "short_name": "NÉVO Studio",
-  "description": "Techno-DAW und PRO-DJ-Player mit zwei Decks, 8 Hot Cues, farbigen Overview- und Zoom-Wellenformen, Beatgrid, Master/Phase-Sync, Sync Lock, Auto Master, PFL/Kopfhörer-Vorhören, Beatgrid-Korrektur, BPM-/Tonart-/Phrase-Analyse, DDJ-FLX4-Modus mit TRIM/GAIN, vollständigen 8 Performance-Pads inkl. SHIFT-Zweitebene, Browser/LOAD mit Instant Doubles, Smart CFX, Smart Fader, Tempo-Range, Live Beat-/Takt-Zähler, Phase-Meter und Master/Sync-Anzeige, MIDI-Learn, Mapping-Backup und MIDI-Monitor, Song-Bibliothek, Arranger, Audio-Editor, Synth und Piano-Roll.",
+  "description": "Techno-DAW und PRO-DJ-Player mit zwei Decks, 8 Hot Cues, farbigen Overview- und Zoom-Wellenformen, Beatgrid, Master/Phase-Sync, Sync Lock, Auto Master, PFL/Kopfhörer-Vorhören, Beatgrid-Korrektur, BPM-/Tonart-/Phrase-Analyse, DDJ-FLX4-Modus mit TRIM/GAIN, vollständigen 8 Performance-Pads inkl. SHIFT-Zweitebene, Browser/LOAD mit Instant Doubles, Smart CFX, Smart Fader, Tempo-Range, Live Beat-/Takt-Zähler, Phase-Meter, Master/Sync-Anzeige, FLX4-Loop-Overlays mit IN/OUT, 4-BEAT/EXIT und 1/2X/2X, MIDI-Learn, Mapping-Backup und MIDI-Monitor, Song-Bibliothek, Arranger, Audio-Editor, Synth und Piano-Roll.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",

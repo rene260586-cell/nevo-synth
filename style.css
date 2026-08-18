@@ -372,3 +372,13 @@ button,.btn,.mode-btn,.lang-btn,.preset-card{-webkit-appearance:none;appearance:
 .flx4-stack-beats span.major::after{content:attr(data-bar);display:block;margin-top:3px;color:#ffdcaa;font-size:6px;letter-spacing:.03em}
 @media(max-width:1120px){.flx4-stack-row{grid-template-columns:180px 1fr}.flx4-stack-readout{grid-template-columns:1fr 1fr}.flx4-stack-id{padding:7px}}
 @media(max-width:760px){.flx4-stack-row{grid-template-columns:1fr}.flx4-stack-id{grid-template-columns:28px 1fr}.flx4-stack-readout{grid-template-columns:repeat(4,1fr)}.flx4-phase-meter{width:45%}.flx4-grid-readout{font-size:6px}}
+
+
+/* ===== v4.0: FLX4 LOOP/CUE OVERLAY IN PARALLEL WAVEFORMS ===== */
+.flx4-loop-overlay{position:absolute;top:0;bottom:22px;z-index:5;pointer-events:none;border-left:2px solid currentColor;border-right:2px solid currentColor;background:linear-gradient(90deg,color-mix(in srgb,currentColor 15%,transparent),color-mix(in srgb,currentColor 7%,transparent));box-shadow:inset 0 0 18px color-mix(in srgb,currentColor 12%,transparent);display:none}
+.deck-a .flx4-loop-overlay{color:#54d8ff}.deck-b .flx4-loop-overlay{color:#ffb55e}.flx4-loop-overlay.on{display:block}
+.flx4-loop-overlay .loop-in,.flx4-loop-overlay .loop-out{position:absolute;top:3px;font-size:8px;font-weight:1000;letter-spacing:.08em;padding:2px 4px;border-radius:5px;background:#020609;color:currentColor;border:1px solid currentColor;white-space:nowrap}
+.flx4-loop-overlay .loop-in{left:2px}.flx4-loop-overlay .loop-out{right:2px}
+.flx4-loop-badge{position:absolute;right:7px;top:6px;z-index:8;padding:4px 7px;border-radius:7px;background:rgba(2,6,9,.88);border:1px solid rgba(255,255,255,.18);font-size:9px;font-weight:1000;letter-spacing:.08em;color:#dce9f2;pointer-events:none;display:none}.flx4-loop-badge.on{display:block}.deck-a .flx4-loop-badge.on{border-color:rgba(84,216,255,.55);color:#75e0ff}.deck-b .flx4-loop-badge.on{border-color:rgba(255,181,94,.55);color:#ffc478}
+.flx4-memory-marker,.flx4-hotcue-marker{position:absolute;top:0;bottom:22px;width:2px;z-index:4;pointer-events:none}.flx4-hotcue-marker{background:#ff4d76;box-shadow:0 0 8px rgba(255,77,118,.7)}.flx4-memory-marker{background:#9d7bff;box-shadow:0 0 8px rgba(157,123,255,.55)}
+.flx4-hotcue-marker::after,.flx4-memory-marker::after{position:absolute;top:2px;left:3px;font-size:8px;font-weight:1000;padding:1px 3px;border-radius:4px;background:#020609;white-space:nowrap}.flx4-hotcue-marker::after{content:attr(data-label);color:#ff7b9c}.flx4-memory-marker::after{content:attr(data-label);color:#bba5ff}

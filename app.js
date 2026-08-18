@@ -1920,3 +1920,45 @@ const v39OldSetMaster=v3SetMaster;
 v3SetMaster=function(letter){const r=v39OldSetMaster(letter);v39RefreshStackLive('A');v39RefreshStackLive('B');return r};
 function v39Bind(){v39RefreshStackLive('A');v39RefreshStackLive('B');setTimeout(()=>{v34DrawStack('A',true);v34DrawStack('B',true);v39RefreshStackLive('A');v39RefreshStackLive('B')},350)}
 v39Bind();
+
+
+// ===== v4.0: AUTHENTIC FLX4 LOOP FLOW + LOOP/CUE OVERLAYS =====
+function v40LoopBounds(letter){
+  const d=djDecks[letter];if(!d?.item)return null;const p=djBeatPeriod(letter);
+  if(d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)&&d.manualLoopOut>d.manualLoopIn)return {start:d.manualLoopIn,end:d.manualLoopOut,beats:(d.manualLoopOut-d.manualLoopIn)/p,manual:true};
+  if(Number(d.loopBeats)>0&&Number.isFinite(d.loopStart))return {start:d.loopStart,end:d.loopStart+Number(d.loopBeats)*p,beats:Number(d.loopBeats),manual:false};
+  return null;
+}
+function v40EnsureOverlay(letter){
+  const wrap=document.querySelector(`[data-flx-stack-seek="${letter}"]`);if(!wrap)return null;
+  let ov=$(`#flx${letter}LoopOverlay`);if(!ov){ov=document.createElement('div');ov.id=`flx${letter}LoopOverlay`;ov.className='flx4-loop-overlay';ov.innerHTML='<i class="loop-in">IN</i><i class="loop-out">OUT</i>';wrap.appendChild(ov)}
+  let badge=$(`#flx${letter}LoopBadge`);if(!badge){badge=document.createElement('b');badge.id=`flx${letter}LoopBadge`;badge.className='flx4-loop-badge';wrap.appendChild(badge)}
+  return {wrap,ov,badge};
+}
+function v40ClearMarkers(letter){const wrap=document.querySelector(`[data-flx-stack-seek="${letter}"]`);wrap?.querySelectorAll('.flx4-hotcue-marker,.flx4-memory-marker').forEach(x=>x.remove())}
+function v40TimeToPct(t,r){return clamp((t-r.start)/Math.max(.001,r.end-r.start)*100,0,100)}
+function v40RefreshMarkers(letter,r){
+  const d=djDecks[letter],wrap=document.querySelector(`[data-flx-stack-seek="${letter}"]`);if(!d?.item||!wrap)return;v40ClearMarkers(letter);
+  (d.hotCues||[]).forEach((t,i)=>{if(!Number.isFinite(t)||t<r.start||t>r.end)return;const m=document.createElement('i');m.className='flx4-hotcue-marker';m.style.left=v40TimeToPct(t,r)+'%';m.dataset.label=`H${i+1}`;wrap.appendChild(m)});
+  const mem=typeof v36MemList==='function'?v36MemList(letter):[];(mem||[]).forEach((x,i)=>{const t=Number(x?.time);if(!Number.isFinite(t)||t<r.start||t>r.end)return;const m=document.createElement('i');m.className='flx4-memory-marker';m.style.left=v40TimeToPct(t,r)+'%';m.dataset.label=x.type==='loop'?`M${i+1}L`:`M${i+1}`;wrap.appendChild(m)});
+}
+function v40RefreshLoopOverlay(letter){
+  const d=djDecks[letter],ui=v40EnsureOverlay(letter);if(!ui)return;if(!d?.item){ui.ov.classList.remove('on');ui.badge.classList.remove('on');v40ClearMarkers(letter);return}
+  const r=v34StackRange(letter),bounds=v40LoopBounds(letter);v40RefreshMarkers(letter,r);if(!bounds){ui.ov.classList.remove('on');ui.badge.classList.remove('on');return}
+  const visStart=Math.max(bounds.start,r.start),visEnd=Math.min(bounds.end,r.end);if(visEnd<=visStart){ui.ov.classList.remove('on')}else{ui.ov.classList.add('on');ui.ov.style.left=v40TimeToPct(visStart,r)+'%';ui.ov.style.width=Math.max(.4,v40TimeToPct(visEnd,r)-v40TimeToPct(visStart,r))+'%'}
+  const b=bounds.beats,txt=`LOOP ${Math.abs(b-Math.round(b))<.01?Math.round(b):b.toFixed(2)} BEAT${Math.abs(b-1)<.01?'':'S'}`;ui.badge.textContent=txt;ui.badge.classList.add('on')
+}
+// Keep the FLX4 hardware semantics explicit: 4 BEAT starts a 4-beat loop; during an active loop it exits.
+const v40OldToggleLoop4=v34ToggleLoop4;
+v34ToggleLoop4=function(letter){const d=djDecks[letter];if(!d?.item)return;const was=!!v35LoopBeats(letter);const r=v40OldToggleLoop4(letter);v40RefreshLoopOverlay(letter);v34DrawStack(letter,true);setStatus(true,was?'4 BEAT / EXIT':'4 BEAT',was?`DECK ${letter} · LOOP AUS · Song läuft weiter`:`DECK ${letter} · 4 BEAT LOOP`);return r};
+// While a loop is active, CUE/LOOP CALL follows the printed 1/2X and 2X labels. Outside a loop it recalls memory/cue points.
+const v40OldCueCall=v34CueCall;
+v34CueCall=function(letter,dir){const active=!!v35LoopBeats(letter),before=v35LoopBeats(letter),r=v40OldCueCall(letter,dir);if(active){const after=v35LoopBeats(letter);setStatus(true,dir<0?'1/2X':'2X',`DECK ${letter} · ${before} → ${after} BEATS`)}v40RefreshLoopOverlay(letter);v34DrawStack(letter,true);return r};
+const v40OldLoopIn=v3LoopIn;v3LoopIn=function(letter){const r=v40OldLoopIn(letter);v40RefreshLoopOverlay(letter);v34DrawStack(letter,true);return r};
+const v40OldLoopOut=v3LoopOut;v3LoopOut=function(letter){const r=v40OldLoopOut(letter);v40RefreshLoopOverlay(letter);v34DrawStack(letter,true);return r};
+const v40OldSetLoopSize=v35SetLoopSize;v35SetLoopSize=function(letter,beats,activate=true){const r=v40OldSetLoopSize(letter,beats,activate);v40RefreshLoopOverlay(letter);v34DrawStack(letter,true);return r};
+const v40OldExitLoop=v35ExitLoop;v35ExitLoop=function(letter){const r=v40OldExitLoop(letter);v40RefreshLoopOverlay(letter);v34DrawStack(letter,true);return r};
+const v40OldDrawStack=v34DrawStack;v34DrawStack=function(letter,force=false){const r=v40OldDrawStack(letter,force);v40RefreshLoopOverlay(letter);return r};
+const v40OldRefreshFlx=refreshFlx4Ui;refreshFlx4Ui=function(){v40OldRefreshFlx();v40RefreshLoopOverlay('A');v40RefreshLoopOverlay('B')};
+function v40Bind(){for(const L of ['A','B']){v40EnsureOverlay(L);v40RefreshLoopOverlay(L)}setTimeout(()=>{v34DrawStack('A',true);v34DrawStack('B',true)},400)}
+v40Bind();
