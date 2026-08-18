@@ -1311,3 +1311,142 @@ body.flx-compact-mode .flx4-controller>.flx4-side-mapper .flx4-rotary-stack labe
     max-height:278px!important;
   }
 }
+
+
+/* ===== v4.2.0: desktop zoom resilience (100% / 110% / 125%) =====
+   Keep the same five-column FLX4 layout while browser zoom reduces the CSS
+   viewport. The important change is that every column and its inner controls
+   are allowed to shrink instead of forcing horizontal overflow/cropping. */
+@media (min-width:1000px){
+  .flx4-controller,
+  body.flx-compact-mode .flx4-controller{
+    grid-template-columns:
+      minmax(0,.95fr)
+      clamp(46px,4vw,58px)
+      minmax(300px,1.35fr)
+      clamp(46px,4vw,58px)
+      minmax(0,.95fr)!important;
+    gap:clamp(3px,.35vw,5px)!important;
+    width:100%!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+
+  .flx4-controller>*{min-width:0!important;box-sizing:border-box!important}
+  .flx4-controller>.flx4-a{grid-column:1!important;grid-row:1!important}
+  .flx4-controller>.flx4-side-mapper.deck-a{grid-column:2!important;grid-row:1!important}
+  .flx4-controller>.flx4-mixer-section{grid-column:3!important;grid-row:1!important}
+  .flx4-controller>.flx4-side-mapper.deck-b{grid-column:4!important;grid-row:1!important}
+  .flx4-controller>.flx4-b{grid-column:5!important;grid-row:1!important}
+
+  /* Deck top controls were the main hidden minimum-width source. */
+  .flx4-hardware-top{
+    grid-template-columns:
+      repeat(3,minmax(0,1fr))
+      minmax(78px,1.42fr)
+      minmax(42px,.72fr)!important;
+    gap:clamp(2px,.3vw,5px)!important;
+  }
+  .flx4-hardware-top>button,
+  .flx4-cuecall,
+  .flx4-cuecall button{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  .flx4-hardware-top>button{padding-inline:clamp(2px,.35vw,6px)!important}
+  .flx4-hardware-top button b{font-size:clamp(6.4px,.55vw,9px)!important}
+  .flx4-hardware-top button small,
+  .flx4-cuecall span{font-size:clamp(4.5px,.38vw,6px)!important}
+
+  /* Jog wheels gently scale down as effective viewport width gets smaller. */
+  body.flx-compact-mode .flx4-jog,
+  .flx4-jog{
+    width:min(100%,clamp(150px,12vw,184px))!important;
+    max-width:72%!important;
+  }
+  .flx4-deck-body{
+    grid-template-columns:clamp(38px,3.5vw,46px) minmax(0,1fr)!important;
+    gap:clamp(2px,.3vw,4px)!important;
+  }
+  .flx4-b .flx4-deck-body{
+    grid-template-columns:minmax(0,1fr) clamp(38px,3.5vw,46px)!important;
+  }
+
+  /* Side mixer strips remain narrow but scale instead of stealing deck width. */
+  .flx4-controller>.flx4-side-mapper,
+  body.flx-compact-mode .flx4-controller>.flx4-side-mapper{
+    width:100%!important;
+    min-width:0!important;
+    padding-inline:clamp(2px,.28vw,5px)!important;
+  }
+  .flx4-controller>.flx4-side-mapper .flx4-rotary{
+    width:clamp(25px,2.2vw,34px)!important;
+    height:clamp(25px,2.2vw,34px)!important;
+    min-height:clamp(25px,2.2vw,34px)!important;
+  }
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label{
+    grid-template-columns:minmax(12px,18px) minmax(0,1fr)!important;
+  }
+
+  /* Center/browser is flexible. No element is allowed to force it wider. */
+  .flx4-mixer-section,
+  .flx4-mixer-section .flx4-browser-panel,
+  .flx4-mixer-section .flx4-browser-list,
+  .flx4-mixer-section .flx4-center-core,
+  .flx4-mixer-section .v415-beatfx-rail{min-width:0!important;max-width:100%!important}
+
+  .flx4-browser-top.flx4-browser-top-compact{
+    grid-template-columns:auto 24px minmax(70px,1fr) 24px auto auto auto!important;
+    gap:2px!important;
+  }
+  .flx4-browser-top-compact>button{min-width:0!important;padding-inline:clamp(2px,.3vw,6px)!important}
+  .flx4-browser-top-compact .browse-center-compact{min-width:0!important}
+  .flx4-browser-top-compact .browse-center-compact small{max-width:min(120px,18vw)!important}
+
+  /* Horizontal Beat FX remains horizontal, but its columns can actually shrink. */
+  .flx4-mixer-section .v415-fx-vertical{
+    min-width:0!important;
+    grid-template-columns:
+      minmax(72px,1fr)
+      minmax(58px,.75fr)
+      minmax(100px,1.25fr)
+      46px
+      60px!important;
+    gap:3px!important;
+  }
+  .flx4-mixer-section .v415-fx-channel-stack,
+  .flx4-mixer-section .v415-fx-select,
+  .flx4-mixer-section .v415-fx-beat-controls,
+  .flx4-mixer-section .v415-fx-level,
+  .flx4-mixer-section .v415-fx-on{min-width:0!important;max-width:100%!important}
+
+  /* Pads/transport should compress rather than widen a deck. */
+  .flx4-padmode-buttons,
+  .flx4-pads,
+  .flx4-transport{min-width:0!important}
+  .flx4-padmode-buttons button,
+  .flx4-pads button,
+  .flx4-transport button{min-width:0!important}
+}
+
+/* Extra tightening only around the 125%-zoom effective widths on typical
+   1366/1440/1680 laptop displays. The layout/order stays identical. */
+@media (min-width:1000px) and (max-width:1380px){
+  .flx4-controller,
+  body.flx-compact-mode .flx4-controller{
+    grid-template-columns:minmax(0,.92fr) 46px minmax(286px,1.28fr) 46px minmax(0,.92fr)!important;
+    gap:3px!important;
+  }
+  .flx4-deck{padding:clamp(5px,.55vw,8px)!important}
+  .flx4-hardware-top{
+    grid-template-columns:repeat(3,minmax(0,1fr)) minmax(72px,1.35fr) minmax(40px,.68fr)!important;
+  }
+  body.flx-compact-mode .flx4-jog,
+  .flx4-jog{width:min(100%,clamp(145px,11.8vw,163px))!important;max-width:74%!important}
+  .flx4-mixer-section .v415-fx-vertical{
+    grid-template-columns:minmax(66px,1fr) minmax(54px,.72fr) minmax(92px,1.2fr) 42px 56px!important;
+  }
+  .flx4-browser-columns,
+  .flx4-browser-track{grid-template-columns:minmax(0,1fr) 42px 38px 48px!important}
+}
