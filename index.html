@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.2</title>
+  <title>NÉVO Studio v3.3</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.2</span></div>
+        <div class="brand-sub">STUDIO <span>v3.3</span></div>
       </div>
 
       <div class="transport">
@@ -91,8 +91,12 @@
           <div class="flx-midi-strip">
             <button id="flxMidiConnect" class="btn small" type="button">USB/MIDI VERBINDEN</button>
             <button id="flxMidiLearn" class="btn small" type="button">MIDI LEARN AUS</button>
+            <button id="flxMidiExport" class="btn small" type="button">MAPPING SICHERN</button>
+            <label class="btn small file-btn flx-midi-import">MAPPING LADEN<input id="flxMidiImport" type="file" accept="application/json"></label>
+            <button id="flxMidiMonitorBtn" class="btn small" type="button">MIDI MONITOR AUS</button>
             <button id="flxMidiReset" class="btn small" type="button">MAPPINGS LÖSCHEN</button>
             <span id="flxMidiStatus" class="flx-midi-status">Kein MIDI-Gerät verbunden</span>
+            <span id="flxMidiMonitor" class="flx-midi-monitor">Noch kein MIDI-Signal</span>
           </div>
           <div class="dj-master-strip">
             <span>MASTER DECK</span>
@@ -126,7 +130,7 @@
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
             <strong>DDJ-FLX4 MODUS</strong>
-            <span>Bildschirm wie dein Controller: Decks außen, Mixer in der Mitte. MIDI LEARN: einschalten → Bildschirm-Regler antippen → echten Regler bewegen.</span>
+            <span>Bildschirm wie dein Controller: Decks außen, Mixer in der Mitte. MIDI LEARN: einschalten → zuerst das Ziel in NÉVO antippen → erst dann den echten Regler bewegen. Jogwheels vorerst nur im MIDI Monitor testen.</span>
           </div>
 
           <div class="flx4-controller">
@@ -152,10 +156,11 @@
               <div class="flx4-mixer-brand"><strong>NÉVO</strong><span>FLX4 CONTROL</span></div>
               <div class="flx4-mixer-columns">
                 <div class="flx4-channel" data-channel="A">
+                  <label>TRIM / GAIN<input data-flx-action="A.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>HIGH<input data-flx-action="A.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>MID<input data-flx-action="A.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>LOW<input data-flx-action="A.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label>FILTER<input data-flx-action="A.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>CFX / FILTER<input data-flx-action="A.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label class="flx4-fader">CH 1<input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
                 <div class="flx4-master-column">
@@ -167,10 +172,11 @@
                   <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small><em>Jeder markierte Regler kann gelernt werden.</em></div>
                 </div>
                 <div class="flx4-channel" data-channel="B">
+                  <label>TRIM / GAIN<input data-flx-action="B.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>HIGH<input data-flx-action="B.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>MID<input data-flx-action="B.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>LOW<input data-flx-action="B.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label>FILTER<input data-flx-action="B.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>CFX / FILTER<input data-flx-action="B.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label class="flx4-fader">CH 2<input data-flx-action="B.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
               </div>

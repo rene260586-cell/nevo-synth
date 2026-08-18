@@ -268,3 +268,12 @@ button,.btn,.mode-btn,.lang-btn,.preset-card{-webkit-appearance:none;appearance:
 #audioNormalizeBtn{color:#a8f7ff;border-color:rgba(84,216,255,.24)}#audioReverseBtn{color:#d4b5ff;border-color:rgba(177,107,255,.24)}#audioDuplicateBtn{color:#ffd09b;border-color:rgba(255,181,94,.24)}
 @media(max-width:760px){.dj-lib-item{grid-template-columns:minmax(0,1fr) 54px 48px 56px auto}.dj-lib-rating{display:none}.v32-analysis-status{width:100%;margin-left:0}.v32-meta-grid{grid-template-columns:1fr}.v32-meta-grid label.wide{grid-column:auto}.v32-deck-to-studio{grid-template-columns:1fr}}
 @media(max-width:520px){.dj-lib-key,.dj-lib-duration{display:none}.dj-lib-item{grid-template-columns:minmax(0,1fr) auto}.v32-library-controls label{flex:1 1 140px}}
+
+/* ===== v3.3 FLX4 mapping backup + monitor ===== */
+.flx-midi-import{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
+.flx-midi-import input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.flx-midi-monitor{display:inline-flex;align-items:center;min-height:34px;max-width:100%;padding:6px 9px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#080d12;color:#6d7d89;font:700 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flx-midi-monitor.active{color:#bfffd1;border-color:rgba(86,241,132,.28);box-shadow:inset 0 0 14px rgba(86,241,132,.05)}
+.flx4-channel label:first-child{color:#ffd38a}
+.flx4-channel label:first-child input{accent-color:#ffbc62}
+@media(max-width:660px){.flx-midi-monitor{width:100%;white-space:normal;overflow-wrap:anywhere}.flx-midi-strip .btn,.flx-midi-strip .flx-midi-import{flex:1 1 auto}}

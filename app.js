@@ -920,17 +920,18 @@ bindAudioEditor();bindDjPlayer();
 // ===== v2.9: DDJ-FLX4 MODE + GENERIC WEB MIDI LEARN =====
 const FLX_MIDI_STORAGE='nevo-flx4-midi-mappings-v1';
 const FLX_MODE_STORAGE='nevo-dj-view-mode-v1';
-const flxState={mode:'pro',midiAccess:null,learn:false,target:null,mappings:{},lastMidi:new Map()};
+const flxState={mode:'pro',midiAccess:null,learn:false,target:null,mappings:{},lastMidi:new Map(),monitor:false,lastRawMidi:''};
 try{flxState.mappings=JSON.parse(localStorage.getItem(FLX_MIDI_STORAGE)||'{}')||{}}catch{flxState.mappings={}}
 
-function flxIsContinuous(action){return /\.(pitch|volume|eqHigh|eqMid|eqLow|filter)$/.test(action)||action==='crossfader'}
+function flxIsContinuous(action){return /\.(pitch|volume|trim|eqHigh|eqMid|eqLow|filter)$/.test(action)||action==='crossfader'}
 function flxActionLabel(action){
   const map={
     'A.play':'Deck A Play/Pause','A.cue':'Deck A Cue','A.sync':'Deck A Sync','A.keylock':'Deck A Key Lock',
     'B.play':'Deck B Play/Pause','B.cue':'Deck B Cue','B.sync':'Deck B Sync','B.keylock':'Deck B Key Lock',
     'A.pitch':'Deck A Tempo','B.pitch':'Deck B Tempo','A.volume':'Deck A Lautstärke','B.volume':'Deck B Lautstärke',
-    'A.eqHigh':'Deck A High','A.eqMid':'Deck A Mid','A.eqLow':'Deck A Low','A.filter':'Deck A Filter',
-    'B.eqHigh':'Deck B High','B.eqMid':'Deck B Mid','B.eqLow':'Deck B Low','B.filter':'Deck B Filter','crossfader':'Crossfader'
+    'A.trim':'Deck A Trim / Gain','B.trim':'Deck B Trim / Gain',
+    'A.eqHigh':'Deck A High','A.eqMid':'Deck A Mid','A.eqLow':'Deck A Low','A.filter':'Deck A CFX / Filter',
+    'B.eqHigh':'Deck B High','B.eqMid':'Deck B Mid','B.eqLow':'Deck B Low','B.filter':'Deck B CFX / Filter','crossfader':'Crossfader'
   };
   if(map[action])return map[action];
   const m=action.match(/^([AB])\.hot([1-4])$/);if(m)return `Deck ${m[1]} Hot Cue ${m[2]}`;
@@ -953,13 +954,14 @@ async function ensureDeckConnected(deck){
   await initAudio();
   if(!deck.source){
     deck.source=ctx.createMediaElementSource(deck.audio);
+    deck.trimGainNode=ctx.createGain();
     deck.eqLowNode=ctx.createBiquadFilter();deck.eqLowNode.type='lowshelf';deck.eqLowNode.frequency.value=180;
     deck.eqMidNode=ctx.createBiquadFilter();deck.eqMidNode.type='peaking';deck.eqMidNode.frequency.value=1000;deck.eqMidNode.Q.value=.8;
     deck.eqHighNode=ctx.createBiquadFilter();deck.eqHighNode.type='highshelf';deck.eqHighNode.frequency.value=6000;
     deck.colorFilterNode=ctx.createBiquadFilter();deck.colorFilterNode.type='lowpass';deck.colorFilterNode.frequency.value=20000;deck.colorFilterNode.Q.value=.75;
     deck.gainNode=ctx.createGain();
-    deck.source.connect(deck.eqLowNode);deck.eqLowNode.connect(deck.eqMidNode);deck.eqMidNode.connect(deck.eqHighNode);deck.eqHighNode.connect(deck.colorFilterNode);deck.colorFilterNode.connect(deck.gainNode);deck.gainNode.connect(master);
-    deck.eqLow=deck.eqLow||0;deck.eqMid=deck.eqMid||0;deck.eqHigh=deck.eqHigh||0;deck.filterValue=deck.filterValue||0;
+    deck.source.connect(deck.trimGainNode);deck.trimGainNode.connect(deck.eqLowNode);deck.eqLowNode.connect(deck.eqMidNode);deck.eqMidNode.connect(deck.eqHighNode);deck.eqHighNode.connect(deck.colorFilterNode);deck.colorFilterNode.connect(deck.gainNode);deck.gainNode.connect(master);
+    deck.trimValue=Number.isFinite(deck.trimValue)?deck.trimValue:0;deck.eqLow=deck.eqLow||0;deck.eqMid=deck.eqMid||0;deck.eqHigh=deck.eqHigh||0;deck.filterValue=deck.filterValue||0;
     flxApplyEq(deck.letter);
   }
   updateCrossfaderGains();
@@ -967,6 +969,7 @@ async function ensureDeckConnected(deck){
 function flxApplyEq(letter){
   const d=djDecks[letter];if(!d)return;
   const t=ctx?.currentTime||0;
+  if(d.trimGainNode){const tv=clamp(d.trimValue||0,-1,1),db=tv<0?tv*24:tv*12;d.trimGainNode.gain.setTargetAtTime(Math.pow(10,db/20),t,.015)}
   if(d.eqLowNode)d.eqLowNode.gain.setTargetAtTime((d.eqLow||0)*12,t,.015);
   if(d.eqMidNode)d.eqMidNode.gain.setTargetAtTime((d.eqMid||0)*12,t,.015);
   if(d.eqHighNode)d.eqHighNode.gain.setTargetAtTime((d.eqHigh||0)*12,t,.015);
@@ -990,7 +993,7 @@ function flxSetContinuous(action,norm,fromMidi=false){
     const v=norm;if($(`#deck${L}Volume`))$(`#deck${L}Volume`).value=v;const flx=document.querySelector(`[data-flx-action="${L}.volume"]`);if(flx)flx.value=v;updateCrossfaderGains();return;
   }
   const v=norm*2-1;
-  if(kind==='eqHigh')d.eqHigh=v;if(kind==='eqMid')d.eqMid=v;if(kind==='eqLow')d.eqLow=v;if(kind==='filter')d.filterValue=v;
+  if(kind==='trim')d.trimValue=v;if(kind==='eqHigh')d.eqHigh=v;if(kind==='eqMid')d.eqMid=v;if(kind==='eqLow')d.eqLow=v;if(kind==='filter')d.filterValue=v;
   const input=document.querySelector(`[data-flx-action="${action}"]`);if(input&&!fromMidi)input.value=v;else if(input)input.value=v;
   flxApplyEq(L);
 }
@@ -1037,11 +1040,44 @@ function flxMidiMessageKey(data){
   if(type===0xE0)return {key:`e0:${ch}:pitch`,norm:clamp(((d2<<7)|d1)/16383,0,1)};
   return {key:`${type.toString(16)}:${ch}:${d1}`,norm:clamp(d2/127,0,1)};
 }
-function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{}}
+function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
+function refreshFlxMappingSummary(){const n=Object.keys(flxState.mappings||{}).length;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} Mapping${n===1?'':'s'} gespeichert`}
+function exportFlxMappings(){
+  const payload={app:'NÉVO Studio',version:'3.3',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings};
+  downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
+  flxStatus(currentLang==='de'?'MIDI-Mapping gesichert':'MIDI mapping exported','connected');
+}
+async function importFlxMappings(file){
+  if(!file)return;
+  try{
+    const data=JSON.parse(await file.text()),candidate=data&&data.mappings?data.mappings:data;
+    if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))throw new Error('invalid');
+    const clean={};for(const [k,v] of Object.entries(candidate))if(typeof k==='string'&&typeof v==='string')clean[k]=v;
+    if(!Object.keys(clean).length)throw new Error('empty');
+    flxState.mappings=clean;saveFlxMappings();flxStatus(`${Object.keys(clean).length} MIDI-Mappings geladen`,'connected');
+  }catch(e){console.warn(e);flxStatus(currentLang==='de'?'Mapping-Datei ungültig':'Invalid mapping file','error')}
+}
+function toggleFlxMidiMonitor(){
+  flxState.monitor=!flxState.monitor;const b=$('#flxMidiMonitorBtn');if(b){b.textContent=flxState.monitor?(currentLang==='de'?'MIDI MONITOR AN':'MIDI MONITOR ON'):(currentLang==='de'?'MIDI MONITOR AUS':'MIDI MONITOR OFF');b.classList.toggle('active',flxState.monitor)}
+  const el=$('#flxMidiMonitor');if(el){el.classList.toggle('active',flxState.monitor);el.textContent=flxState.monitor?(flxState.lastRawMidi||'Warte auf MIDI-Signal …'):'MIDI Monitor aus'}
+}
 function clearFlxLearnTarget(){document.querySelectorAll('.learn-target').forEach(x=>x.classList.remove('learn-target'));flxState.target=null}
-function selectFlxLearnTarget(el){clearFlxLearnTarget();flxState.target=el.dataset.flxAction;el.classList.add('learn-target');$('#flxLearnHint').textContent=`Warte: ${flxActionLabel(flxState.target)}`;flxStatus(`Bewege jetzt am Controller: ${flxActionLabel(flxState.target)}`,'connected')}
+function selectFlxLearnTarget(el){
+  clearFlxLearnTarget();
+  const action=el.dataset.flxAction;
+  if(/\.jog$/.test(action)){
+    $('#flxLearnHint').textContent=currentLang==='de'?'JOG: MONITOR NUTZEN':'JOG: USE MONITOR';
+    flxStatus(currentLang==='de'?'Jogwheel wird separat gemappt. MIDI MONITOR einschalten und Jogwheel bewegen.':'Jog wheel uses a separate mapping. Turn on MIDI MONITOR and move the jog wheel.','error');
+    return;
+  }
+  flxState.target=action;el.classList.add('learn-target');$('#flxLearnHint').textContent=`Warte: ${flxActionLabel(flxState.target)}`;flxStatus(`Bewege jetzt am Controller: ${flxActionLabel(flxState.target)}`,'connected')
+}
+function updateFlxMidiMonitor(raw,key,norm){
+  flxState.lastRawMidi=`${key} · ${Math.round(norm*127)}/127 · RAW ${[...raw].join(' ')}`;
+  if(flxState.monitor){const el=$('#flxMidiMonitor');if(el){el.textContent=flxState.lastRawMidi;el.classList.add('active')}}
+}
 function handleFlxMidiMessage(e){
-  const {key,norm}=flxMidiMessageKey(e.data||[]);if(!key)return;
+  const raw=e.data||[];const {key,norm}=flxMidiMessageKey(raw);if(!key)return;updateFlxMidiMonitor(raw,key,norm);
   if(flxState.learn&&flxState.target){if(norm<=.01)return;for(const k of Object.keys(flxState.mappings))if(flxState.mappings[k]===flxState.target)delete flxState.mappings[k];flxState.mappings[key]=flxState.target;saveFlxMappings();const label=flxActionLabel(flxState.target);clearFlxLearnTarget();$('#flxLearnHint').textContent=`Gelernt: ${label}`;flxStatus(`MIDI gelernt: ${label}`,'connected');return}
   const action=flxState.mappings[key];if(!action)return;
   const prev=flxState.lastMidi.get(key)??0;flxState.lastMidi.set(key,norm);
@@ -1057,17 +1093,17 @@ async function connectFlxMidi(){
 }
 function toggleFlxMidiLearn(){flxState.learn=!flxState.learn;clearFlxLearnTarget();$('#flxMidiLearn').textContent=flxState.learn?(currentLang==='de'?'MIDI LEARN AN':'MIDI LEARN ON'):(currentLang==='de'?'MIDI LEARN AUS':'MIDI LEARN OFF');$('#flxMidiLearn').classList.toggle('active',flxState.learn);$('#flxLearnHint').textContent=flxState.learn?(currentLang==='de'?'Ziel antippen':'Tap a target'):(currentLang==='de'?'AUS':'OFF')}
 function resetFlxMixer(){
-  for(const L of ['A','B']){const d=djDecks[L];d.eqLow=d.eqMid=d.eqHigh=d.filterValue=0;['eqLow','eqMid','eqHigh','filter'].forEach(k=>{const el=document.querySelector(`[data-flx-action="${L}.${k}"]`);if(el)el.value=0});const vol=document.querySelector(`[data-flx-action="${L}.volume"]`);if(vol)vol.value=.9;if($(`#deck${L}Volume`))$(`#deck${L}Volume`).value=.9;flxApplyEq(L)}if($('#flxCrossfader'))$('#flxCrossfader').value=0;if($('#djCrossfader'))$('#djCrossfader').value=0;updateCrossfaderGains();
+  for(const L of ['A','B']){const d=djDecks[L];d.trimValue=d.eqLow=d.eqMid=d.eqHigh=d.filterValue=0;['trim','eqLow','eqMid','eqHigh','filter'].forEach(k=>{const el=document.querySelector(`[data-flx-action="${L}.${k}"]`);if(el)el.value=0});const vol=document.querySelector(`[data-flx-action="${L}.volume"]`);if(vol)vol.value=.9;if($(`#deck${L}Volume`))$(`#deck${L}Volume`).value=.9;flxApplyEq(L)}if($('#flxCrossfader'))$('#flxCrossfader').value=0;if($('#djCrossfader'))$('#djCrossfader').value=0;updateCrossfaderGains();
 }
 function bindFlx4Mode(){
   if(!$('#flx4Surface'))return;
-  $('#djModePro').onclick=()=>setDjViewMode('pro');$('#djModeFlx4').onclick=()=>setDjViewMode('flx4');$('#flxMidiConnect').onclick=connectFlxMidi;$('#flxMidiLearn').onclick=toggleFlxMidiLearn;$('#flxMidiReset').onclick=()=>{if(confirm(currentLang==='de'?'Alle MIDI-Zuweisungen löschen?':'Clear all MIDI mappings?')){flxState.mappings={};saveFlxMappings();flxStatus(currentLang==='de'?'MIDI-Zuweisungen gelöscht':'MIDI mappings cleared','')}};$('#flxResetMixer').onclick=resetFlxMixer;
+  $('#djModePro').onclick=()=>setDjViewMode('pro');$('#djModeFlx4').onclick=()=>setDjViewMode('flx4');$('#flxMidiConnect').onclick=connectFlxMidi;$('#flxMidiLearn').onclick=toggleFlxMidiLearn;$('#flxMidiExport').onclick=exportFlxMappings;$('#flxMidiImport').onchange=e=>{const f=e.target.files?.[0];if(f)importFlxMappings(f);e.target.value=''};$('#flxMidiMonitorBtn').onclick=toggleFlxMidiMonitor;$('#flxMidiReset').onclick=()=>{if(confirm(currentLang==='de'?'Alle MIDI-Zuweisungen löschen?':'Clear all MIDI mappings?')){flxState.mappings={};saveFlxMappings();flxStatus(currentLang==='de'?'MIDI-Zuweisungen gelöscht':'MIDI mappings cleared','')}};$('#flxResetMixer').onclick=resetFlxMixer;
   document.querySelectorAll('#flx4Surface [data-flx-action]').forEach(el=>{
     el.addEventListener('click',e=>{if(flxState.learn){e.preventDefault();e.stopPropagation();selectFlxLearnTarget(el);return}if(el.matches('button'))flxTriggerAction(el.dataset.flxAction)},true);
     if(el.matches('input[type="range"]'))bindFlxRange(el);
   });
   bindFlxJog('A');bindFlxJog('B');
-  const mode=localStorage.getItem(FLX_MODE_STORAGE)||'pro';setDjViewMode(mode);startFlxTicker();
+  const mode=localStorage.getItem(FLX_MODE_STORAGE)||'pro';setDjViewMode(mode);refreshFlxMappingSummary();startFlxTicker();
 }
 
 bindFlx4Mode();
