@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.3</title>
+  <title>NÉVO Studio v3.4</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.3</span></div>
+        <div class="brand-sub">STUDIO <span>v3.4</span></div>
       </div>
 
       <div class="transport">
@@ -129,57 +129,100 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS</strong>
-            <span>Bildschirm wie dein Controller: Decks außen, Mixer in der Mitte. MIDI LEARN: einschalten → zuerst das Ziel in NÉVO antippen → erst dann den echten Regler bewegen. Jogwheels vorerst nur im MIDI Monitor testen.</span>
+            <strong>DDJ-FLX4 MODUS · v3.4</strong>
+            <span>Controller-Ansicht jetzt deutlich näher am echten FLX4. MIDI LEARN: Ziel in NÉVO antippen → danach den echten Regler/Taster bewegen. Jogwheels weiterhin zuerst im MIDI Monitor prüfen.</span>
           </div>
 
-          <div class="flx4-controller">
+          <section class="flx4-parallel-wave" aria-label="Parallele Deck-Wellenformen">
+            <div class="flx4-parallel-head">
+              <div><b>PARALLELE DECK-WELLENFORM</b><small>Deck A und B übereinander · Beatgrid-Striche · Mitte = aktuelle Position</small></div>
+              <label>ZOOM <select id="flxWaveBeats"><option value="2">2 BEATS</option><option value="4">4 BEATS</option><option value="6">6 BEATS</option><option value="8" selected>8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select></label>
+            </div>
+            <div class="flx4-stack-row deck-a" data-flx-stack="A">
+              <div class="flx4-stack-id"><b>A</b><span id="flxAStackTitle">Kein Song</span><small id="flxAStackMeta">— BPM · 00:00.0</small></div>
+              <div class="flx4-stack-wavewrap" data-flx-stack-seek="A"><canvas id="flxAStackWave" width="1600" height="160"></canvas><div id="flxAStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i></div>
+            </div>
+            <div class="flx4-stack-row deck-b" data-flx-stack="B">
+              <div class="flx4-stack-id"><b>B</b><span id="flxBStackTitle">Kein Song</span><small id="flxBStackMeta">— BPM · 00:00.0</small></div>
+              <div class="flx4-stack-wavewrap" data-flx-stack-seek="B"><canvas id="flxBStackWave" width="1600" height="160"></canvas><div id="flxBStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i></div>
+            </div>
+          </section>
+
+          <div class="flx4-controller v34-controller">
             <section class="flx4-deck flx4-a">
               <div class="flx4-deck-head"><span>DECK 1 / A</span><strong id="flxATitle">Kein Song</strong><small id="flxAMeta">— BPM · 00:00</small></div>
               <div class="flx4-mini-wave"><div id="flxAProgress" class="flx4-mini-progress"></div><i></i></div>
+              <div class="flx4-hardware-top">
+                <button data-flx-action="A.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
+                <button data-flx-action="A.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
+                <button data-flx-action="A.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
+                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="A.cuePrev" type="button">◀</button><button data-flx-action="A.cueNext" type="button">▶</button></div>
+                <button class="flx4-sync" data-flx-action="A.sync" type="button"><b>BEAT</b><small>SYNC</small></button>
+              </div>
               <div class="flx4-deck-body">
                 <div class="flx4-pitch-column">
                   <label>TEMPO <b id="flxAPitchVal">0.0%</b><input id="flxAPitch" data-flx-action="A.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
-                  <button class="flx4-sync" data-flx-action="A.sync" type="button">BEAT<br>SYNC</button>
                 </div>
                 <div id="flxAJog" class="flx4-jog" data-flx-action="A.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>A</span><small>JOG</small></div></div>
               </div>
-              <div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY</button></div>
-              <div class="flx4-padmode"><span>HOT CUE MODE</span><small>8 farbige Hot Cues</small></div>
-              <div class="flx4-pads">
-                <button data-flx-action="A.hot1" data-hot="A-0"><b>1</b><span>HOT CUE</span></button><button data-flx-action="A.hot2" data-hot="A-1"><b>2</b><span>HOT CUE</span></button><button data-flx-action="A.hot3" data-hot="A-2"><b>3</b><span>HOT CUE</span></button><button data-flx-action="A.hot4" data-hot="A-3"><b>4</b><span>HOT CUE</span></button>
-                <button data-flx-action="A.hot5" data-hot="A-4"><b>5</b><span>HOT CUE</span></button><button data-flx-action="A.hot6" data-hot="A-5"><b>6</b><span>HOT CUE</span></button><button data-flx-action="A.hot7" data-hot="A-6"><b>7</b><span>HOT CUE</span></button><button data-flx-action="A.hot8" data-hot="A-7"><b>8</b><span>HOT CUE</span></button>
+              <div class="flx4-shift-row"><button data-flx-action="A.shift" class="flx4-shift" type="button">SHIFT</button></div>
+              <div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY/PAUSE</button></div>
+              <div class="flx4-padmode-buttons" data-padmode-deck="A">
+                <button class="active" data-flx-action="A.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="A.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="A.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="A.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
+              </div>
+              <div class="flx4-pads v34-pads">
+                <button data-flx-action="A.pad1" data-pad="A-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="A.pad2" data-pad="A-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="A.pad3" data-pad="A-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="A.pad4" data-pad="A-4"><b>4</b><span>HOT CUE</span></button>
+                <button data-flx-action="A.pad5" data-pad="A-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="A.pad6" data-pad="A-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="A.pad7" data-pad="A-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="A.pad8" data-pad="A-8"><b>8</b><span>HOT CUE</span></button>
               </div>
             </section>
 
-            <section class="flx4-mixer-section">
+            <section class="flx4-mixer-section v34-mixer">
+              <div class="flx4-browser-top">
+                <button data-flx-action="library.loadA" type="button">LOAD A</button>
+                <div class="flx4-browser-knob"><button data-flx-action="library.prev" type="button">◀</button><b>BROWSE</b><button data-flx-action="library.next" type="button">▶</button><small id="flxBrowseTitle">BIBLIOTHEK</small><button class="sub" data-flx-action="library.back" type="button">BACK</button><button class="sub" data-flx-action="library.view" type="button">VIEW</button></div>
+                <button data-flx-action="library.loadB" type="button">LOAD B</button>
+              </div>
               <div class="flx4-mixer-brand"><strong>NÉVO</strong><span>FLX4 CONTROL</span></div>
               <div class="flx4-mixer-columns">
                 <div class="flx4-channel" data-channel="A">
-                  <label>TRIM / GAIN<input data-flx-action="A.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label>HIGH<input data-flx-action="A.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>TRIM<input data-flx-action="A.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>HI<input data-flx-action="A.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>MID<input data-flx-action="A.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>LOW<input data-flx-action="A.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>CFX / FILTER<input data-flx-action="A.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <button class="flx4-channel-cue" data-flx-action="A.pfl" type="button">CUE 1</button>
                   <label class="flx4-fader">CH 1<input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
-                <div class="flx4-master-column">
-                  <div class="flx4-levels"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                  <div class="flx4-mid-buttons"><button data-flx-action="A.keylock" type="button">KEY<br>LOCK A</button><button data-flx-action="B.keylock" type="button">KEY<br>LOCK B</button></div>
-                  <div class="flx4-mid-buttons v31"><button data-flx-action="A.pfl" type="button">PFL A</button><button data-flx-action="B.pfl" type="button">PFL B</button></div>
-                  <div class="flx4-mid-buttons v31"><button data-flx-action="A.synclock" type="button">LOCK A</button><button data-flx-action="B.synclock" type="button">LOCK B</button></div>
-                  <div class="flx4-browser-controls"><button data-flx-action="library.prev" type="button">▲</button><button data-flx-action="library.next" type="button">▼</button><button data-flx-action="library.loadA" type="button">LOAD A</button><button data-flx-action="library.loadB" type="button">LOAD B</button><small id="flxBrowseTitle">BIBLIOTHEK</small></div>
-                  <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small><em>Jeder markierte Regler kann gelernt werden.</em></div>
+                <div class="flx4-master-column v34-master">
+                  <label class="flx4-master-knob">MASTER LEVEL<input data-flx-action="master.level" type="range" min="0" max="1.25" step="0.01" value="0.85"></label>
+                  <label class="flx4-master-knob">MIC LEVEL<input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
+                  <label class="flx4-master-knob">HEADPHONES MIX<input data-flx-action="headphones.mix" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+                  <label class="flx4-master-knob">CUE LEVEL<input data-flx-action="cue.level" type="range" min="0" max="1" step="0.01" value="0.75"></label>
+                  <div class="flx4-smart-row"><button data-flx-action="smart.cfx" type="button">SMART CFX</button><button data-flx-action="smart.fader" type="button">SMART FADER</button></div>
+                  <div class="flx4-mid-buttons"><button data-flx-action="A.keylock" type="button">KEY LOCK A</button><button data-flx-action="B.keylock" type="button">KEY LOCK B</button></div>
+                  <div class="flx4-mid-buttons v31"><button data-flx-action="A.synclock" type="button">SYNC LOCK A</button><button data-flx-action="B.synclock" type="button">SYNC LOCK B</button></div>
+                  <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small><em>Erst Ziel anklicken, dann Hardware bewegen.</em></div>
                 </div>
                 <div class="flx4-channel" data-channel="B">
-                  <label>TRIM / GAIN<input data-flx-action="B.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  <label>HIGH<input data-flx-action="B.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>TRIM<input data-flx-action="B.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <label>HI<input data-flx-action="B.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>MID<input data-flx-action="B.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>LOW<input data-flx-action="B.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
                   <label>CFX / FILTER<input data-flx-action="B.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
+                  <button class="flx4-channel-cue" data-flx-action="B.pfl" type="button">CUE 2</button>
                   <label class="flx4-fader">CH 2<input data-flx-action="B.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
               </div>
+              <section class="flx4-beatfx">
+                <div class="flx4-beatfx-title"><b>BEAT FX</b><span id="flxFxName">ECHO</span></div>
+                <div class="flx4-beatfx-grid">
+                  <button data-flx-action="fx.channel" id="flxFxChannel" type="button">CH 1</button>
+                  <button data-flx-action="fx.select" type="button">FX SELECT</button>
+                  <button data-flx-action="fx.beatDown" type="button">◀ BEAT</button><b id="flxFxBeat">1</b><button data-flx-action="fx.beatUp" type="button">BEAT ▶</button>
+                  <label>LEVEL / DEPTH<input data-flx-action="fx.level" type="range" min="0" max="1" step="0.01" value="0.55"></label>
+                  <button id="flxFxOn" data-flx-action="fx.on" type="button">ON/OFF</button>
+                </div>
+              </section>
               <label class="flx4-cross"><span>A</span><input id="flxCrossfader" data-flx-action="crossfader" type="range" min="-1" max="1" step="0.01" value="0"><span>B</span></label>
               <button id="flxResetMixer" class="btn small flx-reset" type="button">MIXER NULLSTELLEN</button>
             </section>
@@ -187,18 +230,27 @@
             <section class="flx4-deck flx4-b">
               <div class="flx4-deck-head"><span>DECK 2 / B</span><strong id="flxBTitle">Kein Song</strong><small id="flxBMeta">— BPM · 00:00</small></div>
               <div class="flx4-mini-wave"><div id="flxBProgress" class="flx4-mini-progress"></div><i></i></div>
+              <div class="flx4-hardware-top">
+                <button data-flx-action="B.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
+                <button data-flx-action="B.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
+                <button data-flx-action="B.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
+                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="B.cuePrev" type="button">◀</button><button data-flx-action="B.cueNext" type="button">▶</button></div>
+                <button class="flx4-sync" data-flx-action="B.sync" type="button"><b>BEAT</b><small>SYNC</small></button>
+              </div>
               <div class="flx4-deck-body">
                 <div id="flxBJog" class="flx4-jog" data-flx-action="B.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>B</span><small>JOG</small></div></div>
                 <div class="flx4-pitch-column">
                   <label>TEMPO <b id="flxBPitchVal">0.0%</b><input id="flxBPitch" data-flx-action="B.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
-                  <button class="flx4-sync" data-flx-action="B.sync" type="button">BEAT<br>SYNC</button>
                 </div>
               </div>
-              <div class="flx4-transport"><button data-flx-action="B.cue" type="button">CUE</button><button class="play" data-flx-action="B.play" type="button">▶ PLAY</button></div>
-              <div class="flx4-padmode"><span>HOT CUE MODE</span><small>8 farbige Hot Cues</small></div>
-              <div class="flx4-pads">
-                <button data-flx-action="B.hot1" data-hot="B-0"><b>1</b><span>HOT CUE</span></button><button data-flx-action="B.hot2" data-hot="B-1"><b>2</b><span>HOT CUE</span></button><button data-flx-action="B.hot3" data-hot="B-2"><b>3</b><span>HOT CUE</span></button><button data-flx-action="B.hot4" data-hot="B-3"><b>4</b><span>HOT CUE</span></button>
-                <button data-flx-action="B.hot5" data-hot="B-4"><b>5</b><span>HOT CUE</span></button><button data-flx-action="B.hot6" data-hot="B-5"><b>6</b><span>HOT CUE</span></button><button data-flx-action="B.hot7" data-hot="B-6"><b>7</b><span>HOT CUE</span></button><button data-flx-action="B.hot8" data-hot="B-7"><b>8</b><span>HOT CUE</span></button>
+              <div class="flx4-shift-row"><button data-flx-action="B.shift" class="flx4-shift" type="button">SHIFT</button></div>
+              <div class="flx4-transport"><button data-flx-action="B.cue" type="button">CUE</button><button class="play" data-flx-action="B.play" type="button">▶ PLAY/PAUSE</button></div>
+              <div class="flx4-padmode-buttons" data-padmode-deck="B">
+                <button class="active" data-flx-action="B.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="B.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="B.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="B.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
+              </div>
+              <div class="flx4-pads v34-pads">
+                <button data-flx-action="B.pad1" data-pad="B-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="B.pad2" data-pad="B-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="B.pad3" data-pad="B-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="B.pad4" data-pad="B-4"><b>4</b><span>HOT CUE</span></button>
+                <button data-flx-action="B.pad5" data-pad="B-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="B.pad6" data-pad="B-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="B.pad7" data-pad="B-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="B.pad8" data-pad="B-8"><b>8</b><span>HOT CUE</span></button>
               </div>
             </section>
           </div>

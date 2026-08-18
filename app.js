@@ -923,7 +923,7 @@ const FLX_MODE_STORAGE='nevo-dj-view-mode-v1';
 const flxState={mode:'pro',midiAccess:null,learn:false,target:null,mappings:{},lastMidi:new Map(),monitor:false,lastRawMidi:''};
 try{flxState.mappings=JSON.parse(localStorage.getItem(FLX_MIDI_STORAGE)||'{}')||{}}catch{flxState.mappings={}}
 
-function flxIsContinuous(action){return /\.(pitch|volume|trim|eqHigh|eqMid|eqLow|filter)$/.test(action)||action==='crossfader'}
+function flxIsContinuous(action){return /\.(pitch|volume|trim|eqHigh|eqMid|eqLow|filter)$/.test(action)||action==='crossfader'||action==='master.level'||action==='cue.level'||action==='mic.level'||action==='headphones.mix'||action==='fx.level'}
 function flxActionLabel(action){
   const map={
     'A.play':'Deck A Play/Pause','A.cue':'Deck A Cue','A.sync':'Deck A Sync','A.keylock':'Deck A Key Lock',
@@ -1009,7 +1009,11 @@ function bindFlxRange(input){
   if(!input)return;const action=input.dataset.flxAction;if(!action)return;
   input.addEventListener('input',()=>{
     if(flxState.learn)return;
-    let norm;if(action.endsWith('.pitch'))norm=(Number(input.value)+16)/32;else if(action.endsWith('.volume'))norm=Number(input.value);else norm=(Number(input.value)+1)/2;
+    let norm;
+    if(action.endsWith('.pitch'))norm=(Number(input.value)+16)/32;
+    else if(action.endsWith('.volume')||action==='cue.level'||action==='mic.level'||action==='headphones.mix'||action==='fx.level')norm=Number(input.value);
+    else if(action==='master.level')norm=clamp(Number(input.value)/1.25,0,1);
+    else norm=(Number(input.value)+1)/2;
     flxRunAction(action,norm,false);
   });
 }
@@ -1043,7 +1047,7 @@ function flxMidiMessageKey(data){
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const n=Object.keys(flxState.mappings||{}).length;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} Mapping${n===1?'':'s'} gespeichert`}
 function exportFlxMappings(){
-  const payload={app:'NÉVO Studio',version:'3.3',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings};
+  const payload={app:'NÉVO Studio',version:'3.4',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings};
   downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping gesichert':'MIDI mapping exported','connected');
 }
@@ -1470,3 +1474,75 @@ function v32Bind(){
   v32RefreshLanguage();setTimeout(v32MergePersistedMeta,450);setTimeout(v32MergePersistedMeta,1400)
 }
 v32Bind();
+
+
+// ===== v3.4: COMPLETE FLX4 SURFACE + PARALLEL DECK WAVE =====
+const V34_STORAGE='nevo-flx4-v34-state';
+const nevoV34={padMode:{A:'hotcue',B:'hotcue'},shift:{A:false,B:false},waveBeats:8,smartCfx:false,smartFader:false,masterLevel:.85,micLevel:0,headphonesMix:.5,fx:{name:'ECHO',channel:'A',beat:1,level:.55,on:false}};
+try{Object.assign(nevoV34,JSON.parse(localStorage.getItem(V34_STORAGE)||'{}')||{});nevoV34.padMode={A:nevoV34.padMode?.A||'hotcue',B:nevoV34.padMode?.B||'hotcue'};nevoV34.shift={A:!!nevoV34.shift?.A,B:!!nevoV34.shift?.B};nevoV34.fx={name:nevoV34.fx?.name||'ECHO',channel:nevoV34.fx?.channel||'A',beat:Number(nevoV34.fx?.beat)||1,level:Number(nevoV34.fx?.level)??.55,on:!!nevoV34.fx?.on}}catch{}
+function v34Save(){try{localStorage.setItem(V34_STORAGE,JSON.stringify(nevoV34))}catch{}}
+function v34PadLabels(mode){if(mode==='beatjump')return ['-16','-8','-4','-1','+1','+4','+8','+16'];if(mode==='padfx')return ['LP','HP','CUT','PUNCH','BACK','FWD','HALF','DOUBLE'];if(mode==='sampler')return ['KICK','BASS','HAT','ACID','SYNTH','VOCAL','RISER','FX'];return ['HOT 1','HOT 2','HOT 3','HOT 4','HOT 5','HOT 6','HOT 7','HOT 8']}
+function v34SetPadMode(letter,mode){nevoV34.padMode[letter]=mode;v34Save();const box=document.querySelector(`[data-padmode-deck="${letter}"]`);box?.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.flxAction===`${letter}.mode${mode==='hotcue'?'Hotcue':mode==='padfx'?'Padfx':mode==='beatjump'?'Beatjump':'Sampler'}`));const labels=v34PadLabels(mode);for(let i=1;i<=8;i++){const b=document.querySelector(`[data-pad="${letter}-${i}"]`);if(b)b.querySelector('span').textContent=labels[i-1]}}
+function v34PadAction(letter,index){const d=djDecks[letter],mode=nevoV34.padMode[letter]||'hotcue';const b=document.querySelector(`[data-pad="${letter}-${index}"]`);b?.classList.add('pad-active');setTimeout(()=>b?.classList.remove('pad-active'),120);
+  if(mode==='hotcue')return hotCueAction(letter,index-1);
+  if(mode==='beatjump'){const jumps=[-16,-8,-4,-1,1,4,8,16];return v3BeatJump(letter,jumps[index-1])}
+  if(mode==='sampler'){const keys=Object.keys(LOOP_LIBRARY||{});if(keys.length)return previewLibraryLoop(keys[(index-1)%keys.length])}
+  if(mode==='padfx'){
+    if(!d?.item)return;const oldFilter=d.filterValue||0,oldTrim=d.trimValue||0;
+    const reset=()=>{d.filterValue=oldFilter;d.trimValue=oldTrim;const fi=document.querySelector(`[data-flx-action="${letter}.filter"]`),tr=document.querySelector(`[data-flx-action="${letter}.trim"]`);if(fi)fi.value=oldFilter;if(tr)tr.value=oldTrim;flxApplyEq(letter)};
+    if(index===1)d.filterValue=-.68;else if(index===2)d.filterValue=.68;else if(index===3){const vol=$(`#deck${letter}Volume`);if(vol){const old=vol.value;vol.value=.12;updateCrossfaderGains();setTimeout(()=>{vol.value=old;updateCrossfaderGains()},160);return}}else if(index===4)d.trimValue=.35;else if(index===5){d.audio.currentTime=clamp((d.audio.currentTime||0)-4*djBeatPeriod(letter),0,d.audio.duration||0);return}else if(index===6){d.audio.currentTime=clamp((d.audio.currentTime||0)+4*djBeatPeriod(letter),0,d.audio.duration||0);return}else if(index===7){const bpm=djDeckBpm(letter);$(`#deck${letter}Bpm`).value=(bpm/2).toFixed(1);return refreshDeckUi(letter)}else if(index===8){const bpm=djDeckBpm(letter);$(`#deck${letter}Bpm`).value=(bpm*2).toFixed(1);return refreshDeckUi(letter)}
+    flxApplyEq(letter);setTimeout(reset,220)
+  }
+}
+function v34ToggleLoop4(letter){const d=djDecks[letter];if(!d?.item)return;if(d.loopBeats===4){d.loopBeats=0;if($(`#deck${letter}Loop`))$(`#deck${letter}Loop`).value='0';setStatus(true,'4 BEAT/EXIT',`DECK ${letter} · AUS`)}else{const sel=$(`#deck${letter}Loop`);if(sel)sel.value='4';setDeckLoop(letter);setStatus(true,'4 BEAT',`DECK ${letter} · 4 Beats`)}}
+function v34CueCall(letter,dir){const d=djDecks[letter];if(!d?.item)return;const cues=(d.hotCues||[]).filter(Number.isFinite).sort((a,b)=>a-b);if(!cues.length)return;const cur=d.audio.currentTime||0;let t;if(dir<0){const p=cues.filter(x=>x<cur-.02);t=p.length?p.at(-1):cues.at(-1)}else{const n=cues.find(x=>x>cur+.02);t=Number.isFinite(n)?n:cues[0]}d.audio.currentTime=v3SnapTime(letter,t);drawDeckZoom(letter,true)}
+function v34ToggleShift(letter){nevoV34.shift[letter]=!nevoV34.shift[letter];v34Save();document.querySelector(`[data-flx-action="${letter}.shift"]`)?.classList.toggle('active',nevoV34.shift[letter])}
+function v34FxCycle(){const list=['ECHO','REVERB','FILTER','FLANGER','ROLL'];const i=list.indexOf(nevoV34.fx.name);nevoV34.fx.name=list[(i+1)%list.length];v34Save();v34RefreshFx()}
+function v34FxChannel(){nevoV34.fx.channel=nevoV34.fx.channel==='A'?'B':nevoV34.fx.channel==='B'?'AB':'A';v34Save();v34RefreshFx()}
+function v34FxBeat(dir){const list=[.25,.5,1,2,4,8,16];let i=list.findIndex(x=>x===nevoV34.fx.beat);if(i<0)i=2;i=clamp(i+dir,0,list.length-1);nevoV34.fx.beat=list[i];v34Save();v34RefreshFx()}
+function v34FxOn(){nevoV34.fx.on=!nevoV34.fx.on;v34Save();v34RefreshFx();setStatus(true,'BEAT FX',`${nevoV34.fx.name} · ${nevoV34.fx.on?'AN':'AUS'} · ${nevoV34.fx.channel}`)}
+function v34RefreshFx(){if($('#flxFxName'))$('#flxFxName').textContent=nevoV34.fx.name;if($('#flxFxChannel'))$('#flxFxChannel').textContent=nevoV34.fx.channel==='AB'?'1 & 2':`CH ${nevoV34.fx.channel==='A'?'1':'2'}`;if($('#flxFxBeat'))$('#flxFxBeat').textContent=String(nevoV34.fx.beat);$('#flxFxOn')?.classList.toggle('active',nevoV34.fx.on);const lev=document.querySelector('[data-flx-action="fx.level"]');if(lev&&document.activeElement!==lev)lev.value=nevoV34.fx.level}
+function v34SmartCfx(){nevoV34.smartCfx=!nevoV34.smartCfx;v34Save();document.querySelector('[data-flx-action="smart.cfx"]')?.classList.toggle('active',nevoV34.smartCfx);setStatus(true,'SMART CFX',nevoV34.smartCfx?'AN':'AUS')}
+function v34SmartFader(){nevoV34.smartFader=!nevoV34.smartFader;v34Save();document.querySelector('[data-flx-action="smart.fader"]')?.classList.toggle('active',nevoV34.smartFader);setStatus(true,'SMART FADER',nevoV34.smartFader?'AN':'AUS')}
+
+const v34OldFlxSetContinuous=flxSetContinuous;
+flxSetContinuous=function(action,norm,fromMidi=false){
+  norm=clamp(Number(norm)||0,0,1);
+  if(action==='master.level'){nevoV34.masterLevel=norm*1.25;const el=document.querySelector('[data-flx-action="master.level"]');if(el)el.value=nevoV34.masterLevel;if(master?.gain)master.gain.setTargetAtTime(nevoV34.masterLevel,ctx?.currentTime||0,.015);v34Save();return}
+  if(action==='mic.level'){nevoV34.micLevel=norm;const el=document.querySelector('[data-flx-action="mic.level"]');if(el)el.value=norm;v34Save();return}
+  if(action==='headphones.mix'){nevoV34.headphonesMix=norm;const el=document.querySelector('[data-flx-action="headphones.mix"]');if(el)el.value=norm;v34Save();return}
+  if(action==='cue.level'){nevoV31.cueLevel=norm;const el=document.querySelector('[data-flx-action="cue.level"]');if(el)el.value=norm;if($('#cueLevel'))$('#cueLevel').value=norm;if($('#cueLevelValue'))$('#cueLevelValue').textContent=Math.round(norm*100)+'%';for(const L of ['A','B'])v31CueAudio(L).volume=norm;saveV31();return}
+  if(action==='fx.level'){nevoV34.fx.level=norm;const el=document.querySelector('[data-flx-action="fx.level"]');if(el)el.value=norm;v34Save();return}
+  return v34OldFlxSetContinuous(action,norm,fromMidi)
+};
+const v34OldFlxTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  let m=action.match(/^([AB])\.(loopIn|loopOut|loop4exit|cuePrev|cueNext|shift)$/);if(m){const L=m[1],k=m[2];if(k==='loopIn')return v3LoopIn(L);if(k==='loopOut')return v3LoopOut(L);if(k==='loop4exit')return v34ToggleLoop4(L);if(k==='cuePrev')return v34CueCall(L,-1);if(k==='cueNext')return v34CueCall(L,1);if(k==='shift')return v34ToggleShift(L)}
+  m=action.match(/^([AB])\.mode(Hotcue|Padfx|Beatjump|Sampler)$/);if(m)return v34SetPadMode(m[1],m[2].toLowerCase());
+  m=action.match(/^([AB])\.pad([1-8])$/);if(m)return v34PadAction(m[1],Number(m[2]));
+  if(action==='library.back'){document.querySelector('.dj-library')?.scrollIntoView({behavior:'smooth',block:'start'});return}if(action==='library.view'){setDjViewMode(flxState.mode==='flx4'?'pro':'flx4');return}
+  if(action==='smart.cfx')return v34SmartCfx();if(action==='smart.fader')return v34SmartFader();if(action==='fx.channel')return v34FxChannel();if(action==='fx.select')return v34FxCycle();if(action==='fx.beatDown')return v34FxBeat(-1);if(action==='fx.beatUp')return v34FxBeat(1);if(action==='fx.on')return v34FxOn();
+  return v34OldFlxTrigger(action)
+};
+const v34OldFlxLabel=flxActionLabel;
+flxActionLabel=function(action){const map={'master.level':'Master Level','cue.level':'Kopfhörer Cue Level','mic.level':'Mic Level','headphones.mix':'Headphones Mix','library.back':'Browser Back','library.view':'Browser View','smart.cfx':'Smart CFX','smart.fader':'Smart Fader','fx.channel':'Beat FX Kanal','fx.select':'Beat FX Select','fx.beatDown':'Beat FX Beat -','fx.beatUp':'Beat FX Beat +','fx.level':'Beat FX Level/Depth','fx.on':'Beat FX On/Off'};if(map[action])return map[action];let m=action.match(/^([AB])\.(loopIn|loopOut|loop4exit|cuePrev|cueNext|shift)$/);if(m)return `Deck ${m[1]} ${m[2]}`;m=action.match(/^([AB])\.pad([1-8])$/);if(m)return `Deck ${m[1]} Pad ${m[2]}`;m=action.match(/^([AB])\.mode(.+)$/);if(m)return `Deck ${m[1]} Pad Mode ${m[2]}`;return v34OldFlxLabel(action)};
+
+function v34StackRange(letter){const d=djDecks[letter],dur=d.audio?.duration||d.buffer?.duration||0,bpm=Math.max(1,djDeckBpm(letter)),period=60/bpm,beats=clamp(Number(nevoV34.waveBeats)||8,2,32),span=period*beats,cur=clamp(d.audio?.currentTime||0,0,dur);let start=cur-span/2,end=cur+span/2;if(start<0){end-=start;start=0}if(end>dur){start=Math.max(0,start-(end-dur));end=dur}return {start,end,cur,dur,period,beats,span:Math.max(.001,end-start)}}
+function v34BeatOverlay(letter,r){const box=$(`#flx${letter}StackBeats`);if(!box)return;box.innerHTML='';if(!r.dur||!r.period)return;const d=djDecks[letter],off=djNormalizeOffset(d.beatOffset||0,r.period);let n=Math.ceil((r.start-off)/r.period),count=0;for(let tt=off+n*r.period;tt<=r.end+.0001;tt+=r.period,n++,count++){const x=(tt-r.start)/(r.end-r.start)*100,sp=document.createElement('span');sp.style.left=x+'%';const beat=((n%4)+4)%4+1;sp.textContent=String(beat);if(beat===1)sp.classList.add('major');if(Math.abs(tt-r.cur)<r.period*.35)sp.classList.add('center');box.appendChild(sp)}}
+function v34DrawStack(letter,force=false){const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv)return;const r=v34StackRange(letter),key=`${r.start.toFixed(2)}:${r.end.toFixed(2)}:${nevoV34.waveBeats}`;if(!force&&d.v34StackKey===key)return;d.v34StackKey=key;drawDjWaveRange(d.buffer,cv,r.start,r.end,letter,true);v34BeatOverlay(letter,r);const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`}
+function v34SeekStack(letter,e){const d=djDecks[letter];if(!d?.item)return;const r=v34StackRange(letter),box=e.currentTarget.getBoundingClientRect(),ratio=clamp((e.clientX-box.left)/box.width,0,1);d.audio.currentTime=clamp(r.start+ratio*(r.end-r.start),0,r.dur);v34DrawStack(letter,true);drawDeckZoom(letter,true)}
+
+const v34OldRefreshFlx=refreshFlx4Ui;
+refreshFlx4Ui=function(){v34OldRefreshFlx();for(const L of ['A','B']){const d=djDecks[L];v34DrawStack(L,false);document.querySelector(`[data-flx-action="${L}.shift"]`)?.classList.toggle('active',!!nevoV34.shift[L]);const pfl=document.querySelector(`[data-flx-action="${L}.pfl"]`);pfl?.classList.toggle('active',!!nevoV31.pfl[L]);const mode=nevoV34.padMode[L]||'hotcue';const labels=v34PadLabels(mode);for(let i=1;i<=8;i++){const pad=document.querySelector(`[data-pad="${L}-${i}"]`);if(!pad)continue;pad.querySelector('span').textContent=labels[i-1];pad.classList.toggle('hot-set',mode==='hotcue'&&Number.isFinite(d.hotCues?.[i-1]))}}
+  const ml=document.querySelector('[data-flx-action="master.level"]');if(ml&&document.activeElement!==ml)ml.value=nevoV34.masterLevel;const mic=document.querySelector('[data-flx-action="mic.level"]');if(mic&&document.activeElement!==mic)mic.value=nevoV34.micLevel;const hm=document.querySelector('[data-flx-action="headphones.mix"]');if(hm&&document.activeElement!==hm)hm.value=nevoV34.headphonesMix;const cl=document.querySelector('[data-flx-action="cue.level"]');if(cl&&document.activeElement!==cl)cl.value=nevoV31.cueLevel;document.querySelector('[data-flx-action="smart.cfx"]')?.classList.toggle('active',nevoV34.smartCfx);document.querySelector('[data-flx-action="smart.fader"]')?.classList.toggle('active',nevoV34.smartFader);v34RefreshFx()
+};
+
+function v34Bind(){
+  const z=$('#flxWaveBeats');if(z){z.value=String(nevoV34.waveBeats||8);z.addEventListener('change',e=>{nevoV34.waveBeats=Number(e.target.value)||8;v34Save();v34DrawStack('A',true);v34DrawStack('B',true)})}
+  document.querySelectorAll('[data-flx-stack-seek]').forEach(el=>el.addEventListener('click',e=>v34SeekStack(el.dataset.flxStackSeek,e)));
+  for(const L of ['A','B'])v34SetPadMode(L,nevoV34.padMode[L]||'hotcue');
+  document.querySelector(`[data-flx-action="A.shift"]`)?.classList.toggle('active',nevoV34.shift.A);document.querySelector(`[data-flx-action="B.shift"]`)?.classList.toggle('active',nevoV34.shift.B);
+  v34RefreshFx();refreshFlx4Ui();
+  setTimeout(()=>{v34DrawStack('A',true);v34DrawStack('B',true)},300)
+}
+v34Bind();
