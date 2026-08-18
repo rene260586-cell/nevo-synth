@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.5</title>
+  <title>NÉVO Studio v3.6</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.5</span></div>
+        <div class="brand-sub">STUDIO <span>v3.6</span></div>
       </div>
 
       <div class="transport">
@@ -129,8 +129,8 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v3.5</strong>
-            <span>FLX4-Loops, Master-Cue und Beat-FX sind jetzt als echte Bedienfunktionen ausgebaut. MIDI LEARN erst ganz am Ende komplett belegen; Jogwheels weiterhin zuerst im MIDI Monitor prüfen.</span>
+            <strong>DDJ-FLX4 MODUS · v3.6</strong>
+            <span>Unterwegs-Build: Loop-Memory, echte CUE/LOOP-CALL-Logik und Pegelanzeigen sind ergänzt. MIDI LEARN weiter erst ganz am Ende komplett belegen.</span>
           </div>
 
           <section class="flx4-parallel-wave" aria-label="Parallele Deck-Wellenformen">
@@ -156,13 +156,13 @@
                 <button data-flx-action="A.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
                 <button data-flx-action="A.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
                 <button data-flx-action="A.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
-                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="A.cuePrev" type="button"><b>◀</b><small>1/2X</small></button><button data-flx-action="A.cueNext" type="button"><b>▶</b><small>2X</small></button></div>
+                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="A.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="A.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
                 <button class="flx4-sync" data-flx-action="A.sync" type="button"><b>BEAT</b><small>SYNC</small></button>
               </div>
               <div class="flx4-loop-strip" data-loop-strip="A">
                 <span>LOOP-LÄNGE</span><button data-flx-action="A.loopHalf" type="button">½×</button>
                 <select id="flxALoopSize" data-loop-size="A"><option value="1">1 BEAT</option><option value="2">2 BEATS</option><option value="3">3 BEATS</option><option value="4" selected>4 BEATS</option><option value="6">6 BEATS</option><option value="8">8 BEATS</option><option value="12">12 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
-                <button data-flx-action="A.loopDouble" type="button">2×</button><b id="flxALoopState">LOOP AUS</b>
+                <button data-flx-action="A.loopDouble" type="button">2×</button><b id="flxALoopState">LOOP AUS</b><em id="flxAMemoryState">MEM 0</em>
               </div>
               <div class="flx4-deck-body">
                 <div class="flx4-pitch-column">
@@ -199,6 +199,7 @@
                   <label class="flx4-fader">CH 1<input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
                 <div class="flx4-master-column v34-master">
+                  <div class="flx4-vu-panel" aria-label="Pegelanzeigen"><div><span>CH 1</span><i class="flx4-vu"><b id="flxVuA"></b></i></div><div><span>CH 2</span><i class="flx4-vu"><b id="flxVuB"></b></i></div><div><span>MASTER</span><i class="flx4-vu"><b id="flxVuM"></b></i></div></div>
                   <label class="flx4-master-knob">MASTER LEVEL<input data-flx-action="master.level" type="range" min="0" max="1.25" step="0.01" value="0.85"></label>
                   <button id="flxMasterCue" class="flx4-master-cue" data-flx-action="master.cue" type="button"><b>CUE</b><small>MASTER</small></button>
                   <label class="flx4-master-knob">MIC LEVEL<input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
@@ -249,13 +250,13 @@
                 <button data-flx-action="B.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
                 <button data-flx-action="B.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
                 <button data-flx-action="B.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
-                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="B.cuePrev" type="button"><b>◀</b><small>1/2X</small></button><button data-flx-action="B.cueNext" type="button"><b>▶</b><small>2X</small></button></div>
+                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="B.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="B.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
                 <button class="flx4-sync" data-flx-action="B.sync" type="button"><b>BEAT</b><small>SYNC</small></button>
               </div>
               <div class="flx4-loop-strip" data-loop-strip="B">
                 <span>LOOP-LÄNGE</span><button data-flx-action="B.loopHalf" type="button">½×</button>
                 <select id="flxBLoopSize" data-loop-size="B"><option value="1">1 BEAT</option><option value="2">2 BEATS</option><option value="3">3 BEATS</option><option value="4" selected>4 BEATS</option><option value="6">6 BEATS</option><option value="8">8 BEATS</option><option value="12">12 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
-                <button data-flx-action="B.loopDouble" type="button">2×</button><b id="flxBLoopState">LOOP AUS</b>
+                <button data-flx-action="B.loopDouble" type="button">2×</button><b id="flxBLoopState">LOOP AUS</b><em id="flxBMemoryState">MEM 0</em>
               </div>
               <div class="flx4-deck-body">
                 <div id="flxBJog" class="flx4-jog" data-flx-action="B.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center"><span>B</span><small>JOG</small></div></div>

@@ -1658,7 +1658,40 @@ function v35Bind(){
   document.querySelectorAll('#flxFxMenu [data-fx-name]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();v35SelectFx(b.dataset.fxName)}));
   document.addEventListener('click',e=>{const m=$('#flxFxMenu');if(m&&!m.hidden&&!e.target.closest('.flx4-beatfx'))m.hidden=true});
   v35UpdateHeadphoneVolumes();for(const L of ['A','B'])v35RefreshLoopUi(L);v35RefreshFxMenu();
-  setTimeout(async()=>{try{await v35EnsureFxEngine();for(const L of ['A','B'])if(djDecks[L]?.source)await v35AttachDeckFx(djDecks[L]);v35ApplyFx()}catch(e){console.warn('v3.5 FX init',e)}},600);
+  setTimeout(async()=>{try{await v35EnsureFxEngine();for(const L of ['A','B'])if(djDecks[L]?.source)await v35AttachDeckFx(djDecks[L]);v35ApplyFx()}catch(e){console.warn('v3.6 FX init',e)}},600);
 }
 let v35Last=0;function v35Ticker(ts){if(ts-v35Last>70){v35Last=ts;v35UpdateHeadphoneVolumes();if(v35Fx.ready&&nevoV34.fx.on)v35ApplyFx()}requestAnimationFrame(v35Ticker)}
 v35Bind();requestAnimationFrame(v35Ticker);
+
+// ===== v3.6: FLX4 MEMORY CUES/LOOPS + CHANNEL/MASTER VU METERS =====
+nevoV34.memory = nevoV34.memory && typeof nevoV34.memory==='object' ? nevoV34.memory : {};
+function v36TrackKey(letter){const d=djDecks[letter];return d?.item?.id||null}
+function v36MemList(letter){const key=v36TrackKey(letter);if(!key)return [];if(!Array.isArray(nevoV34.memory[key]))nevoV34.memory[key]=[];return nevoV34.memory[key]}
+function v36SortMem(list){list.sort((a,b)=>(a.time||0)-(b.time||0));return list}
+function v36SaveMemory(letter){const d=djDecks[letter];if(!d?.item)return;const list=v36MemList(letter),cur=clamp(d.audio.currentTime||0,0,d.audio.duration||d.buffer?.duration||0),beats=v35LoopBeats(letter);let mem;
+  if(beats){const start=Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)?d.manualLoopIn:(Number.isFinite(d.loopStart)?d.loopStart:cur);const end=Number.isFinite(d.manualLoopOut)&&d.manualLoopOut>start?d.manualLoopOut:start+beats*djBeatPeriod(letter);mem={id:uid(),type:'loop',time:start,start,end,beats,label:`${Number.isInteger(beats)?beats:beats.toFixed(2)} BEAT LOOP`}}
+  else mem={id:uid(),type:'cue',time:v3SnapTime(letter,cur),label:'MEMORY CUE'};
+  const near=list.findIndex(x=>Math.abs((x.time||0)-mem.time)<.08);if(near>=0)list[near]=mem;else list.push(mem);v36SortMem(list);v34Save();v36RefreshMemoryUi(letter);setStatus(true,'MEMORY',`DECK ${letter} · ${mem.label} · ${fmtDeckTime(mem.time)}`)
+}
+function v36DeleteMemory(letter){const d=djDecks[letter],list=v36MemList(letter);if(!d?.item||!list.length)return;const cur=d.audio.currentTime||0;let idx=0,best=Infinity;list.forEach((m,i)=>{const dist=Math.abs((m.time||0)-cur);if(dist<best){best=dist;idx=i}});const gone=list.splice(idx,1)[0];v34Save();v36RefreshMemoryUi(letter);setStatus(true,'MEMORY DEL',`DECK ${letter} · ${gone?.label||'PUNKT'}`)
+}
+function v36RecallMemory(letter,dir){const d=djDecks[letter],list=v36SortMem(v36MemList(letter));if(!d?.item||!list.length)return false;const cur=d.audio.currentTime||0;let mem;if(dir<0){const prev=list.filter(x=>(x.time||0)<cur-.03);mem=prev.length?prev.at(-1):list.at(-1)}else{mem=list.find(x=>(x.time||0)>cur+.03)||list[0]};if(!mem)return false;d.audio.currentTime=clamp(mem.time||0,0,d.audio.duration||d.buffer?.duration||0);
+  if(mem.type==='loop'){d.manualLoopIn=mem.start;d.manualLoopOut=mem.end;d.manualLoopActive=true;d.loopStart=mem.start;d.loopBeats=mem.beats||Math.max(.25,(mem.end-mem.start)/djBeatPeriod(letter))}else{d.manualLoopActive=false;d.loopBeats=0}
+  v35RefreshLoopUi(letter);drawDeckZoom(letter,true);v34DrawStack(letter,true);setStatus(true,'MEMORY CALL',`DECK ${letter} · ${mem.label||mem.type} · ${fmtDeckTime(mem.time)}`);return true
+}
+function v36RefreshMemoryUi(letter){const list=v36MemList(letter),el=$(`#flx${letter}MemoryState`);if(el){el.textContent=`MEM ${list.length}`;el.classList.toggle('has-memory',list.length>0)}}
+const v36OldCueCall=v34CueCall;
+v34CueCall=function(letter,dir){if(nevoV34.shift?.[letter])return dir>0?v36SaveMemory(letter):v36DeleteMemory(letter);if(v35LoopBeats(letter))return v35ResizeLoop(letter,dir<0?.5:2);if(v36RecallMemory(letter,dir))return;return v36OldCueCall(letter,dir)};
+const v36OldShift=v34ToggleShift;
+v34ToggleShift=function(letter){v36OldShift(letter);const on=!!nevoV34.shift[letter];setStatus(true,'SHIFT',`DECK ${letter} · ${on?'AN · CUE/LOOP: DEL / MEMORY':'AUS'}`)};
+
+function v36AttachAnalyser(deck){if(!ctx||!deck?.gainNode||deck.v36Analyser)return;deck.v36Analyser=ctx.createAnalyser();deck.v36Analyser.fftSize=256;deck.v36Analyser.smoothingTimeConstant=.72;deck.gainNode.connect(deck.v36Analyser);deck.v36VuData=new Uint8Array(deck.v36Analyser.fftSize)}
+const v36OldEnsureDeckConnected=ensureDeckConnected;
+ensureDeckConnected=async function(deck){await v36OldEnsureDeckConnected(deck);v36AttachAnalyser(deck)};
+function v36MeterLevel(an,data){if(!an)return 0;if(!data||data.length!==an.fftSize)data=new Uint8Array(an.fftSize);an.getByteTimeDomainData(data);let sum=0;for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;sum+=v*v}const rms=Math.sqrt(sum/data.length);if(rms<=.0001)return 0;const db=20*Math.log10(rms);return clamp((db+48)/48,0,1)}
+let v36MasterData=null;
+function v36UpdateMeters(){for(const L of ['A','B']){const d=djDecks[L];if(d?.source)v36AttachAnalyser(d);const level=d?.v36Analyser?v36MeterLevel(d.v36Analyser,d.v36VuData):0;const el=$(`#flxVu${L}`);if(el)el.style.height=(level*100).toFixed(1)+'%'}if(analyser){if(!v36MasterData||v36MasterData.length!==analyser.fftSize)v36MasterData=new Uint8Array(analyser.fftSize);const m=v36MeterLevel(analyser,v36MasterData),el=$('#flxVuM');if(el)el.style.height=(m*100).toFixed(1)+'%'}}
+const v36OldRefreshFlx=refreshFlx4Ui;
+refreshFlx4Ui=function(){v36OldRefreshFlx();for(const L of ['A','B'])v36RefreshMemoryUi(L)};
+for(const L of ['A','B'])v36RefreshMemoryUi(L);
+let v36Last=0;function v36Ticker(ts){if(ts-v36Last>55){v36Last=ts;v36UpdateMeters()}requestAnimationFrame(v36Ticker)}requestAnimationFrame(v36Ticker);

@@ -306,3 +306,13 @@ button,.btn,.mode-btn,.lang-btn,.preset-card{-webkit-appearance:none;appearance:
 @media(max-width:760px){.flx4-loop-strip{grid-template-columns:auto 36px 1fr 36px}.flx4-loop-strip>b{grid-column:1/-1;text-align:right}.flx4-fx-menu{grid-template-columns:1fr}}
 
 .flx4-cuecall button b{display:block;font-size:9px}.flx4-cuecall button small{display:block;color:#6f8495;font-size:5px;margin-top:1px}.flx4-master-cue b{display:block;font-size:8px}.flx4-master-cue small{display:block;color:#8fa0ad;font-size:5px;margin-top:1px}.flx4-master-cue.active small{color:#fff2d6}
+
+/* ===== v3.6 FLX4 MEMORY + VU METERS ===== */
+.flx4-loop-strip em{font-style:normal;font-size:9px;font-weight:900;letter-spacing:.08em;color:#7f93a4;padding:6px 8px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#071019;white-space:nowrap}
+.flx4-loop-strip em.has-memory{color:#ffd18a;border-color:rgba(255,179,92,.36);box-shadow:0 0 16px rgba(255,179,92,.12)}
+.flx4-vu-panel{display:flex;justify-content:center;gap:8px;align-items:flex-end;padding:7px 5px 9px;margin:0 auto 7px;border:1px solid rgba(255,255,255,.07);background:#05090d;border-radius:12px;min-height:100px;width:min(150px,100%)}
+.flx4-vu-panel>div{display:grid;grid-template-rows:auto 1fr;gap:4px;justify-items:center;height:82px}
+.flx4-vu-panel span{font-size:7px;letter-spacing:.08em;font-weight:950;color:#788b9d}
+.flx4-vu{display:block;position:relative;width:13px;height:62px;border-radius:5px;background:repeating-linear-gradient(to top,rgba(255,255,255,.055) 0 4px,transparent 4px 6px),#020507;border:1px solid rgba(255,255,255,.08);overflow:hidden}
+.flx4-vu b{position:absolute;left:1px;right:1px;bottom:1px;height:0%;border-radius:3px;background:linear-gradient(to top,#35e36f 0 58%,#e7d641 58% 80%,#ff9b3d 80% 92%,#ff4f67 92% 100%);box-shadow:0 0 10px rgba(75,226,148,.25);transition:height .06s linear}
+.flx4-cuecall button small{line-height:1.05;max-width:64px}
