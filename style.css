@@ -1463,3 +1463,12 @@ body.flx-compact-mode .flx4-controller>.flx4-side-mapper .flx4-rotary-stack labe
 .flx4-b .flx4-jog.jog-touching{box-shadow:inset 0 0 0 2px #080a0d,inset 0 0 0 7px #20262d,0 0 0 2px rgba(255,181,94,.45),0 0 24px rgba(255,181,94,.24)!important}
 .flx4-jog.jog-searching .flx4-jog-ring{filter:brightness(1.5);animation:v421JogSearchPulse .28s linear infinite alternate}
 @keyframes v421JogSearchPulse{from{opacity:.55}to{opacity:1}}
+
+
+/* ===== v4.2.2: hardware mixer rotaries visually follow MIDI ===== */
+.flx4-rotary:after{
+  transform:translateX(-50%) rotate(var(--rotary-angle,0deg))!important;
+  transform-origin:50% 11px!important;
+  transition:transform 34ms linear;
+}
+body.flx-compact-mode .flx4-rotary:after{transform-origin:50% 9px!important}

@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.1',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.2',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2666,3 +2666,147 @@ flxTriggerAction=function(action){
 
 for(const L of ['A','B'])v421RefreshVinylUi(L);
 console.info('NÉVO v4.2.1: native DDJ-FLX4 jogwheel scratch / pitch-bend / fast-search enabled');
+
+
+// ===== v4.2.2: mixer visual follow + adaptive FLX4 jog rotation / waveform follow =====
+// Hardware EQ/CFX already changed the audio. This layer keeps the visible rotary
+// knobs in sync with their hidden range inputs and adds a safer jog auto-detect
+// path for FLX4 firmware/browser MIDI variants.
+function v422RotaryAngleFromValue(v){
+  v=clamp(Number(v)||0,-1,1);return -135+(v+1)*135;
+}
+function v422RefreshRotary(action,value=null){
+  const btn=document.querySelector(`.flx4-rotary[data-map-target="${action}"]`);
+  const input=document.querySelector(`input[data-flx-action="${action}"]`);
+  if(!btn||!input)return;
+  const v=value==null?Number(input.value||0):Number(value||0);
+  btn.style.setProperty('--rotary-angle',`${v422RotaryAngleFromValue(v)}deg`);
+  btn.setAttribute('aria-valuenow',String(Math.round(v*100)));
+}
+function v422RefreshMixerVisuals(){
+  for(const L of ['A','B']){
+    const d=djDecks?.[L];if(!d)continue;
+    const vals={
+      [`${L}.trim`]:Number(d.trimValue)||0,
+      [`${L}.eqHigh`]:Number(d.eqHigh)||0,
+      [`${L}.eqMid`]:Number(d.eqMid)||0,
+      [`${L}.eqLow`]:Number(d.eqLow)||0,
+      [`${L}.filter`]:Number(d.filterValue)||0
+    };
+    for(const [a,v] of Object.entries(vals)){
+      const input=document.querySelector(`input[data-flx-action="${a}"]`);
+      if(input&&document.activeElement!==input)input.value=String(v);
+      v422RefreshRotary(a,v);
+    }
+  }
+}
+const v422OldSetContinuous=flxSetContinuous;
+flxSetContinuous=function(action,norm,fromMidi=false){
+  const r=v422OldSetContinuous(action,norm,fromMidi);
+  if(/^([AB])\.(trim|eqHigh|eqMid|eqLow|filter)$/.test(String(action||'')))v422RefreshMixerVisuals();
+  return r;
+};
+const v422OldRefreshFlx4Ui=refreshFlx4Ui;
+refreshFlx4Ui=function(){const r=v422OldRefreshFlx4Ui();v422RefreshMixerVisuals();return r};
+
+function v422ForceDeckPositionUi(letter){
+  const d=djDecks?.[letter];if(!d?.item)return;
+  // force the moving/zoom waveforms to the exact new jog position immediately
+  try{d.lastZoomDraw=-999;drawDeckZoom(letter,true)}catch{}
+  try{d.v34StackKey='';v34DrawStack(letter,true)}catch{}
+  try{v40RefreshLoopOverlay?.(letter)}catch{}
+  try{refreshDeckUi(letter);refreshFlx4Ui()}catch{}
+}
+function v422SeekByJog(letter,seconds){
+  const d=djDecks?.[letter];if(!d?.item||!Number.isFinite(seconds)||!seconds)return;
+  const dur=d.audio.duration||d.buffer?.duration||0;
+  try{d.audio.currentTime=clamp((d.audio.currentTime||0)+seconds,0,dur||0)}catch{}
+  v422ForceDeckPositionUi(letter);
+}
+
+// Track per-deck rotational MIDI data. The top-touch note already works on the
+// user's FLX4, so while that touch is held the next changing CC/pitch-bend stream
+// can safely be learned as that deck's jog rotation stream.
+for(const L of ['A','B'])Object.assign(nevoV421Jog[L],{
+  turnSig:nevoV421Jog[L].turnSig||'',lastTurnValue:null,lastTurnAt:0,
+  candidateSig:'',candidateHits:0,candidateLast:null
+});
+function v422MidiSig(raw){
+  const status=raw[0]||0,type=status&0xF0,ch=status&0x0F,d1=raw[1]||0;
+  return type===0xE0?`pb:${ch}`:`${type.toString(16)}:${ch}:${d1}`;
+}
+function v422TurnDelta(st,raw){
+  const status=raw[0]||0,type=status&0xF0,d1=raw[1]||0,d2=raw[2]||0;
+  if(type===0xE0){
+    const value=(d2<<7)|d1;
+    // Most relative pitch-bend jog streams return around center 8192.
+    if(Math.abs(value-8192)<=4096 && value!==8192){st.lastTurnValue=value;return clamp((value-8192)/48,-28,28)}
+    const prev=st.lastTurnValue;st.lastTurnValue=value;if(prev==null)return 0;
+    let diff=value-prev;if(diff>8192)diff-=16384;if(diff<-8192)diff+=16384;
+    return clamp(diff/40,-28,28);
+  }
+  if(type===0xB0){
+    const value=d2;
+    // Common relative encoders: 64=center, or 1/127 two's-complement.
+    if(value===64)return 0;
+    if(value>=56&&value<=72){st.lastTurnValue=value;return value-64}
+    if(value===127){st.lastTurnValue=value;return -1}
+    if(value===1){st.lastTurnValue=value;return 1}
+    const prev=st.lastTurnValue;st.lastTurnValue=value;if(prev==null)return 0;
+    let diff=value-prev;if(diff>64)diff-=128;if(diff<-64)diff+=128;
+    return clamp(diff,-24,24);
+  }
+  return 0;
+}
+function v422AdaptiveJogMidi(e){
+  if(!v421IsFlx4Input(e))return false;
+  const raw=e.data||[];if(raw.length<3)return false;
+  const status=raw[0]||0,type=status&0xF0,ch=status&0x0F;
+  if(ch!==0&&ch!==1)return false;
+  if(type!==0xB0&&type!==0xE0)return false;
+  const L=ch===0?'A':'B',st=nevoV421Jog[L],sig=v422MidiSig(raw);
+  const mapped=flxState.mappings?.[flxMidiMessageKey(raw).key];
+
+  // If we already learned the rotational stream, consume it permanently.
+  if(st.turnSig&&sig===st.turnSig){
+    const delta=v422TurnDelta(st,raw);if(!delta)return true;
+    if(st.searchTouch||nevoV34?.shift?.[L])v422SeekByJog(L,delta*.10);
+    else if(st.touch&&st.vinyl)v422SeekByJog(L,delta*V421_SCRATCH_SEC_PER_TICK*5.2);
+    else v421JogBend(L,delta);
+    return true;
+  }
+
+  // During platter touch, discover a changing, otherwise-unmapped stream.
+  if(st.touch&&!mapped){
+    let sample;
+    if(type===0xE0)sample=((raw[2]||0)<<7)|(raw[1]||0);else sample=raw[2]||0;
+    if(st.candidateSig!==sig){st.candidateSig=sig;st.candidateHits=0;st.candidateLast=sample}
+    else{
+      // Relative jog encoders often send the same value repeatedly (e.g. 65/63),
+      // so repeated non-center events still count as real rotation.
+      const moving=type===0xE0?sample!==8192:sample!==64;
+      if(moving)st.candidateHits++;
+      st.candidateLast=sample;
+    }
+    if(st.candidateHits>=2){
+      st.turnSig=sig;st.lastTurnValue=null;
+      flxStatus(`DDJ-FLX4 Jog ${L}: Drehdaten erkannt (${sig})`,'connected');
+      const delta=v422TurnDelta(st,raw);if(delta)v422SeekByJog(L,delta*V421_SCRATCH_SEC_PER_TICK*5.2);
+      return true;
+    }
+  }
+  return false;
+}
+
+// Put adaptive detection in front of the v4.2.1 native handler.
+const v422OldMidiHandler=handleFlxMidiMessage;
+handleFlxMidiMessage=function(e){if(v422AdaptiveJogMidi(e))return;return v422OldMidiHandler(e)};
+
+// Also make the known native path force the visible waveform immediately.
+const v422OldScratch=v421JogScratch;
+v421JogScratch=function(letter,delta){const r=v422OldScratch(letter,delta);v422ForceDeckPositionUi(letter);return r};
+const v422OldSearch=v421JogSearch;
+v421JogSearch=function(letter,delta){const r=v422OldSearch(letter,delta);v422ForceDeckPositionUi(letter);return r};
+
+v422RefreshMixerVisuals();
+console.info('NÉVO v4.2.2: mixer rotaries follow MIDI + adaptive jog rotation/waveform follow active');
