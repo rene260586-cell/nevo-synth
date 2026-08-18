@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v4.0.6</title>
+  <title>NÉVO Studio v4.1.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v4.0.6</span></div>
+        <div class="brand-sub">STUDIO <span>v4.1.0</span></div>
       </div>
 
       <div class="transport">
@@ -87,6 +87,7 @@
           <div class="dj-mode-tabs" role="group" aria-label="DJ Ansicht">
             <button id="djModePro" class="btn small mode-tab active" type="button">DJ PRO</button>
             <button id="djModeFlx4" class="btn small mode-tab" type="button">DDJ-FLX4</button>
+            <button id="flxCompactToggle" class="btn small mode-tab compact-toggle" type="button">KOMPAKT</button>
           </div>
           <div class="flx-midi-strip">
             <button id="flxMidiConnect" class="btn small" type="button">USB/MIDI VERBINDEN</button>
@@ -132,8 +133,8 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v4.0.6</strong>
-            <span>FLX4 Multi-Bank MIDI: Hot Cue, Pad FX, Beat Jump und Sampler können parallel angelernt werden, ohne sich gegenseitig zu überschreiben. Ein fertiges DDJ-FLX4-Standardprofil kann automatisch für neue Nutzer geladen werden.</span>
+            <strong>DDJ-FLX4 MODUS · v4.1.0</strong>
+            <span>Performance-Ansicht: zwei Decks, Browser, Mixer und Beat FX kompakt zusammen. Beat FX folgt jetzt der echten FLX4-Logik: CH SELECT 1/2/1&2 · FX SELECT vor/zurück mit SHIFT · BEAT ◀/▶ ändert die Beat-Länge.</span>
           </div>
 
           <section class="flx4-parallel-wave" aria-label="Parallele Deck-Wellenformen">
@@ -196,7 +197,7 @@
             <section class="flx4-mixer-section v34-mixer">
               <div class="flx4-browser-top">
                 <button data-flx-action="library.loadA" type="button">LOAD A</button>
-                <div class="flx4-browser-knob"><button data-flx-action="library.prev" type="button">◀</button><button class="browse-center" data-flx-action="library.open" type="button"><b>BROWSE</b><small>DRÜCKEN</small></button><button data-flx-action="library.next" type="button">▶</button><small id="flxBrowseTitle">BIBLIOTHEK</small><button class="sub" data-flx-action="library.back" type="button">BACK</button><button class="sub" data-flx-action="library.view" type="button">VIEW</button></div>
+                <div class="flx4-browser-knob"><button data-flx-action="library.prev" type="button">◀</button><button class="browse-center" data-flx-action="library.open" type="button"><b>BROWSE</b><small>DREHEN = TITEL · DRÜCKEN = LISTE</small></button><button data-flx-action="library.next" type="button">▶</button><small id="flxBrowseTitle">BIBLIOTHEK</small><button class="sub" data-flx-action="library.back" type="button">BACK</button><button class="sub" data-flx-action="library.view" type="button">VIEW</button></div>
                 <button data-flx-action="library.loadB" type="button">LOAD B</button>
               </div>
               <div id="flxBrowserPanel" class="flx4-browser-panel">
@@ -238,33 +239,26 @@
                   <label class="flx4-fader">CH 2<input data-flx-action="B.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
               </div>
-              <section class="flx4-beatfx">
-                <div class="flx4-beatfx-title"><b>BEAT FX</b><span id="flxFxName">ECHO</span><small>Kanal 1 / 2 / 1&2 · FX SELECT öffnen/bestätigen · BEAT ◀/▶ navigiert im Menü · LEVEL/DEPTH · ON/OFF</small></div>
+              <section class="flx4-beatfx v410-beatfx">
+                <div class="flx4-beatfx-title"><b>BEAT FX</b><span id="flxFxName">ECHO</span><small>CH SELECT: 1 / 2 / 1&amp;2 · FX SELECT = nächster Effekt · SHIFT + FX SELECT = vorheriger Effekt · BEAT ◀/▶ = Beat-Länge · LEVEL/DEPTH · ON/OFF</small></div>
                 <div class="flx4-fx-channel-box" aria-label="Beat FX Kanalwahl">
-                  <span>FX KANAL</span>
-                  <div class="flx4-fx-channel-segments" id="flxFxChannel" data-flx-action="fx.channel">
-                    <button type="button" data-fx-channel="A">1</button>
-                    <button type="button" data-fx-channel="B">2</button>
-                    <button type="button" data-fx-channel="AB">1 &amp; 2</button>
+                  <span>CH SELECT</span>
+                  <div class="flx4-fx-channel-segments" id="flxFxChannel">
+                    <button type="button" data-fx-channel="A" data-flx-action="fx.channel1">1</button>
+                    <button type="button" data-fx-channel="B" data-flx-action="fx.channel2">2</button>
+                    <button type="button" data-fx-channel="AB" data-flx-action="fx.channelBoth">1 &amp; 2</button>
                   </div>
                 </div>
-                <div class="flx4-beatfx-grid v406-beatfx-grid">
-                  <button data-flx-action="fx.select" id="flxFxSelectBtn" type="button">FX SELECT</button>
+                <div class="flx4-beatfx-grid v410-beatfx-grid">
+                  <button data-flx-action="fx.select" id="flxFxSelectBtn" type="button"><b>FX SELECT</b><small id="flxFxSelectDir">WEITER</small></button>
                   <button data-flx-action="fx.beatDown" id="flxFxPrevBtn" type="button">◀ BEAT</button>
                   <div class="flx4-fx-center-readout"><small id="flxFxCenterLabel">BEAT-LÄNGE</small><b id="flxFxBeat">1 BEAT</b></div>
                   <button data-flx-action="fx.beatUp" id="flxFxNextBtn" type="button">BEAT ▶</button>
                   <label>LEVEL / DEPTH<input data-flx-action="fx.level" type="range" min="0" max="1" step="0.01" value="0.55"></label>
-                  <button id="flxFxOn" data-flx-action="fx.on" type="button">ON/OFF</button>
+                  <button id="flxFxOn" data-flx-action="fx.on" type="button">ON/OFF<small>SHIFT = RELEASE FX</small></button>
                 </div>
-                <div id="flxFxMenu" class="flx4-fx-menu" hidden>
-                  <button type="button" data-fx-name="ECHO"><b>ECHO</b><small>Beat-synchrones Echo</small></button>
-                  <button type="button" data-fx-name="REVERB"><b>REVERB / HALL</b><small>Raum und Nachhall</small></button>
-                  <button type="button" data-fx-name="DELAY"><b>DELAY</b><small>Rhythmische Wiederholung</small></button>
-                  <button type="button" data-fx-name="FLANGER"><b>FLANGER</b><small>Metallische Bewegung</small></button>
-                  <button type="button" data-fx-name="PHASER"><b>PHASER</b><small>Phasenbewegung</small></button>
-                  <button type="button" data-fx-name="FILTER"><b>FILTER</b><small>Beat-synchroner Bandpass</small></button>
-                  <button type="button" data-fx-name="ROLL"><b>ROLL</b><small>Rhythmischer Gate/Roll-Effekt</small></button>
-                </div>
+                <div class="flx4-fx-current"><span>GEWÄHLTER FX</span><strong id="flxFxCurrentName">ECHO</strong><em id="flxFxTempoMode">AUTO BPM</em></div>
+                <div id="flxFxMenu" class="flx4-fx-menu v410-hidden-fxmenu" hidden aria-hidden="true"></div>
               </section>
               <label class="flx4-cross"><span>A</span><input id="flxCrossfader" data-flx-action="crossfader" type="range" min="-1" max="1" step="0.01" value="0"><span>B</span></label>
               <button id="flxResetMixer" class="btn small flx-reset" type="button">MIXER NULLSTELLEN</button>
@@ -672,7 +666,7 @@
 
       <section class="panel glass groove-panel">
         <div class="section-head">
-          <div><div class="eyebrow cyan" data-i18n="steps16">16 SCHRITTE</div><h2 data-i18n="grooveEditor">Groove-Editor</h2></div>
+          <div><div id="grooveStepsEyebrow" class="eyebrow cyan" data-i18n="steps16">16 SCHRITTE</div><h2 data-i18n="grooveEditor">Groove-Editor</h2></div>
           <div class="seq-controls">
             <label><span data-i18n="rootNote">GRUNDTON</span> <select id="rootNote"><option>C2</option><option>D2</option><option>E2</option><option>F2</option><option>G2</option><option>A2</option><option>B2</option><option selected>D3</option><option>F3</option><option>A3</option></select></label>
             <label class="swing-box"><span data-i18n="swing">SWING</span> <input id="swing" type="range" min="0" max="75" value="20"><span id="swingValue">20%</span></label>
@@ -681,13 +675,17 @@
             <button id="grooveToArrangerBtn" class="btn small groove-apply" type="button">→ IN SONG ÜBERNEHMEN</button>
             <button id="clearSeq" class="btn small" data-i18n="clear">LÖSCHEN</button>
             <button id="fillSeq" class="btn small" data-i18n="demo">DEMO</button>
+            <button id="grooveExpandBtn" class="btn small groove-expand" type="button">ERWEITERN</button>
+            <label id="grooveStepsControl" class="groove-steps-control" hidden><span>LÄNGE</span><select id="grooveStepsSelect"><option value="32">32 SCHRITTE</option><option value="64">64 SCHRITTE</option></select></label>
           </div>
         </div>
         <div id="grooveInfo" class="groove-info">Tippe einen Schritt an = Sound kurz vorhören. GROOVE ANHÖREN spielt nur diesen 16-Schritt-Groove. IN SONG ÜBERNEHMEN legt ihn als eigene Blöcke in den Arranger.</div>
-        <div class="seq-table">
-          <div class="seq-row"><div class="seq-name synth">SYNTH</div><div id="synthSteps" class="steps"></div></div>
-          <div class="seq-row"><div class="seq-name kick">KICK</div><div id="kickSteps" class="steps"></div></div>
-          <div class="seq-row"><div class="seq-name hat">HAT</div><div id="hatSteps" class="steps"></div></div>
+        <div id="grooveSeqScroll" class="seq-scroll">
+          <div class="seq-table">
+            <div class="seq-row"><div class="seq-name synth">SYNTH</div><div id="synthSteps" class="steps"></div></div>
+            <div class="seq-row"><div class="seq-name kick">KICK</div><div id="kickSteps" class="steps"></div></div>
+            <div class="seq-row"><div class="seq-name hat">HAT</div><div id="hatSteps" class="steps"></div></div>
+          </div>
         </div>
       </section>
 

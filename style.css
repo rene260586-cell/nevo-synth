@@ -456,3 +456,179 @@ body.nevo-scrolling .ambient{display:none!important}
 .flx4-fx-channel-box{margin:6px 0 8px;display:flex;align-items:center;gap:8px}.flx4-fx-channel-box>span{font-size:7px;font-weight:950;letter-spacing:.08em;color:#8da0af;white-space:nowrap}.flx4-fx-channel-segments{display:grid;grid-template-columns:repeat(3,minmax(44px,1fr));gap:3px;flex:1;padding:3px;border:1px solid rgba(255,255,255,.10);border-radius:10px;background:#07111a}.flx4-fx-channel-segments button{min-height:30px;border:1px solid transparent;border-radius:7px;background:#0b1722;color:#7f92a1;font-size:8px;font-weight:950}.flx4-fx-channel-segments button.active{color:#fff4df;border-color:#ffb55e;background:linear-gradient(180deg,rgba(255,181,94,.28),rgba(255,181,94,.10));box-shadow:0 0 12px rgba(255,181,94,.12)}
 .v406-beatfx-grid{grid-template-columns:1.15fr .9fr 1fr .9fr!important}.v406-beatfx-grid>label{grid-column:1/4!important}.flx4-fx-center-readout{min-height:31px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:#07111a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 5px;text-align:center}.flx4-fx-center-readout small{font-size:5.5px;color:#718796;font-weight:900;letter-spacing:.07em}.flx4-fx-center-readout b{font-size:8px!important;color:#ffd49a;line-height:1.15}.flx4-fx-menu button.preview{border-color:#61d7ff;background:rgba(50,198,255,.12);box-shadow:0 0 0 1px rgba(50,198,255,.08) inset}.flx4-fx-menu button.preview b{color:#73ddff}.flx4-fx-menu.fx-browse-open{border-color:rgba(97,215,255,.45)}
 @media(max-width:760px){.flx4-fx-channel-box{align-items:stretch;flex-direction:column}.flx4-fx-channel-box>span{align-self:flex-start}.v406-beatfx-grid{grid-template-columns:repeat(2,1fr)!important}.v406-beatfx-grid>label{grid-column:1/-1!important}.flx4-fx-center-readout{order:3}.v406-beatfx-grid #flxFxOn{order:6}}
+
+/* =========================================================
+   NÉVO Studio v4.1.0 — compact FLX4 performance workspace
+   ========================================================= */
+.v410-hidden-fxmenu{display:none!important}
+.flx4-fx-channel-segments{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%}
+.flx4-fx-channel-segments button{min-height:36px;border:1px solid rgba(120,160,200,.24);background:rgba(7,18,29,.72);color:#a9b8c7;border-radius:10px;font:800 11px/1 system-ui,sans-serif;letter-spacing:.05em}
+.flx4-fx-channel-segments button.active{color:#fff;border-color:#ffb55c;background:linear-gradient(180deg,rgba(255,181,92,.28),rgba(255,181,92,.10));box-shadow:0 0 0 1px rgba(255,181,92,.18),0 0 16px rgba(255,166,72,.10)}
+.v410-beatfx-grid{display:grid;grid-template-columns:1.25fr 1fr minmax(92px,.85fr) 1fr 1.1fr;gap:6px;align-items:stretch;margin-top:7px}
+.v410-beatfx-grid button{min-height:40px}
+.v410-beatfx-grid button small{display:block;margin-top:3px;font-size:7px;line-height:1;color:#75889a;font-weight:800}
+.flx4-fx-beat-readout{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(120,160,200,.18);background:rgba(4,12,20,.72);border-radius:10px;padding:4px 8px;text-align:center}
+.flx4-fx-beat-readout b{font-size:18px;color:#f4f7fb;line-height:1}
+.flx4-fx-beat-readout small{font-size:8px;color:#8ea1b4;margin-top:3px}
+.flx4-fx-current{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;padding:6px 9px;border:1px solid rgba(120,160,200,.15);background:rgba(5,14,23,.62);border-radius:10px;font-size:9px;color:#8ea1b4}
+.flx4-fx-current strong{color:#eaf2f8;font-size:10px}
+#flxCompactToggle.active{border-color:#57d9ff;color:#65dfff;box-shadow:0 0 14px rgba(60,210,255,.12)}
+
+/* Smaller loop-library cards: more sounds visible at once. */
+.loop-library-grid{grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px}
+.loop-card{padding:10px;border-radius:14px}
+.loop-card .loop-kicker{font-size:8px}
+.loop-card>strong{font-size:13px;margin:5px 0 2px}
+.loop-card p{font-size:9px;line-height:1.35;min-height:26px;margin:3px 0}
+.loop-card-actions{gap:6px;margin-top:7px}
+.loop-card-actions .btn{min-height:30px;padding:6px 8px;font-size:8px}
+
+/* Knobs were intentionally huge in the early mobile prototype. On desktop they can be studio-sized. */
+@media (min-width:900px){
+  .macro-grid,.knob-grid{grid-template-columns:repeat(6,minmax(105px,1fr));gap:8px}
+  .macro-card,.knob-card{min-height:138px;padding:9px;border-radius:15px}
+  .macro-card .knob,.knob-card .knob{width:72px;height:72px}
+  .macro-card .knob:before,.knob-card .knob:before{inset:7px}
+  .macro-card .knob:after,.knob-card .knob:after{height:21px;top:8px;transform-origin:50% 28px}
+  .macro-card .knob-label,.knob-card .knob-label{font-size:9px;margin-bottom:4px}
+  .macro-card .knob-value,.knob-card .knob-value{margin-top:5px;font-size:13px}
+  .macro-card .knob-sub,.knob-card .knob-sub{font-size:7px;line-height:1.25}
+}
+
+/* Groove editor: 16 steps stay clean by default; 32/64 become horizontally scrollable only after activation. */
+.groove-steps-control{display:flex;align-items:center;gap:5px;margin-left:auto}
+.groove-steps-control .btn{min-height:32px;padding:6px 10px;font-size:8px}
+.groove-steps-control select{min-height:32px;padding:5px 27px 5px 9px;font-size:9px}
+.seq-scroll{width:100%;overflow-x:hidden;padding-bottom:3px;overscroll-behavior-x:contain}
+.groove-panel.groove-expanded .seq-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:rgba(81,216,255,.55) rgba(5,14,22,.55)}
+.groove-panel.groove-expanded .seq-table{min-width:1150px}
+.groove-panel.groove-expanded.groove-64 .seq-table{min-width:2250px}
+.groove-panel .seq-table{gap:5px}
+.groove-panel .seq-row{grid-template-columns:64px 1fr;gap:7px}
+.groove-panel .seq-name{font-size:9px}
+.groove-panel .steps{gap:4px}
+.groove-panel .step{min-height:34px;border-radius:8px;font-size:10px}
+
+/* Full performance surface on one desktop view. This only affects the FLX4/DJ workspace. */
+@media (min-width:1050px){
+  body.flx-compact-mode .dj-panel{padding:6px!important;margin:0!important;gap:4px!important}
+  body.flx-compact-mode .dj-head,
+  body.flx-compact-mode .dj-library-box,
+  body.flx-compact-mode .dj-master-strip{display:none!important}
+  body.flx-compact-mode .dj-modebar{padding:4px 6px;margin:0 0 4px;gap:4px;border-radius:10px}
+  body.flx-compact-mode .dj-modebar .btn{min-height:28px;padding:5px 9px;font-size:8px}
+  body.flx-compact-mode .flx-midi-strip{margin:0 0 4px;padding:4px 6px;min-height:auto;gap:4px}
+  body.flx-compact-mode .flx-midi-strip .flx-backup-help,
+  body.flx-compact-mode #flxMidiExportDefault,
+  body.flx-compact-mode #flxMidiLoadDefault,
+  body.flx-compact-mode #flxMidiReset,
+  body.flx-compact-mode #flxMidiMonitorBtn{display:none!important}
+  body.flx-compact-mode .flx4-helpbar{display:none!important}
+  body.flx-compact-mode .flx4-surface{margin:0;gap:4px}
+  body.flx-compact-mode .flx4-parallel-wave{padding:4px 5px;margin:0 0 4px;border-radius:10px}
+  body.flx-compact-mode .flx4-parallel-head{margin-bottom:2px;min-height:20px}
+  body.flx-compact-mode .flx4-parallel-head h3{font-size:11px}
+  body.flx-compact-mode .flx4-stack-row{grid-template-columns:132px 1fr;gap:4px;margin:2px 0}
+  body.flx-compact-mode .flx4-stack-id{padding:3px 5px;border-radius:7px;min-height:48px}
+  body.flx-compact-mode .flx4-stack-id b{font-size:10px}
+  body.flx-compact-mode .flx4-stack-id small{font-size:7px}
+  body.flx-compact-mode .flx4-stack-readout{font-size:7px;gap:4px}
+  body.flx-compact-mode .flx4-stack-wavewrap{height:50px;border-radius:7px}
+  body.flx-compact-mode .flx4-phase-meter{bottom:2px;height:7px}
+  body.flx-compact-mode .flx4-grid-readout{font-size:5px;padding:2px 4px}
+
+  body.flx-compact-mode .flx4-controller{grid-template-columns:minmax(245px,1fr) minmax(390px,1.16fr) minmax(245px,1fr);gap:4px;padding:4px;border-radius:12px;align-items:start}
+  body.flx-compact-mode .flx4-deck,
+  body.flx-compact-mode .flx4-mixer-section{padding:5px;border-radius:10px}
+  body.flx-compact-mode .flx4-deck-title{font-size:9px;margin-bottom:2px}
+  body.flx-compact-mode .flx4-mini-wave{height:10px;margin:2px 0 3px}
+  body.flx-compact-mode .flx4-hardware-top{margin:2px 0;gap:2px}
+  body.flx-compact-mode .flx4-hardware-top>button,
+  body.flx-compact-mode .flx4-loop-strip>button{min-height:25px;padding:3px 4px;border-radius:6px;font-size:6px}
+  body.flx-compact-mode .flx4-loop-strip{gap:2px}
+  body.flx-compact-mode .flx4-loop-call{gap:1px}
+  body.flx-compact-mode .flx4-loop-call small{font-size:5px}
+  body.flx-compact-mode .flx4-deck-body{grid-template-columns:46px 1fr;gap:3px}
+  body.flx-compact-mode .flx4-b .flx4-deck-body{grid-template-columns:1fr 46px}
+  body.flx-compact-mode .flx4-jog{width:112px;max-width:42%;margin:auto}
+  body.flx-compact-mode .flx4-pitch-column{height:112px}
+  body.flx-compact-mode .flx4-pitch-column label{height:96px;font-size:5px}
+  body.flx-compact-mode .flx4-pitch-column input{height:73px}
+  body.flx-compact-mode .flx4-shift-row{margin:2px 0}
+  body.flx-compact-mode .flx4-shift-row button{min-height:22px;padding:3px 6px;font-size:6px}
+  body.flx-compact-mode .flx4-transport{margin-top:2px;gap:3px}
+  body.flx-compact-mode .flx4-transport button{min-height:27px;padding:3px 6px;font-size:8px}
+  body.flx-compact-mode .flx4-padmode-buttons{gap:2px;margin-top:3px}
+  body.flx-compact-mode .flx4-padmode-buttons button{min-height:23px;padding:2px;font-size:5px}
+  body.flx-compact-mode .flx4-pad-state{display:none}
+  body.flx-compact-mode .flx4-pads{gap:2px;margin-top:3px}
+  body.flx-compact-mode .flx4-pads button{min-height:26px;padding:2px 3px;font-size:5px;border-radius:6px}
+  body.flx-compact-mode .flx4-pads b{width:14px;height:14px;font-size:6px;border-radius:4px}
+
+  body.flx-compact-mode .flx4-browser-top{margin:0 0 3px;gap:3px}
+  body.flx-compact-mode .flx4-browser-top button{min-height:23px;padding:2px 5px;font-size:6px}
+  body.flx-compact-mode .flx4-browser-center{min-height:25px;padding:2px 5px}
+  body.flx-compact-mode .flx4-browser-center b{font-size:7px}
+  body.flx-compact-mode .flx4-browser-center small{font-size:5px}
+  body.flx-compact-mode .flx4-browser-panel{margin:3px 0 0;padding:4px;max-height:137px;border-radius:8px}
+  body.flx-compact-mode .flx4-browser-panel h4{font-size:7px;margin:0 0 2px}
+  body.flx-compact-mode .flx4-browser-list{max-height:106px}
+  body.flx-compact-mode .flx4-browser-track{min-height:20px;padding:2px 5px;font-size:6px}
+  body.flx-compact-mode .flx4-browser-track small{font-size:5px}
+
+  body.flx-compact-mode .flx4-mixer-brand{display:none}
+  body.flx-compact-mode .flx4-mixer-columns{gap:4px;grid-template-columns:1fr .9fr 1fr}
+  body.flx-compact-mode .flx4-channel{gap:2px}
+  body.flx-compact-mode .flx4-channel label{gap:1px;font-size:5px}
+  body.flx-compact-mode .flx4-channel label:not(.flx4-fader) input{height:14px}
+  body.flx-compact-mode .flx4-channel button{min-height:23px;font-size:6px;padding:2px 4px}
+  body.flx-compact-mode .flx4-fader{margin-top:1px}
+  body.flx-compact-mode .flx4-fader input{height:43px}
+  body.flx-compact-mode .flx4-master-column{gap:2px}
+  body.flx-compact-mode .flx4-vu-panel{min-height:38px;padding:2px}
+  body.flx-compact-mode .flx4-master-knob{font-size:5px;gap:1px;margin:0}
+  body.flx-compact-mode .flx4-master-knob small{display:none}
+  body.flx-compact-mode .flx4-master-knob input{height:14px}
+  body.flx-compact-mode .flx4-mid-buttons,
+  body.flx-compact-mode .flx4-midi-card{display:none!important}
+  body.flx-compact-mode .flx4-smart-row{gap:2px}
+  body.flx-compact-mode .flx4-smart-row button{min-height:22px;padding:2px 3px;font-size:5px}
+  body.flx-compact-mode .flx4-beatfx{margin-top:3px;padding-top:3px}
+  body.flx-compact-mode .flx4-beatfx-title{margin:0 0 2px}
+  body.flx-compact-mode .flx4-beatfx-title strong{font-size:8px}
+  body.flx-compact-mode .flx4-beatfx-title small{display:none}
+  body.flx-compact-mode .flx4-fx-channel-box{margin:2px 0}
+  body.flx-compact-mode .flx4-fx-channel-box>span{font-size:5px}
+  body.flx-compact-mode .flx4-fx-channel-segments{gap:2px}
+  body.flx-compact-mode .flx4-fx-channel-segments button{min-height:21px;padding:2px;font-size:6px;border-radius:5px}
+  body.flx-compact-mode .v410-beatfx-grid{gap:2px;margin-top:3px;grid-template-columns:1.2fr .9fr 60px .9fr 1fr}
+  body.flx-compact-mode .v410-beatfx-grid button{min-height:23px;padding:2px 3px;font-size:5px;border-radius:5px}
+  body.flx-compact-mode .v410-beatfx-grid button small{display:none}
+  body.flx-compact-mode .flx4-fx-beat-readout{padding:2px 3px;border-radius:5px}
+  body.flx-compact-mode .flx4-fx-beat-readout b{font-size:9px}
+  body.flx-compact-mode .flx4-fx-beat-readout small{font-size:5px;margin-top:1px}
+  body.flx-compact-mode .flx4-beatfx .flx4-master-knob{margin-top:2px}
+  body.flx-compact-mode .flx4-fx-current{margin-top:2px;padding:2px 4px;border-radius:5px;font-size:5px}
+  body.flx-compact-mode .flx4-fx-current strong{font-size:6px}
+  body.flx-compact-mode .flx4-cross{margin-top:3px;font-size:5px}
+  body.flx-compact-mode .flx4-cross input{height:14px}
+  body.flx-compact-mode .flx-reset{display:none}
+}
+
+@media (max-width:899px){
+  .loop-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .v410-beatfx-grid{grid-template-columns:1fr 1fr 85px 1fr 1fr}
+}
+@media (max-width:560px){
+  .loop-library-grid{grid-template-columns:1fr}
+  .v410-beatfx-grid{grid-template-columns:1fr 1fr 70px 1fr 1fr;gap:4px}
+  .v410-beatfx-grid button{padding:5px 3px;font-size:8px}
+}
+@media (min-width:1050px){
+  body.flx-compact-mode .flx4-browser-knob{gap:2px;grid-template-columns:25px 1fr 25px}
+  body.flx-compact-mode .flx4-browser-knob button{min-height:23px;padding:2px 4px;font-size:6px}
+  body.flx-compact-mode .flx4-browser-knob .browse-center{min-height:27px;padding:2px 4px;aspect-ratio:auto;border-radius:7px}
+  body.flx-compact-mode .flx4-browser-knob .browse-center b{font-size:7px}
+  body.flx-compact-mode .flx4-browser-knob .browse-center small{font-size:4px;white-space:normal;line-height:1.05}
+  body.flx-compact-mode .flx4-browser-knob .sub{min-height:18px;font-size:5px;padding:1px 3px}
+}

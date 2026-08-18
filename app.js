@@ -631,7 +631,7 @@ async function toggleRecord(){
   }
 }
 function encodeWav(buffer){const nCh=buffer.numberOfChannels,rate=buffer.sampleRate,len=buffer.length*nCh*2+44,ab=new ArrayBuffer(len),view=new DataView(ab);let p=0;const str=s=>{for(let i=0;i<s.length;i++)view.setUint8(p++,s.charCodeAt(i))},u16=v=>{view.setUint16(p,v,true);p+=2},u32=v=>{view.setUint32(p,v,true);p+=4};str('RIFF');u32(len-8);str('WAVE');str('fmt ');u32(16);u16(1);u16(nCh);u32(rate);u32(rate*nCh*2);u16(nCh*2);u16(16);str('data');u32(len-44);const ch=[];for(let c=0;c<nCh;c++)ch.push(buffer.getChannelData(c));for(let i=0;i<buffer.length;i++)for(let c=0;c<nCh;c++){let s=clamp(ch[c][i],-1,1);view.setInt16(p,s<0?s*0x8000:s*0x7fff,true);p+=2}return ab}
-async function exportWav(){await initAudio();setStatus(true,t('wavExporting'),t('wavExportingSub'));const bpm=Number($('#bpm').value),sd=60/bpm/4,total=sd*16+2,sr=44100,off=new OfflineAudioContext(2,Math.ceil(total*sr),sr),out=off.createGain();out.gain.value=params.volume.value;out.connect(off.destination);const synth=(note,t)=>{const o=off.createOscillator(),g=off.createGain();o.type=$('#waveform').value;o.frequency.value=noteFreq(note);o.connect(g);g.connect(out);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+sd*.7);o.start(t);o.stop(t+sd*.75)},kk=t=>{const o=off.createOscillator(),g=off.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.16);o.connect(g);g.connect(out);g.gain.setValueAtTime(.7,t);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.start(t);o.stop(t+.3)};for(let i=0;i<16;i++){const t=.05+i*sd+(i%2?sd*(Number($('#swing').value)/100)*.5:0);if(kickPattern[i])kk(t);if(synthPattern[i])synth($('#keySelect').value,t)}const r=await off.startRendering();downloadBlob(new Blob([encodeWav(r)],{type:'audio/wav'}),'NEVO-groove.wav');setStatus(true,t('wavDone'),t('wavDoneSub'))}
+async function exportWav(){await initAudio();setStatus(true,t('wavExporting'),t('wavExportingSub'));const bpm=Number($('#bpm').value),sd=60/bpm/4,total=sd*grooveStepCount+2,sr=44100,off=new OfflineAudioContext(2,Math.ceil(total*sr),sr),out=off.createGain();out.gain.value=params.volume.value;out.connect(off.destination);const synth=(note,t)=>{const o=off.createOscillator(),g=off.createGain();o.type=$('#waveform').value;o.frequency.value=noteFreq(note);o.connect(g);g.connect(out);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+sd*.7);o.start(t);o.stop(t+sd*.75)},kk=t=>{const o=off.createOscillator(),g=off.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.16);o.connect(g);g.connect(out);g.gain.setValueAtTime(.7,t);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.start(t);o.stop(t+.3)};for(let i=0;i<grooveStepCount;i++){const t=.05+i*sd+(i%2?sd*(Number($('#swing').value)/100)*.5:0);if(kickPattern[i])kk(t);if(synthPattern[i])synth($('#keySelect').value,t)}const r=await off.startRendering();downloadBlob(new Blob([encodeWav(r)],{type:'audio/wav'}),'NEVO-groove.wav');setStatus(true,t('wavDone'),t('wavDoneSub'))}
 
 $('#audioImport').onchange=async e=>{const f=e.target.files[0];if(!f)return;await initAudio();const arr=await f.arrayBuffer(),buf=await ctx.decodeAudioData(arr.slice(0)),audioId=uid();audioBuffers.set(audioId,buf);let tr=tracks.find(t=>t.type==='audio');if(!tr){tr={id:'audio-'+uid(),name:'AUDIO',color:'#ffffff',type:'audio',mute:false,solo:false,clips:[]};tracks.push(tr)}const barDur=60/Number($('#bpm').value)*4,len=clamp(Math.ceil(Math.min(buf.duration,MAX_SONG_SECONDS)/barDur),1,TOTAL_BARS);tr.clips.push({id:uid(),start:0,len,name:f.name.replace(/\.[^.]+$/,''),loop:false,audioId,trimStart:0,trimEnd:Math.min(buf.duration,MAX_SONG_SECONDS),fadeIn:0,fadeOut:0,gain:1});renderTracks();setStatus(true,t('imported'),`${f.name} · ${buf.duration.toFixed(1)} s`);e.target.value=''};
 $('#addTrackBtn').onclick=()=>{tracks.push({id:'track-'+uid(),name:'SYNTH '+(tracks.length+1),nameDe:'SYNTH '+(tracks.length+1),nameEn:'SYNTH '+(tracks.length+1),color:'#54d8ff',type:'synth',mute:false,solo:false,clips:[]});renderTracks()};
@@ -2303,3 +2303,173 @@ function v406BindFxUi(){
 }
 v406BindFxUi();setTimeout(v406BindFxUi,350);
 console.info('NÉVO v4.0.6: Beat FX channel 1/2/1&2 and FX browse/confirm workflow active');
+
+// ===== v4.1.0: FLX4-TRUE BEAT FX + COMPACT PERFORMANCE VIEW + EXTENDED GROOVE =====
+// DDJ-FLX4 behavior mirrored here:
+// CH SELECT = 1 / 2 / 1&2, FX SELECT = next FX (SHIFT = previous),
+// BEAT left/right = shorter/longer Beat FX time (SHIFT = AUTO/TAP tempo mode).
+const V410_COMPACT_STORAGE='nevo-v410-compact-performance';
+const V410_GROOVE_STORAGE='nevo-v410-groove-editor';
+const V410_FX_BEATS=[1/16,1/8,1/4,1/2,1,2,4,8,16];
+const nevoV410={compact:false,fxTempoMode:'AUTO',fxTapTimes:[],grooveExpanded:false,grooveExtendedSteps:32};
+try{
+  const c=localStorage.getItem(V410_COMPACT_STORAGE);
+  nevoV410.compact=c==null?window.innerWidth>=1050:c==='1';
+  Object.assign(nevoV410,JSON.parse(localStorage.getItem(V410_GROOVE_STORAGE)||'{}')||{});
+  nevoV410.grooveExtendedSteps=[32,64].includes(Number(nevoV410.grooveExtendedSteps))?Number(nevoV410.grooveExtendedSteps):32;
+}catch{}
+
+function v410SaveGroove(){try{localStorage.setItem(V410_GROOVE_STORAGE,JSON.stringify({grooveExpanded:!!nevoV410.grooveExpanded,grooveExtendedSteps:nevoV410.grooveExtendedSteps}))}catch{}}
+function v410ShiftHeld(){return !!(nevoV34?.shift?.A||nevoV34?.shift?.B)}
+function v410FxNames(){return Array.isArray(V35_FX_NAMES)&&V35_FX_NAMES.length?V35_FX_NAMES:['ECHO','REVERB','DELAY','FLANGER','PHASER','FILTER','ROLL']}
+function v410FxDisplay(name){return name==='REVERB'?'REVERB / HALL':name}
+function v410FormatBeat(v){v=Number(v)||1;if(v<1){const den=Math.round(1/v);return `1/${den} BEAT`}return `${v} ${v===1?'BEAT':'BEATS'}`}
+function v410EnsureChannelButtons(){
+  const box=$('#flxFxChannel');if(!box)return;
+  if(box.querySelectorAll('[data-fx-channel]').length!==3){
+    box.innerHTML='<button type="button" data-fx-channel="A" data-flx-action="fx.channel1">1</button><button type="button" data-fx-channel="B" data-flx-action="fx.channel2">2</button><button type="button" data-fx-channel="AB" data-flx-action="fx.channelBoth">1 &amp; 2</button>';
+  }
+  box.removeAttribute('data-flx-action');
+  box.querySelectorAll('[data-fx-channel]').forEach(btn=>{
+    if(btn.dataset.v410Bound)return;btn.dataset.v410Bound='1';
+    btn.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      if(flxState.learn){selectFlxLearnTarget(btn);return}
+      v410SetFxChannel(btn.dataset.fxChannel);
+    },true);
+  });
+}
+function v410SetFxChannel(ch){
+  if(!['A','B','AB'].includes(ch))return;
+  nevoV34.fx.channel=ch;v34Save();v410RefreshFx();try{v35ApplyFx()}catch{}
+  setStatus(true,'BEAT FX CH SELECT',ch==='A'?'KANAL 1':ch==='B'?'KANAL 2':'KANAL 1 & 2');
+}
+function v410CycleFx(dir=1){
+  const list=v410FxNames();let i=list.indexOf(nevoV34.fx.name);if(i<0)i=0;
+  i=(i+(dir<0?-1:1)+list.length)%list.length;
+  const name=list[i];
+  if(typeof v35SelectFx==='function')v35SelectFx(name);else{nevoV34.fx.name=name;v34Save();v410RefreshFx()}
+  setStatus(true,'FX SELECT',`${v410FxDisplay(name)} · ${dir<0?'ZURÜCK':'WEITER'}`);
+}
+function v410AdjustFxBeat(dir){
+  let i=V410_FX_BEATS.findIndex(x=>Math.abs(x-(Number(nevoV34.fx.beat)||1))<1e-6);if(i<0)i=4;
+  i=clamp(i+(dir<0?-1:1),0,V410_FX_BEATS.length-1);nevoV34.fx.beat=V410_FX_BEATS[i];v34Save();v410RefreshFx();try{v35ApplyFx()}catch{}
+  setStatus(true,'BEAT FX',v410FormatBeat(nevoV34.fx.beat));
+}
+function v410TapFxTempo(){
+  const now=performance.now();nevoV410.fxTempoMode='TAP';nevoV410.fxTapTimes.push(now);nevoV410.fxTapTimes=nevoV410.fxTapTimes.filter(t=>now-t<3000).slice(-6);
+  if(nevoV410.fxTapTimes.length>=2){let sum=0;for(let i=1;i<nevoV410.fxTapTimes.length;i++)sum+=nevoV410.fxTapTimes[i]-nevoV410.fxTapTimes[i-1];const avg=sum/(nevoV410.fxTapTimes.length-1),bpm=60000/avg;setStatus(true,'BEAT FX TAP',`${bpm.toFixed(1)} BPM`)}else setStatus(true,'BEAT FX TAP','Noch einmal im Takt drücken');
+  v410RefreshFx();
+}
+function v410FxBeatPress(dir){
+  if(v410ShiftHeld()){
+    if(dir<0){nevoV410.fxTempoMode='AUTO';nevoV410.fxTapTimes=[];setStatus(true,'BEAT FX','AUTO BPM')}
+    else v410TapFxTempo();
+    v410RefreshFx();return;
+  }
+  v410AdjustFxBeat(dir);
+}
+function v410RefreshFx(){
+  v410EnsureChannelButtons();
+  const name=v410FxDisplay(nevoV34.fx.name||'ECHO');
+  if($('#flxFxName'))$('#flxFxName').textContent=name;
+  if($('#flxFxCurrentName'))$('#flxFxCurrentName').textContent=name;
+  if($('#flxFxCenterLabel'))$('#flxFxCenterLabel').textContent='BEAT-LÄNGE';
+  if($('#flxFxBeat'))$('#flxFxBeat').textContent=v410FormatBeat(nevoV34.fx.beat);
+  if($('#flxFxTempoMode'))$('#flxFxTempoMode').textContent=`${nevoV410.fxTempoMode} BPM`;
+  if($('#flxFxSelectBtn')){$('#flxFxSelectBtn').classList.remove('active');const s=$('#flxFxSelectDir');if(s)s.textContent=v410ShiftHeld()?'ZURÜCK':'WEITER'}
+  document.querySelectorAll('#flxFxChannel [data-fx-channel]').forEach(b=>b.classList.toggle('active',b.dataset.fxChannel===nevoV34.fx.channel));
+  $('#flxFxOn')?.classList.toggle('active',!!nevoV34.fx.on);
+  const lev=document.querySelector('[data-flx-action="fx.level"]');if(lev&&document.activeElement!==lev)lev.value=nevoV34.fx.level;
+  const menu=$('#flxFxMenu');if(menu){menu.hidden=true;menu.innerHTML='';menu.setAttribute('aria-hidden','true')}
+}
+
+// Replace the v4.0.6 pseudo-menu with the real controller workflow.
+v34FxCycle=function(){v410CycleFx(v410ShiftHeld()?-1:1)};
+v34FxBeat=function(dir){v410FxBeatPress(dir)};
+v34RefreshFx=function(){v410RefreshFx()};
+try{v406FxSelectPress=function(){v410CycleFx(v410ShiftHeld()?-1:1)}}catch{}
+try{v406FxBrowseStep=function(dir){v410FxBeatPress(dir)}}catch{}
+
+const v410OldTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  if(action==='fx.channel1')return v410SetFxChannel('A');
+  if(action==='fx.channel2')return v410SetFxChannel('B');
+  if(action==='fx.channelBoth')return v410SetFxChannel('AB');
+  if(action==='fx.select')return v410CycleFx(v410ShiftHeld()?-1:1);
+  if(action==='fx.beatDown')return v410FxBeatPress(-1);
+  if(action==='fx.beatUp')return v410FxBeatPress(1);
+  return v410OldTrigger(action);
+};
+const v410OldLabel=flxActionLabel;
+flxActionLabel=function(action){const x={'fx.channel1':'Beat FX CH SELECT 1','fx.channel2':'Beat FX CH SELECT 2','fx.channelBoth':'Beat FX CH SELECT 1&2'};return x[action]||v410OldLabel(action)};
+
+// Compact performance view: the complete live-DJ surface in one desktop viewport.
+function v410ApplyCompact(on){
+  nevoV410.compact=!!on;document.body.classList.toggle('flx-compact-mode',nevoV410.compact);
+  const b=$('#flxCompactToggle');if(b){b.classList.toggle('active',nevoV410.compact);b.textContent=nevoV410.compact?'KOMPAKT AN':'KOMPAKT AUS'}
+  try{localStorage.setItem(V410_COMPACT_STORAGE,nevoV410.compact?'1':'0')}catch{}
+  setTimeout(()=>{try{v34DrawStack('A',true);v34DrawStack('B',true)}catch{}},60);
+}
+$('#flxCompactToggle')?.addEventListener('click',()=>v410ApplyCompact(!nevoV410.compact));
+v410ApplyCompact(nevoV410.compact);
+
+// Extended Groove Editor. 16 steps stay the default; extension is activated deliberately.
+let grooveStepCount=16;
+function v410ActiveGrooveSteps(){return nevoV410.grooveExpanded?nevoV410.grooveExtendedSteps:16}
+function v410EnsurePatternCapacity(n){for(const a of [synthPattern,kickPattern,hatPattern])while(a.length<n)a.push(false)}
+function v410ApplyGrooveLength(){
+  grooveStepCount=v410ActiveGrooveSteps();v410EnsurePatternCapacity(Math.max(64,grooveStepCount));
+  const panel=document.querySelector('.groove-panel');panel?.classList.toggle('groove-expanded',!!nevoV410.grooveExpanded);
+  const ctrl=$('#grooveStepsControl');if(ctrl)ctrl.hidden=!nevoV410.grooveExpanded;
+  const sel=$('#grooveStepsSelect');if(sel)sel.value=String(nevoV410.grooveExtendedSteps);
+  const btn=$('#grooveExpandBtn');if(btn){btn.classList.toggle('active',nevoV410.grooveExpanded);btn.textContent=nevoV410.grooveExpanded?'ERWEITERT AN':'ERWEITERN'}
+  if($('#grooveStepsEyebrow'))$('#grooveStepsEyebrow').textContent=`${grooveStepCount} SCHRITTE`;
+  buildSteps();v410SaveGroove();
+}
+buildSteps=function(){
+  [['synthSteps',synthPattern,'synth'],['kickSteps',kickPattern,'kick'],['hatSteps',hatPattern,'hat']].forEach(([id,a,kind])=>{
+    const e=$('#'+id);if(!e)return;e.innerHTML='';e.style.gridTemplateColumns=grooveStepCount>16?`repeat(${grooveStepCount},32px)`:`repeat(16,minmax(30px,1fr))`;
+    for(let i=0;i<grooveStepCount;i++){
+      const v=!!a[i],b=document.createElement('button');b.className='step'+(v?' on':'');b.textContent=i+1;
+      b.onclick=()=>{a[i]=!a[i];b.classList.toggle('on',a[i]);if(a[i])auditionGrooveStep(kind,i)};e.appendChild(b);
+    }
+  });
+  const table=document.querySelector('#grooveSeqScroll .seq-table');if(table)table.style.minWidth=grooveStepCount>16?`${90+grooveStepCount*39}px`:'';
+};
+scheduleGrooveOnlyStep=function(i,t0){const st=t0+swingOffset(i);if(synthPattern[i])startVoice($('#rootNote').value,st,stepDur()*.62,{amp:.22,width:params.width.value});if(kickPattern[i])kick(st);if(hatPattern[i])hat(st,(i%16)===14||(i%16)===15);markStep(i,st)};
+grooveScheduler=function(){while(grooveNextTime<ctx.currentTime+.12){scheduleGrooveOnlyStep(grooveStep,grooveNextTime);grooveNextTime+=stepDur();grooveStep=(grooveStep+1)%grooveStepCount}};
+grooveIntoArranger=function(){
+  const start=Math.max(0,Number($('#loopStart').value)-1),neededBars=Math.max(1,Math.ceil(grooveStepCount/16)),len=Math.max(neededBars,Number($('#loopEnd').value)-Number($('#loopStart').value)+1);
+  const defs=[['my-groove-kick','MEIN KICK','MY KICK','#ffb55e','kick'],['my-groove-synth','MEIN SYNTH','MY SYNTH','#54d8ff','synth'],['my-groove-hat','MEINE HATS','MY HATS','#ffcc84','perc']];
+  defs.forEach(([id,de,en,color,type])=>{let tr=tracks.find(x=>x.id===id);if(!tr){tr={id,name:de,nameDe:de,nameEn:en,color,type,mute:false,solo:false,clips:[]};tracks.push(tr)}tr.clips=[{id:uid(),start,len,name:de,nameDe:de,nameEn:en,loop:true,sourceSteps:grooveStepCount}]});renderTracks();setStatus(audioReady,'Groove übernommen',`${grooveStepCount} Schritte · ${len} ${len===1?'Takt':'Takte'} ab Takt ${start+1}`)
+};
+const v410OldScheduleTrack=scheduleTrack;
+scheduleTrack=function(track,bar,local,t){
+  if(['my-groove-kick','my-groove-synth','my-groove-hat'].includes(track?.id)){
+    if(!trackAudible(track))return;const c=activeClip(track,bar,local);if(!c)return;const sourceSteps=Math.max(16,Number(c.sourceSteps)||16);let rel=(bar-c.start)*16+local;if(c.loop)rel=((rel%sourceSteps)+sourceSteps)%sourceSteps;if(!c.loop&&rel>=sourceSteps)return;const root=$('#keySelect').value;
+    if(track.id==='my-groove-kick'&&kickPattern[rel])kick(t);
+    if(track.id==='my-groove-hat'&&hatPattern[rel])hat(t,(rel%16)===14||(rel%16)===15);
+    if(track.id==='my-groove-synth'&&synthPattern[rel])startVoice(transpose(root,12),t,stepDur()*.65,{amp:.18,width:12});
+    return;
+  }
+  return v410OldScheduleTrack(track,bar,local,t);
+};
+const v410OldProjectData=projectData;
+projectData=function(){const d=v410OldProjectData();d.grooveSteps=grooveStepCount;d.grooveExpanded=!!nevoV410.grooveExpanded;d.grooveExtendedSteps=nevoV410.grooveExtendedSteps;d.patterns={synth:[...synthPattern],kick:[...kickPattern],hat:[...hatPattern]};return d};
+const v410OldApplyProject=applyProject;
+applyProject=function(d){
+  if(d){nevoV410.grooveExpanded=!!d.grooveExpanded;nevoV410.grooveExtendedSteps=[32,64].includes(Number(d.grooveExtendedSteps||d.grooveSteps))?Number(d.grooveExtendedSteps||d.grooveSteps):32;v410EnsurePatternCapacity(64)}
+  v410OldApplyProject(d);
+  if(d?.patterns){for(const [n,a] of [['synth',synthPattern],['kick',kickPattern],['hat',hatPattern]])if(Array.isArray(d.patterns[n]))d.patterns[n].slice(0,64).forEach((v,i)=>a[i]=!!v)}
+  v410ApplyGrooveLength();
+};
+$('#grooveExpandBtn')?.addEventListener('click',()=>{nevoV410.grooveExpanded=!nevoV410.grooveExpanded;v410ApplyGrooveLength()});
+$('#grooveStepsSelect')?.addEventListener('change',e=>{nevoV410.grooveExtendedSteps=Number(e.target.value)===64?64:32;v410ApplyGrooveLength()});
+v410ApplyGrooveLength();
+
+// Make screen SHIFT state immediately update the Beat FX SELECT direction hint.
+for(const L of ['A','B'])document.querySelector(`[data-flx-action="${L}.shift"]`)?.addEventListener('pointerdown',()=>setTimeout(v410RefreshFx,0));
+window.addEventListener('pointerup',()=>setTimeout(v410RefreshFx,0));
+v410RefreshFx();
+console.info('NÉVO v4.1.0: true FLX4 Beat FX workflow, compact performance view and extended groove editor active');
