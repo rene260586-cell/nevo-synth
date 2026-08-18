@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.1.1',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.1.2',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2472,15 +2472,17 @@ v410ApplyGrooveLength();
 for(const L of ['A','B'])document.querySelector(`[data-flx-action="${L}.shift"]`)?.addEventListener('pointerdown',()=>setTimeout(v410RefreshFx,0));
 window.addEventListener('pointerup',()=>setTimeout(v410RefreshFx,0));
 v410RefreshFx();
-console.info('NÉVO v4.1.1: jog info, compact loop controls and playlist-first browser active');
+console.info('NÉVO v4.1.2: playlist-first deck layout active');
 
 
-// ===== v4.1.1: move live deck info into jogwheels + playlist-first browser =====
+// ===== v4.1.2: larger jogs + playlist-first center + compact mapping drawer =====
 function v411Text(id,val){const e=$(id);if(e)e.textContent=val}
 function v411RefreshJogInfo(letter){
   const d=djDecks[letter],info=v39BeatInfo(letter),M=nevoV3?.masterDeck||'A',isMaster=letter===M&&!!d?.item,isSync=!!nevoV31?.syncLock?.[letter]||v39PhaseDiff(letter).locked,eff=d?.item?v3EffectiveBpm(letter):0;
   v411Text(`#flx${letter}JogBpm`,d?.item?`${eff.toFixed(2)} BPM`:'— BPM');
-  v411Text(`#flx${letter}JogTitle`,d?.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track'));
+  const trackName=d?.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');
+  v411Text(`#flx${letter}JogTitle`,trackName);
+  v411Text(`#flx${letter}JogTrackTitle`,trackName);
   v411Text(`#flx${letter}JogBeat`,d?.item?`TAKT ${info.bar} · BEAT ${info.beat}`:'TAKT — · BEAT —');
   const mb=$(`#flx${letter}JogMaster`),sb=$(`#flx${letter}JogSync`);mb?.classList.toggle('on',isMaster);sb?.classList.toggle('on',isSync);
 }
@@ -2493,4 +2495,4 @@ const v411OldCompact=v410ApplyCompact;
 v410ApplyCompact=function(on){v411OldCompact(on);if(on){nevoV38.browserExpanded=true;v38Save();v38RenderBrowser()}setTimeout(()=>{v411RefreshJogInfo('A');v411RefreshJogInfo('B')},20)};
 // Re-apply once after the override is installed.
 v410ApplyCompact(nevoV410.compact);v411RefreshJogInfo('A');v411RefreshJogInfo('B');v35RefreshLoopUi('A');v35RefreshLoopUi('B');
-console.info('NÉVO v4.1.1: deck BPM/master/sync moved into jogs; loop strip removed; browser made playlist-first');
+console.info('NÉVO v4.1.2: larger jogs, track labels, taller playlist and collapsible mixer mapping active');

@@ -688,3 +688,74 @@ body.flx-compact-mode .flx4-browser-panel.expanded .flx4-browser-list{max-height
   .flx4-browser-top-compact .browse-sub{grid-column:auto;}
   .flx4-browser-panel{max-height:260px!important}.flx4-browser-list{max-height:200px!important}
 }
+
+
+/* ===== v4.1.2: playlist-first DJ workspace ===== */
+/* The physical FLX4 already owns the mixer knobs. Keep them available for MIDI Learn,
+   but move them into a tiny drawer so the center is primarily the music library. */
+.flx4-mapping-drawer{margin:3px 0 5px;border:1px solid rgba(255,255,255,.075);border-radius:8px;background:#060b10;overflow:hidden}
+.flx4-mapping-drawer>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;min-height:24px;padding:3px 7px;color:#8fa2b0;font-size:6px;font-weight:950;letter-spacing:.08em;user-select:none}
+.flx4-mapping-drawer>summary::-webkit-details-marker{display:none}
+.flx4-mapping-drawer>summary:before{content:'▸';color:#54d8ff;font-size:8px;transition:transform .15s ease}
+.flx4-mapping-drawer[open]>summary:before{transform:rotate(90deg)}
+.flx4-mapping-drawer>summary small{font-size:5px;color:#617482;font-weight:800;letter-spacing:.02em}
+.flx4-mapping-drawer[open]{padding-bottom:5px;border-color:rgba(84,216,255,.18)}
+.flx4-mapping-drawer .flx4-mixer-brand{display:none!important}
+.flx4-mapping-drawer .flx4-vu-panel{display:none!important}
+.flx4-mapping-drawer .flx4-control-section-title{font-size:6px;margin-bottom:2px}
+.flx4-mapping-drawer .flx4-mixer-columns{grid-template-columns:1fr .72fr 1fr;gap:4px;padding:0 5px 4px}
+.flx4-mapping-drawer .flx4-channel{gap:2px}
+.flx4-mapping-drawer .flx4-channel label,.flx4-mapping-drawer .flx4-master-knob{font-size:5px;gap:1px}
+.flx4-mapping-drawer .flx4-channel label:not(.flx4-fader) input,.flx4-mapping-drawer .flx4-master-knob input{height:13px}
+.flx4-mapping-drawer .flx4-fader input{height:38px}
+.flx4-mapping-drawer .flx4-master-column{gap:2px}
+.flx4-mapping-drawer .flx4-master-knob small,.flx4-mapping-drawer .flx4-midi-card em{display:none}
+.flx4-mapping-drawer .flx4-mid-buttons,.flx4-mapping-drawer .flx4-smart-row{gap:2px}
+.flx4-mapping-drawer button{min-height:20px!important;padding:2px 4px!important;font-size:5px!important}
+.flx4-mapping-drawer .flx4-midi-card{padding:3px;font-size:5px}
+
+/* Song name directly beside the jogwheel area, with the detailed state still inside the jog. */
+.flx4-jog-trackline{display:flex;align-items:center;justify-content:center;gap:6px;min-height:25px;margin:1px 0 3px;padding:3px 7px;border-radius:7px;background:#071019;border:1px solid rgba(255,255,255,.06);overflow:hidden}
+.flx4-jog-trackline span{font-size:9px;font-weight:1000}
+.flx4-jog-trackline strong{max-width:82%;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eef8ff}
+.flx4-jog-trackline.deck-a span{color:#54d8ff}.flx4-jog-trackline.deck-b span{color:#ffb55e}
+
+/* Give the jogwheels more visual weight. */
+body.flx-compact-mode .flx4-jog{width:158px;max-width:62%}
+body.flx-compact-mode .flx4-jog-center.flx4-jog-info{inset:20%;padding:6px;gap:2px}
+body.flx-compact-mode .flx4-jog-info .flx4-jog-deck{font-size:16px}
+body.flx-compact-mode .flx4-jog-info>strong{font-size:10px}
+body.flx-compact-mode .flx4-jog-info>small{font-size:6px;max-width:96%}
+body.flx-compact-mode .flx4-jog-badges em{font-size:5px;padding:2px 4px}
+body.flx-compact-mode .flx4-jog-info>i{font-size:5px}
+body.flx-compact-mode .flx4-jog-trackline{min-height:22px;margin:0 0 2px;padding:2px 5px}
+body.flx-compact-mode .flx4-jog-trackline strong{font-size:7px}
+
+/* Center column = playlist first. The browser should use the free vertical space rather
+   than the on-screen mixer that is already present on the hardware controller. */
+body.flx-compact-mode .flx4-mixer-section.v34-mixer{display:flex;flex-direction:column;min-height:100%;}
+body.flx-compact-mode .flx4-browser-panel{max-height:345px!important;min-height:245px!important;flex:1 1 auto;padding:3px!important}
+body.flx-compact-mode .flx4-browser-list{max-height:307px!important}
+body.flx-compact-mode .flx4-browser-panel.expanded{max-height:430px!important;min-height:315px!important}
+body.flx-compact-mode .flx4-browser-panel.expanded .flx4-browser-list{max-height:392px!important}
+body.flx-compact-mode .flx4-browser-track{min-height:25px;padding:3px 5px}
+body.flx-compact-mode .flx4-browser-track b{font-size:6.5px}
+body.flx-compact-mode .flx4-browser-track small{font-size:5px}
+body.flx-compact-mode .flx4-mapping-drawer{flex:0 0 auto;margin:2px 0 3px}
+body.flx-compact-mode .flx4-mapping-drawer>summary{min-height:20px;padding:2px 5px;font-size:5px}
+body.flx-compact-mode .flx4-mapping-drawer>summary small{font-size:4.5px}
+body.flx-compact-mode .flx4-beatfx{flex:0 0 auto}
+
+/* Beat FX remains prominent; make the ON/OFF label readable from normal laptop distance. */
+#flxFxOn{font-size:9px!important;font-weight:1000!important;letter-spacing:.04em}
+#flxFxOn small{font-size:5px!important}
+body.flx-compact-mode #flxFxOn{font-size:7px!important}
+
+/* Slightly favor the decks over the center width; the center gains height instead. */
+body.flx-compact-mode .flx4-controller{grid-template-columns:minmax(275px,1.04fr) minmax(360px,1.08fr) minmax(275px,1.04fr)}
+
+@media(max-width:1100px){
+  body.flx-compact-mode .flx4-jog{width:146px;max-width:60%}
+  body.flx-compact-mode .flx4-browser-panel{min-height:220px!important}
+  body.flx-compact-mode .flx4-browser-panel.expanded{min-height:280px!important}
+}
