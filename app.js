@@ -1962,3 +1962,75 @@ const v40OldDrawStack=v34DrawStack;v34DrawStack=function(letter,force=false){con
 const v40OldRefreshFlx=refreshFlx4Ui;refreshFlx4Ui=function(){v40OldRefreshFlx();v40RefreshLoopOverlay('A');v40RefreshLoopOverlay('B')};
 function v40Bind(){for(const L of ['A','B']){v40EnsureOverlay(L);v40RefreshLoopOverlay(L)}setTimeout(()=>{v34DrawStack('A',true);v34DrawStack('B',true)},400)}
 v40Bind();
+
+
+// ===== v4.0.1: MOBILE SCROLL / OVERLAY PERFORMANCE FIX =====
+// v4.0 rebuilt all hot-cue + memory marker DOM nodes every FLX refresh (~12x/s).
+// On phones that created enough layout/paint churn to starve native scrolling.
+const nevoV401={
+  markerSig:{A:'',B:''},
+  markerNodes:{A:[],B:[]},
+  scrolling:false,
+  scrollTimer:0
+};
+function v401MarkerData(letter){
+  const d=djDecks[letter];if(!d?.item)return [];
+  const out=[];
+  (d.hotCues||[]).forEach((t,i)=>{if(Number.isFinite(t))out.push({kind:'hot',time:Number(t),label:`H${i+1}`})});
+  const mem=typeof v36MemList==='function'?(v36MemList(letter)||[]):[];
+  mem.forEach((x,i)=>{const t=Number(x?.time);if(Number.isFinite(t))out.push({kind:'mem',time:t,label:x?.type==='loop'?`M${i+1}L`:`M${i+1}`})});
+  return out;
+}
+function v401MarkerSignature(data){return data.map(x=>`${x.kind}:${x.time.toFixed(3)}:${x.label}`).join('|')}
+function v401BuildMarkers(letter,wrap,data){
+  wrap.querySelectorAll('.flx4-hotcue-marker,.flx4-memory-marker').forEach(x=>x.remove());
+  const nodes=[];
+  for(const x of data){
+    const m=document.createElement('i');
+    m.className=x.kind==='hot'?'flx4-hotcue-marker':'flx4-memory-marker';
+    m.dataset.label=x.label;m.dataset.time=String(x.time);m.style.display='none';wrap.appendChild(m);nodes.push(m)
+  }
+  nevoV401.markerNodes[letter]=nodes
+}
+// Replace the expensive v4.0 implementation with a cached one: create marker
+// elements only when cues/memory change; while playing only move/hide them.
+v40RefreshMarkers=function(letter,r){
+  const d=djDecks[letter],wrap=document.querySelector(`[data-flx-stack-seek="${letter}"]`);if(!d?.item||!wrap)return;
+  const data=v401MarkerData(letter),sig=v401MarkerSignature(data);
+  if(sig!==nevoV401.markerSig[letter]){nevoV401.markerSig[letter]=sig;v401BuildMarkers(letter,wrap,data)}
+  for(const m of nevoV401.markerNodes[letter]){
+    const t=Number(m.dataset.time),inside=Number.isFinite(t)&&t>=r.start&&t<=r.end;
+    if(!inside){if(m.style.display!=='none')m.style.display='none';continue}
+    m.style.display='block';m.style.left=v40TimeToPct(t,r)+'%'
+  }
+};
+const v401BaseClearMarkers=v40ClearMarkers;
+v40ClearMarkers=function(letter){
+  v401BaseClearMarkers(letter);nevoV401.markerSig[letter]='';nevoV401.markerNodes[letter]=[]
+};
+
+// While the user is physically scrolling the page, pause the expensive moving
+// waveform redraws. Audio keeps playing; visual redraw resumes immediately after.
+function v401ScrollingPulse(){
+  nevoV401.scrolling=true;clearTimeout(nevoV401.scrollTimer);
+  nevoV401.scrollTimer=setTimeout(()=>{
+    nevoV401.scrolling=false;
+    try{v34DrawStack('A',true);v34DrawStack('B',true);v40RefreshLoopOverlay('A');v40RefreshLoopOverlay('B')}catch{}
+  },140)
+}
+window.addEventListener('scroll',v401ScrollingPulse,{passive:true});
+document.addEventListener('touchmove',v401ScrollingPulse,{passive:true,capture:true});
+document.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&Math.abs(e.movementY||0)>1)v401ScrollingPulse()},{passive:true,capture:true});
+
+const v401CurrentDrawStack=v34DrawStack;
+v34DrawStack=function(letter,force=false){if(nevoV401.scrolling&&!force)return;return v401CurrentDrawStack(letter,force)};
+
+// Do not let seek areas steal a normal vertical swipe. A tap still seeks, but a
+// swipe is left to the browser's native scrolling gesture.
+for(const el of document.querySelectorAll('[data-flx-stack-seek]')){
+  if(el.dataset.v401TouchBound)continue;el.dataset.v401TouchBound='1';
+  let sx=0,sy=0,moved=false;
+  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;sx=e.clientX;sy=e.clientY;moved=false},{passive:true});
+  el.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')return;if(Math.abs(e.clientY-sy)>8||Math.abs(e.clientX-sx)>12)moved=true},{passive:true});
+  el.addEventListener('click',e=>{if(moved&&e.detail!==0){e.preventDefault();e.stopImmediatePropagation();moved=false}},true)
+}

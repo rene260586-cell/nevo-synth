@@ -382,3 +382,13 @@ button,.btn,.mode-btn,.lang-btn,.preset-card{-webkit-appearance:none;appearance:
 .flx4-loop-badge{position:absolute;right:7px;top:6px;z-index:8;padding:4px 7px;border-radius:7px;background:rgba(2,6,9,.88);border:1px solid rgba(255,255,255,.18);font-size:9px;font-weight:1000;letter-spacing:.08em;color:#dce9f2;pointer-events:none;display:none}.flx4-loop-badge.on{display:block}.deck-a .flx4-loop-badge.on{border-color:rgba(84,216,255,.55);color:#75e0ff}.deck-b .flx4-loop-badge.on{border-color:rgba(255,181,94,.55);color:#ffc478}
 .flx4-memory-marker,.flx4-hotcue-marker{position:absolute;top:0;bottom:22px;width:2px;z-index:4;pointer-events:none}.flx4-hotcue-marker{background:#ff4d76;box-shadow:0 0 8px rgba(255,77,118,.7)}.flx4-memory-marker{background:#9d7bff;box-shadow:0 0 8px rgba(157,123,255,.55)}
 .flx4-hotcue-marker::after,.flx4-memory-marker::after{position:absolute;top:2px;left:3px;font-size:8px;font-weight:1000;padding:1px 3px;border-radius:4px;background:#020609;white-space:nowrap}.flx4-hotcue-marker::after{content:attr(data-label);color:#ff7b9c}.flx4-memory-marker::after{content:attr(data-label);color:#bba5ff}
+
+
+/* ===== v4.0.1: MOBILE SCROLL RESPONSIVENESS FIX =====
+   The DJ widgets may capture horizontal/jog gestures, but the page itself must
+   always remain vertically scrollable on touch devices. */
+html,body{touch-action:pan-y pinch-zoom;overscroll-behavior-y:auto}
+.app-shell,.main-grid,.panel,.flx4-layout,.flx4-player{touch-action:pan-y pinch-zoom}
+.flx4-stack-wavewrap{touch-action:pan-y pinch-zoom}
+/* Only controls that genuinely need drag gestures block browser panning. */
+.flx4-jog,.flx4-pads.v34-pads button,.knob{touch-action:none}
