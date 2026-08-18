@@ -1695,3 +1695,111 @@ const v36OldRefreshFlx=refreshFlx4Ui;
 refreshFlx4Ui=function(){v36OldRefreshFlx();for(const L of ['A','B'])v36RefreshMemoryUi(L)};
 for(const L of ['A','B'])v36RefreshMemoryUi(L);
 let v36Last=0;function v36Ticker(ts){if(ts-v36Last>55){v36Last=ts;v36UpdateMeters()}requestAnimationFrame(v36Ticker)}requestAnimationFrame(v36Ticker);
+
+// ===== v3.7: COMPLETE FLX4 PERFORMANCE PADS + SHIFT SECOND LAYER =====
+const V37_SECONDARY={hotcue:'keyboard',padfx:'padfx2',beatjump:'beatloop',sampler:'keyshift'};
+const V37_PRIMARY={keyboard:'hotcue',padfx2:'padfx',beatloop:'beatjump',keyshift:'sampler'};
+const V37_MODE_NAMES={hotcue:'HOT CUE',keyboard:'KEYBOARD',padfx:'PAD FX1',padfx2:'PAD FX2',beatjump:'BEAT JUMP',beatloop:'BEAT LOOP',sampler:'SAMPLER',keyshift:'KEY SHIFT'};
+const V37_PAD_LABELS={
+  hotcue:['HOT 1','HOT 2','HOT 3','HOT 4','HOT 5','HOT 6','HOT 7','HOT 8'],
+  keyboard:['1','2','♭3','4','5','♭6','♭7','8'],
+  padfx:['ECHO ½','ECHO 1','HALL','FILTER','FLANGER','PHASER','ROLL ½','ROLL ¼'],
+  padfx2:['DELAY ¼','DELAY ½','HALL BIG','FILTER +','FLANGE +','PHASE +','ROLL ⅛','ROLL 1/16'],
+  beatjump:['-16','-8','-4','-1','+1','+4','+8','+16'],
+  beatloop:['⅛','¼','½','1','2','4','8','16'],
+  sampler:['KICK','BASS','HAT','ACID','SYNTH','VOCAL','RISER','DOWN FX'],
+  keyshift:['-3','-2','-1','0','+1','+2','+3','+4']
+};
+const V37_SAMPLER_KEYS=['kick-driving','bass-coronita','drums-minimal','acid-303','synth-darkstab','vocals-chop','fx-riser','fx-down'];
+const V37_BEAT_LOOPS=[.125,.25,.5,1,2,4,8,16];
+const V37_KEY_SHIFTS=[-3,-2,-1,0,1,2,3,4];
+const v37HeldPads=new Map();
+const v37PadFxSnapshots=new Map();
+const v37SuppressClick=new Map();
+
+function v37BaseMode(mode){return V37_PRIMARY[mode]||mode}
+function v37SecondaryMode(mode){return V37_SECONDARY[mode]||mode}
+function v37IsSecondary(mode){return Object.hasOwn(V37_PRIMARY,mode)}
+function v37DeckRoot(letter){
+  const d=djDecks[letter],raw=(d?.key&&d.key!=='—'?d.key:'D').replace(/m$/i,'');
+  const m=raw.match(/^([A-G](?:#|b)?)/i),root=(m?.[1]||'D').replace('b','#');
+  return root.toUpperCase()+'3'
+}
+function v37ScaleOffsets(letter){const key=djDecks[letter]?.key||'';return /m$/i.test(key)?[0,2,3,5,7,8,10,12]:[0,2,4,5,7,9,11,12]}
+function v37PadNote(letter,index){return transpose(v37DeckRoot(letter),v37ScaleOffsets(letter)[index-1]||0)}
+function v37RefreshPadMode(letter){
+  const mode=nevoV34.padMode?.[letter]||'hotcue',base=v37BaseMode(mode),secondary=v37IsSecondary(mode),state=$(`#flx${letter}PadModeState`),hint=$(`#flx${letter}PadModeHint`),box=document.querySelector(`[data-padmode-deck="${letter}"]`),pads=document.querySelector(`[data-performance-pads="${letter}"]`);
+  if(state)state.textContent=V37_MODE_NAMES[mode]||mode.toUpperCase();
+  if(hint){if(mode==='keyshift')hint.textContent=`SHIFT ${djDecks[letter]?.v37KeyShift||0} HT`;else if(mode==='keyboard')hint.textContent=`${v37DeckRoot(letter)} · passende Tonleiter`;else hint.textContent=secondary?'SHIFT-Ebene aktiv':'SHIFT + Modus = zweite Ebene'}
+  state?.parentElement?.classList.toggle('secondary',secondary);
+  box?.querySelectorAll('button').forEach(b=>{const a=b.dataset.flxAction||'',is=(base==='hotcue'&&a.endsWith('.modeHotcue'))||(base==='padfx'&&a.endsWith('.modePadfx'))||(base==='beatjump'&&a.endsWith('.modeBeatjump'))||(base==='sampler'&&a.endsWith('.modeSampler'));b.classList.toggle('active',is);b.classList.toggle('secondary-active',is&&secondary)});
+  if(pads){pads.className='flx4-pads v34-pads mode-'+mode;const labels=V37_PAD_LABELS[mode]||V37_PAD_LABELS.hotcue;for(let i=1;i<=8;i++){const p=document.querySelector(`[data-pad="${letter}-${i}"]`);if(!p)continue;p.querySelector('span').textContent=labels[i-1];p.classList.toggle('hot-set',mode==='hotcue'&&Number.isFinite(djDecks[letter]?.hotCues?.[i-1]));p.classList.toggle('selected-shift',mode==='keyshift'&&V37_KEY_SHIFTS[i-1]===(djDecks[letter]?.v37KeyShift||0))}}
+}
+function v37SelectMode(letter,base){const mode=nevoV34.shift?.[letter]?v37SecondaryMode(base):base;nevoV34.padMode[letter]=mode;v34Save();v37RefreshPadMode(letter);setStatus(true,'PAD MODE',`DECK ${letter} · ${V37_MODE_NAMES[mode]}`)}
+
+async function v37SamplerHit(index){const key=V37_SAMPLER_KEYS[index-1],item=LOOP_LIBRARY[key];if(!item)return;await initAudio();const sd=60/Math.max(60,item.bpm||150)/4,rel=Array.isArray(item.steps)&&item.steps.length?item.steps[0]:0;scheduleLibraryItem(item,rel,ctx.currentTime+.012,sd)}
+function v37KeyShift(letter,semis){const d=djDecks[letter];if(!d?.item)return;d.v37KeyShift=clamp(Number(semis)||0,-12,12);updateDeckRate(letter);v37RefreshPadMode(letter);setStatus(true,'KEY SHIFT',`DECK ${letter} · ${d.v37KeyShift>0?'+':''}${d.v37KeyShift} HT`)}
+function v37ApplyBeatLoop(letter,index){const beats=V37_BEAT_LOOPS[index-1],active=v35LoopBeats(letter);if(active&&Math.abs(active-beats)<.0001)return v35ExitLoop(letter);v35SetLoopSize(letter,beats,true)}
+function v37FxPreset(mode,index){
+  const a=mode==='padfx2';
+  const p=a?[
+    ['DELAY',.25,.72],['DELAY',.5,.62],['REVERB',2,.9],['FILTER',.5,.88],['FLANGER',.25,.82],['PHASER',.25,.82],['ROLL',.125,.72],['ROLL',.0625,.78]
+  ]:[
+    ['ECHO',.5,.58],['ECHO',1,.52],['REVERB',1,.58],['FILTER',1,.62],['FLANGER',.5,.58],['PHASER',.5,.58],['ROLL',.5,.58],['ROLL',.25,.62]
+  ];return p[index-1]
+}
+function v37PadFxDown(letter,index,mode){const k=`${letter}-${index}`;if(v37PadFxSnapshots.has(k))return;v37PadFxSnapshots.set(k,{name:nevoV34.fx.name,channel:nevoV34.fx.channel,beat:nevoV34.fx.beat,level:nevoV34.fx.level,on:nevoV34.fx.on});const [name,beat,level]=v37FxPreset(mode,index);nevoV34.fx.name=name;nevoV34.fx.channel=letter;nevoV34.fx.beat=beat;nevoV34.fx.level=level;nevoV34.fx.on=true;v34RefreshFx();v35ApplyFx()}
+function v37PadFxUp(letter,index){const k=`${letter}-${index}`,old=v37PadFxSnapshots.get(k);if(!old)return;v37PadFxSnapshots.delete(k);Object.assign(nevoV34.fx,old);v34RefreshFx();v35ApplyFx()}
+function v37SetPadVisual(letter,index,on){document.querySelector(`[data-pad="${letter}-${index}"]`)?.classList.toggle('pad-active',!!on)}
+
+async function v37PadDown(letter,index,source='screen'){
+  const mode=nevoV34.padMode?.[letter]||'hotcue',key=`${letter}-${index}`;if(v37HeldPads.has(key))return;v37HeldPads.set(key,{mode,source});v37SetPadVisual(letter,index,true);
+  if(mode==='hotcue')return hotCueAction(letter,index-1);
+  if(mode==='beatjump')return v3BeatJump(letter,[-16,-8,-4,-1,1,4,8,16][index-1]);
+  if(mode==='sampler')return v37SamplerHit(index);
+  if(mode==='beatloop')return v37ApplyBeatLoop(letter,index);
+  if(mode==='keyshift')return v37KeyShift(letter,V37_KEY_SHIFTS[index-1]);
+  if(mode==='keyboard'){await initAudio();const note=v37PadNote(letter,index);const held=v37HeldPads.get(key);if(!held)return;held.note=note;if(voices.has(note))stopVoice(note,true);startVoice(note);return}
+  if(mode==='padfx'||mode==='padfx2'){await initAudio();await v35EnsureFxEngine();v37PadFxDown(letter,index,mode)}
+}
+function v37PadUp(letter,index){const key=`${letter}-${index}`,held=v37HeldPads.get(key);if(!held){v37SetPadVisual(letter,index,false);return}v37HeldPads.delete(key);v37SetPadVisual(letter,index,false);if(held.mode==='keyboard'&&held.note)stopVoice(held.note,false);if(held.mode==='padfx'||held.mode==='padfx2')v37PadFxUp(letter,index)}
+
+// Extend deck rate with browser key-shift. At non-zero shift this intentionally changes pitch + tempo.
+const v37OldUpdateDeckRate=updateDeckRate;
+updateDeckRate=function(letter){
+  const d=djDecks[letter],semis=Number(d?.v37KeyShift)||0,pct=Number($(`#deck${letter}Pitch`)?.value)||0,base=clamp(1+pct/100,.5,2),rate=clamp(base*Math.pow(2,semis/12),.5,2);
+  if(!d?.audio)return v37OldUpdateDeckRate(letter);d.audio.preservesPitch=semis===0?!!d.keyLock:false;d.audio.mozPreservesPitch=d.audio.preservesPitch;d.audio.webkitPreservesPitch=d.audio.preservesPitch;d.audio.playbackRate=rate;if($(`#deck${letter}PitchValue`))$(`#deck${letter}PitchValue`).textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%';refreshDeckUi(letter);v37RefreshPadMode(letter)
+};
+const v37OldToggleKeyLock=toggleDeckKeyLock;
+toggleDeckKeyLock=function(letter){const d=djDecks[letter];v37OldToggleKeyLock(letter);if((d?.v37KeyShift||0)!==0)updateDeckRate(letter)};
+
+// Override old pad-mode/pad click actions. SHIFT chooses the printed lower function.
+const v37OldFlxTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  let m=action.match(/^([AB])\.mode(Hotcue|Padfx|Beatjump|Sampler)$/);if(m){const base=m[2].toLowerCase();return v37SelectMode(m[1],base)}
+  m=action.match(/^([AB])\.pad([1-8])$/);if(m){const k=`${m[1]}-${m[2]}`;if((v37SuppressClick.get(k)||0)>performance.now())return;v37PadDown(m[1],Number(m[2]),'click');setTimeout(()=>v37PadUp(m[1],Number(m[2])),90);return}
+  return v37OldFlxTrigger(action)
+};
+
+// On-screen pads need genuine press/release for keyboard + pad FX.
+function v37BindScreenPads(){for(const L of ['A','B'])for(let i=1;i<=8;i++){const b=document.querySelector(`[data-pad="${L}-${i}"]`);if(!b||b.dataset.v37Bound)return;b.dataset.v37Bound='1';b.addEventListener('pointerdown',e=>{if(flxState.learn)return;e.preventDefault();const k=`${L}-${i}`;v37SuppressClick.set(k,performance.now()+600);try{b.setPointerCapture(e.pointerId)}catch{}v37PadDown(L,i,'screen')});const up=e=>{if(flxState.learn)return;v37PadUp(L,i)};b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up)}}
+
+// Hardware pads: consume Note-On and Note-Off so held effects/notes really release.
+const v37OldHandleMidi=handleFlxMidiMessage;
+handleFlxMidiMessage=function(e){
+  const raw=e.data||[],parsed=flxMidiMessageKey(raw);if(!parsed?.key)return v37OldHandleMidi(e);const {key,norm}=parsed;
+  if(flxState.learn)return v37OldHandleMidi(e);
+  const action=flxState.mappings[key];
+  if(/^([AB])\.pad[1-8]$/.test(action||'')){updateFlxMidiMonitor(raw,key,norm);const m=action.match(/^([AB])\.pad([1-8])$/),prev=flxState.lastMidi.get(key)??0;flxState.lastMidi.set(key,norm);if(norm>.45&&prev<=.45)v37PadDown(m[1],Number(m[2]),'midi');else if(norm<=.45&&prev>.45)v37PadUp(m[1],Number(m[2]));return}
+  if(/^([AB])\.shift$/.test(action||'')){updateFlxMidiMonitor(raw,key,norm);const m=action.match(/^([AB])\.shift$/),on=norm>.45;nevoV34.shift[m[1]]=on;v34Save();document.querySelector(`[data-flx-action="${m[1]}.shift"]`)?.classList.toggle('active',on);return}
+  return v37OldHandleMidi(e)
+};
+
+const v37OldRefreshFlx=refreshFlx4Ui;
+refreshFlx4Ui=function(){v37OldRefreshFlx();for(const L of ['A','B'])v37RefreshPadMode(L)};
+
+function v37Bind(){
+  for(const L of ['A','B']){const stored=nevoV34.padMode?.[L]||'hotcue';if(!V37_PAD_LABELS[stored])nevoV34.padMode[L]='hotcue';const d=djDecks[L];if(!Number.isFinite(d.v37KeyShift))d.v37KeyShift=0;v37RefreshPadMode(L)}
+  v37BindScreenPads();v34Save();refreshFlx4Ui();
+}
+v37Bind();

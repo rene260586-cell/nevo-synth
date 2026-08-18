@@ -316,3 +316,21 @@ button,.btn,.mode-btn,.lang-btn,.preset-card{-webkit-appearance:none;appearance:
 .flx4-vu{display:block;position:relative;width:13px;height:62px;border-radius:5px;background:repeating-linear-gradient(to top,rgba(255,255,255,.055) 0 4px,transparent 4px 6px),#020507;border:1px solid rgba(255,255,255,.08);overflow:hidden}
 .flx4-vu b{position:absolute;left:1px;right:1px;bottom:1px;height:0%;border-radius:3px;background:linear-gradient(to top,#35e36f 0 58%,#e7d641 58% 80%,#ff9b3d 80% 92%,#ff4f67 92% 100%);box-shadow:0 0 10px rgba(75,226,148,.25);transition:height .06s linear}
 .flx4-cuecall button small{line-height:1.05;max-width:64px}
+
+/* ===== v3.7: FLX4 PERFORMANCE PADS ===== */
+.flx4-pad-state{display:flex;align-items:center;gap:10px;margin:8px 0 9px;padding:8px 10px;border:1px solid rgba(99,216,255,.18);border-radius:12px;background:rgba(3,12,20,.55);min-height:38px}
+.flx4-pad-state span{font-size:10px;font-weight:900;letter-spacing:.16em;color:#7f91a3}
+.flx4-pad-state b{font-size:12px;letter-spacing:.08em;color:#5bddff}
+.flx4-pad-state small{margin-left:auto;font-size:9px;color:#7f91a3;text-align:right}
+.flx4-pad-state.secondary{border-color:rgba(255,181,94,.35);box-shadow:0 0 18px rgba(255,181,94,.07) inset}
+.flx4-pad-state.secondary b{color:#ffb55e}
+.flx4-padmode-buttons button.secondary-active{border-color:#ffb55e!important;box-shadow:0 0 16px rgba(255,181,94,.15) inset;color:#ffcf91!important}
+.flx4-pads.v34-pads button{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;transition:transform .07s ease,box-shadow .09s ease,border-color .09s ease,background .09s ease}
+.flx4-pads.v34-pads button.pad-active{transform:translateY(1px) scale(.97);box-shadow:0 0 20px rgba(84,216,255,.32) inset,0 0 18px rgba(84,216,255,.18);border-color:#54d8ff;background:linear-gradient(180deg,rgba(38,117,151,.55),rgba(6,22,32,.9))}
+.flx4-pads.v34-pads.mode-keyboard button.pad-active{box-shadow:0 0 22px rgba(54,240,192,.35) inset,0 0 18px rgba(54,240,192,.2);border-color:#36f0c0}
+.flx4-pads.v34-pads.mode-padfx1 button.pad-active,.flx4-pads.v34-pads.mode-padfx2 button.pad-active{box-shadow:0 0 24px rgba(255,181,94,.38) inset,0 0 18px rgba(255,181,94,.22);border-color:#ffb55e;background:linear-gradient(180deg,rgba(118,72,24,.62),rgba(22,15,8,.95))}
+.flx4-pads.v34-pads.mode-beatloop button.pad-active{border-color:#b980ff;box-shadow:0 0 22px rgba(185,128,255,.32) inset}
+.flx4-pads.v34-pads.mode-sampler button.pad-active{border-color:#ff83b6;box-shadow:0 0 22px rgba(255,131,182,.32) inset}
+.flx4-pads.v34-pads.mode-keyshift button.pad-active{border-color:#8fe8ff;box-shadow:0 0 22px rgba(143,232,255,.32) inset}
+.flx4-pads.v34-pads button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media(max-width:720px){.flx4-pad-state{gap:7px}.flx4-pad-state small{display:none}}

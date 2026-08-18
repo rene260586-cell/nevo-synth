@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v3.6</title>
+  <title>NÉVO Studio v3.7</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v3.6</span></div>
+        <div class="brand-sub">STUDIO <span>v3.7</span></div>
       </div>
 
       <div class="transport">
@@ -129,8 +129,8 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v3.6</strong>
-            <span>Unterwegs-Build: Loop-Memory, echte CUE/LOOP-CALL-Logik und Pegelanzeigen sind ergänzt. MIDI LEARN weiter erst ganz am Ende komplett belegen.</span>
+            <strong>DDJ-FLX4 MODUS · v3.7</strong>
+            <span>Performance-Pads sind jetzt vollständig: HOT CUE / PAD FX1 / BEAT JUMP / SAMPLER und mit SHIFT die zweite Ebene KEYBOARD / PAD FX2 / BEAT LOOP / KEY SHIFT. MIDI LEARN weiter erst ganz am Ende komplett belegen.</span>
           </div>
 
           <section class="flx4-parallel-wave" aria-label="Parallele Deck-Wellenformen">
@@ -175,7 +175,8 @@
               <div class="flx4-padmode-buttons" data-padmode-deck="A">
                 <button class="active" data-flx-action="A.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="A.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="A.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="A.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
               </div>
-              <div class="flx4-pads v34-pads">
+              <div class="flx4-pad-state"><span>PAD MODE</span><b id="flxAPadModeState">HOT CUE</b><small id="flxAPadModeHint">SHIFT + Modus = zweite Ebene</small></div>
+              <div class="flx4-pads v34-pads" data-performance-pads="A">
                 <button data-flx-action="A.pad1" data-pad="A-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="A.pad2" data-pad="A-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="A.pad3" data-pad="A-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="A.pad4" data-pad="A-4"><b>4</b><span>HOT CUE</span></button>
                 <button data-flx-action="A.pad5" data-pad="A-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="A.pad6" data-pad="A-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="A.pad7" data-pad="A-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="A.pad8" data-pad="A-8"><b>8</b><span>HOT CUE</span></button>
               </div>
@@ -269,7 +270,8 @@
               <div class="flx4-padmode-buttons" data-padmode-deck="B">
                 <button class="active" data-flx-action="B.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="B.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="B.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="B.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
               </div>
-              <div class="flx4-pads v34-pads">
+              <div class="flx4-pad-state"><span>PAD MODE</span><b id="flxBPadModeState">HOT CUE</b><small id="flxBPadModeHint">SHIFT + Modus = zweite Ebene</small></div>
+              <div class="flx4-pads v34-pads" data-performance-pads="B">
                 <button data-flx-action="B.pad1" data-pad="B-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="B.pad2" data-pad="B-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="B.pad3" data-pad="B-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="B.pad4" data-pad="B-4"><b>4</b><span>HOT CUE</span></button>
                 <button data-flx-action="B.pad5" data-pad="B-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="B.pad6" data-pad="B-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="B.pad7" data-pad="B-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="B.pad8" data-pad="B-8"><b>8</b><span>HOT CUE</span></button>
               </div>
