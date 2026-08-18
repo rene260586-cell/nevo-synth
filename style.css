@@ -844,3 +844,87 @@ body.flx-compact-mode .v415-fx-knob{width:33px;height:33px;min-height:33px}
 body.flx-compact-mode .v415-fx-knob:after{top:4px;height:9px;transform-origin:50% 12.5px}
 body.flx-compact-mode .v415-fx-on{width:68px;min-height:24px!important;font-size:6px!important}
 @media(max-width:760px){.v415-beatfx-rail{width:min(116px,100%)}.v415-fx-beat-controls{grid-template-columns:26px 1fr 26px}}
+
+/* ===== v4.1.6: physical-style channel strips BETWEEN the jog wheels ===== */
+/* Desktop layout now mirrors the hardware more closely:
+   Deck A | CH1 strip | Playlist/Beat FX | CH2 strip | Deck B */
+.flx4-controller{
+  grid-template-columns:minmax(285px,1fr) 74px minmax(330px,.92fr) 74px minmax(285px,1fr)!important;
+  gap:7px!important;
+  align-items:start;
+}
+.flx4-controller>.flx4-a{grid-column:1}
+.flx4-controller>.flx4-side-mapper.deck-a{grid-column:2}
+.flx4-controller>.flx4-mixer-section{grid-column:3;grid-row:1}
+.flx4-controller>.flx4-side-mapper.deck-b{grid-column:4}
+.flx4-controller>.flx4-b{grid-column:5}
+
+/* The strips begin around the height of the jog wheels, not up at the loop buttons. */
+.flx4-controller>.flx4-side-mapper{
+  margin-top:150px;
+  min-width:0;
+  width:100%;
+  padding:7px 5px;
+  gap:6px;
+  border-radius:12px;
+  background:linear-gradient(180deg,#08121a,#050a0f);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 10px 24px rgba(0,0,0,.22);
+}
+.flx4-controller>.flx4-side-mapper .flx4-rotary-stack{gap:5px}
+.flx4-controller>.flx4-side-mapper .flx4-rotary-stack label{
+  grid-template-columns:24px 1fr;
+  gap:3px;
+  font-size:5.4px;
+}
+.flx4-controller>.flx4-side-mapper .flx4-rotary{
+  width:34px;
+  height:34px;
+  min-height:34px;
+}
+.flx4-controller>.flx4-side-mapper .flx4-rotary:after{top:4px;height:10px}
+.flx4-controller>.flx4-side-mapper .v414-channel-fader input{height:82px}
+.flx4-controller>.flx4-side-mapper .flx4-channel-cue.v414-cue{min-height:29px;font-size:6.5px}
+
+/* The center remains the useful part: large playlist + compact Beat FX. */
+.flx4-mixer-section.v34-mixer{min-width:0;display:flex;flex-direction:column;gap:5px}
+.flx4-mixer-section .flx4-browser-panel{flex:1 1 auto}
+.flx4-mixer-section .flx4-center-core{display:grid;grid-template-columns:1fr;justify-items:center;gap:5px;width:100%}
+.flx4-mixer-section .v415-beatfx-rail{margin-top:2px!important}
+.flx4-mixer-section .flx4-cross{width:100%;justify-self:stretch}
+
+/* Compact mode still keeps the same physical order but saves a little width. */
+body.flx-compact-mode .flx4-controller{
+  grid-template-columns:minmax(260px,1fr) 64px minmax(320px,.95fr) 64px minmax(260px,1fr)!important;
+  gap:5px!important;
+}
+body.flx-compact-mode .flx4-controller>.flx4-side-mapper{margin-top:127px;padding:5px 3px;gap:4px}
+body.flx-compact-mode .flx4-controller>.flx4-side-mapper .flx4-rotary{width:29px;height:29px;min-height:29px}
+body.flx-compact-mode .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label{grid-template-columns:20px 1fr;font-size:4.6px}
+body.flx-compact-mode .flx4-controller>.flx4-side-mapper .v414-channel-fader input{height:68px}
+
+/* At narrower widths, preserve usability instead of squeezing five columns to nothing. */
+@media(max-width:1120px){
+  .flx4-controller,
+  body.flx-compact-mode .flx4-controller{
+    grid-template-columns:minmax(250px,1fr) 60px minmax(300px,.9fr) 60px minmax(250px,1fr)!important;
+    overflow-x:auto;
+    align-items:start;
+  }
+  .flx4-controller>.flx4-side-mapper{margin-top:125px}
+  .flx4-controller>.flx4-side-mapper .flx4-rotary{width:27px;height:27px;min-height:27px}
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label{grid-template-columns:18px 1fr;font-size:4.2px}
+}
+@media(max-width:760px){
+  .flx4-controller,
+  body.flx-compact-mode .flx4-controller{
+    grid-template-columns:1fr 56px 56px 1fr!important;
+    overflow:visible;
+  }
+  .flx4-controller>.flx4-a{grid-column:1/3;grid-row:1}
+  .flx4-controller>.flx4-b{grid-column:3/5;grid-row:1}
+  .flx4-controller>.flx4-side-mapper.deck-a{grid-column:1/2;grid-row:2}
+  .flx4-controller>.flx4-side-mapper.deck-b{grid-column:4/5;grid-row:2}
+  .flx4-controller>.flx4-mixer-section{grid-column:2/4;grid-row:2}
+  .flx4-controller>.flx4-side-mapper,
+  body.flx-compact-mode .flx4-controller>.flx4-side-mapper{margin-top:0}
+}

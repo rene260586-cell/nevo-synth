@@ -1,838 +1,767 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#071019" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v4.1.5</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" name="viewport"/>
+<meta content="#071019" name="theme-color"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="NÉVO Studio" name="apple-mobile-web-app-title"/>
+<link href="manifest.webmanifest" rel="manifest"/>
+<link href="icons/icon-192.png" rel="apple-touch-icon"/>
+<title>NÉVO Studio v4.1.6</title>
+<link href="style.css" rel="stylesheet"/>
 </head>
 <body>
-  <div class="ambient ambient-a"></div>
-  <div class="ambient ambient-b"></div>
-
-  <div class="app-shell">
-    <header class="topbar glass">
-      <div class="brand">
-        <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v4.1.5</span></div>
-      </div>
-
-      <div class="transport">
-        <button id="audioBtn" class="btn primary" data-i18n="audioStart">AUDIO STARTEN</button>
-        <button id="playBtn" class="btn" data-i18n="play">▶ ABSPIELEN</button>
-        <button id="stopBtn" class="btn" data-i18n="stop">■ STOPP</button>
-        <button id="recBtn" class="btn danger" data-i18n="record">● AUFNEHMEN</button>
-        <label class="mini-control"><span data-i18n="bpm">BPM</span> <input id="bpm" type="number" min="60" max="220" value="150"></label>
-        <button id="saveBtn" class="btn" data-i18n="save">SPEICHERN</button>
-        <button id="loadBtn" class="btn" data-i18n="load">LADEN</button>
-        <button id="exportBtn" class="btn" data-i18n="exportWav">WAV EXPORT</button>
-        <button id="helpBtn" class="btn help-btn" data-i18n="help">? HILFE</button>
-        <div class="language-switch" role="group" aria-label="Sprache / Language">
-          <button id="langDe" class="lang-btn active" type="button">DE</button>
-          <button id="langEn" class="lang-btn" type="button">EN</button>
-        </div>
-      </div>
-    </header>
-
-    <main class="main-grid">
-      <section class="hero glass panel">
-        <div>
-          <div class="eyebrow cyan" data-i18n="workflow">TECHNO-ARBEITSWEISE</div>
-          <h1 data-i18n="heroTitle">Song aus Blöcken bauen. Ziehen. Loopen. Verlängern.</h1>
-          <p data-i18n="heroText">
+<div class="ambient ambient-a"></div>
+<div class="ambient ambient-b"></div>
+<div class="app-shell">
+<header class="topbar glass">
+<div class="brand">
+<div class="brand-main">NÉVO</div>
+<div class="brand-sub">STUDIO <span>v4.1.6</span></div>
+</div>
+<div class="transport">
+<button class="btn primary" data-i18n="audioStart" id="audioBtn">AUDIO STARTEN</button>
+<button class="btn" data-i18n="play" id="playBtn">▶ ABSPIELEN</button>
+<button class="btn" data-i18n="stop" id="stopBtn">■ STOPP</button>
+<button class="btn danger" data-i18n="record" id="recBtn">● AUFNEHMEN</button>
+<label class="mini-control"><span data-i18n="bpm">BPM</span> <input id="bpm" max="220" min="60" type="number" value="150"/></label>
+<button class="btn" data-i18n="save" id="saveBtn">SPEICHERN</button>
+<button class="btn" data-i18n="load" id="loadBtn">LADEN</button>
+<button class="btn" data-i18n="exportWav" id="exportBtn">WAV EXPORT</button>
+<button class="btn help-btn" data-i18n="help" id="helpBtn">? HILFE</button>
+<div aria-label="Sprache / Language" class="language-switch" role="group">
+<button class="lang-btn active" id="langDe" type="button">DE</button>
+<button class="lang-btn" id="langEn" type="button">EN</button>
+</div>
+</div>
+</header>
+<main class="main-grid">
+<section class="hero glass panel">
+<div>
+<div class="eyebrow cyan" data-i18n="workflow">TECHNO-ARBEITSWEISE</div>
+<h1 data-i18n="heroTitle">Song aus Blöcken bauen. Ziehen. Loopen. Verlängern.</h1>
+<p data-i18n="heroText">
             Der Arranger ist jetzt das Zentrum. Clips lassen sich verschieben, verlängern und loopen.
             Lange drücken erklärt dir, was ein Element macht.
           </p>
-          <div class="chip-row">
-            <span class="chip cyan" data-i18n="dark">Dunkel</span>
-            <span class="chip amber" data-i18n="hypnotic">Hypnotisch</span>
-            <span class="chip cyan" data-i18n="minimal">Minimal</span>
-            <span class="chip amber">Acid</span>
-            <span class="chip cyan" data-i18n="raw">Roh</span>
-          </div>
-        </div>
-        <div class="status-card">
-          <div class="status-line">
-            <div id="statusDot" class="status-dot"></div>
-            <div><strong id="statusText">Audio noch nicht gestartet</strong><small id="statusSub">Tippe auf AUDIO STARTEN</small></div>
-          </div>
-          <div class="meter-wrap">
-            <div class="meter-head"><span>MASTER</span><strong id="meterLabel">-∞ dB</strong></div>
-            <div class="meter"><div id="masterMeterFill" class="meter-fill"></div></div>
-          </div>
-        </div>
-      </section>
+<div class="chip-row">
+<span class="chip cyan" data-i18n="dark">Dunkel</span>
+<span class="chip amber" data-i18n="hypnotic">Hypnotisch</span>
+<span class="chip cyan" data-i18n="minimal">Minimal</span>
+<span class="chip amber">Acid</span>
+<span class="chip cyan" data-i18n="raw">Roh</span>
+</div>
+</div>
+<div class="status-card">
+<div class="status-line">
+<div class="status-dot" id="statusDot"></div>
+<div><strong id="statusText">Audio noch nicht gestartet</strong><small id="statusSub">Tippe auf AUDIO STARTEN</small></div>
+</div>
+<div class="meter-wrap">
+<div class="meter-head"><span>MASTER</span><strong id="meterLabel">-∞ dB</strong></div>
+<div class="meter"><div class="meter-fill" id="masterMeterFill"></div></div>
+</div>
+</div>
+</section>
+<section class="panel glass dj-panel" data-help="djPlayer">
+<div class="section-head dj-head">
+<div>
+<div class="eyebrow amber" data-i18n="djEyebrow">NÉVO PLAYER</div>
+<h2 data-i18n="djTitle">Fertige Songs abspielen &amp; mixen</h2>
+<p class="section-copy" data-i18n="djText">Lade deine fertigen WAV/MP3-Dateien, spiele sie wie auf einem DJ-Deck und ziehe sie bei Bedarf direkt in den Arranger.</p>
+</div>
+<label class="btn file-btn dj-import-btn">
+<span data-i18n="djImport">+ SONGS LADEN</span>
+<input accept="audio/*" id="djImport" multiple="" type="file"/>
+</label>
+</div>
+<div class="dj-modebar">
+<div aria-label="DJ Ansicht" class="dj-mode-tabs" role="group">
+<button class="btn small mode-tab active" id="djModePro" type="button">DJ PRO</button>
+<button class="btn small mode-tab" id="djModeFlx4" type="button">DDJ-FLX4</button>
+<button class="btn small mode-tab compact-toggle" id="flxCompactToggle" type="button">KOMPAKT</button>
+</div>
+<div class="flx-midi-strip">
+<button class="btn small" id="flxMidiConnect" type="button">USB/MIDI VERBINDEN</button>
+<button class="btn small" id="flxMidiLearn" type="button">MIDI LEARN AUS</button>
+<button class="btn small" id="flxMidiExport" type="button">MAPPING SICHERN</button>
+<button class="btn small" id="flxMidiExportDefault" type="button">STANDARDPROFIL EXPORT</button>
+<button class="btn small" id="flxMidiLoadDefault" type="button">STANDARDPROFIL LADEN</button>
+<label class="btn small file-btn flx-midi-import">MAPPING LADEN<input accept="application/json" id="flxMidiImport" type="file"/></label>
+<button class="btn small" id="flxMidiMonitorBtn" type="button">MIDI MONITOR AUS</button>
+<button class="btn small" id="flxMidiReset" type="button">MAPPINGS LÖSCHEN</button>
+<span class="flx-midi-status" id="flxMidiStatus">Kein MIDI-Gerät verbunden</span>
+<span class="flx-midi-monitor" id="flxMidiMonitor">Noch kein MIDI-Signal</span>
+<small class="flx-backup-help">MAPPING SICHERN = persönliches Backup. MAPPING LADEN = Backup später wiederherstellen.</small>
+</div>
+<div class="dj-master-strip">
+<span>MASTER DECK</span>
+<button class="btn small active" id="masterDeckA" type="button">A</button>
+<button class="btn small" id="masterDeckB" type="button">B</button>
+<button class="btn small toggle" id="autoMasterBtn" type="button">AUTO MASTER AUS</button>
+<button class="btn small toggle on" id="globalQuantize" type="button">QUANTIZE AN</button>
+<button class="btn small toggle on" id="autoAnalyzeBtn" type="button">AUTO ANALYSE AN</button>
+</div>
+</div>
+<div class="dj-library-box">
+<div class="subhead-row dj-library-head">
+<div><strong data-i18n="djLibrary">PLAYER-BIBLIOTHEK</strong><span data-i18n="djLibraryHint">Song auswählen und auf Deck A oder B laden.</span></div>
+<div class="dj-library-tools">
+<input autocomplete="off" class="dj-search" id="djLibrarySearch" placeholder="Titel suchen …" type="search"/>
+<button class="btn small" id="djAnalyzeAll" type="button">⚡ ALLE ANALYSIEREN</button>
+<button class="btn small" id="djClearLibrary" type="button">BIBLIOTHEK LEEREN</button>
+</div>
+<div class="v32-library-controls">
+<label><span>ANALYSE</span><select id="djAnalysisProfile"><option value="techno">TECHNO 125–165</option><option value="minimal">MINIMAL 135–160</option><option value="psy">PSY 138–158</option><option value="wide">WEIT 80–190</option></select></label>
+<label><span>SORTIEREN</span><select id="djLibrarySort"><option value="added">NEUE ZUERST</option><option value="title">TITEL A–Z</option><option value="bpm">BPM</option><option value="key">TONART</option><option value="rating">BEWERTUNG</option></select></label>
+<label><span>PLAYLIST / CRATE</span><select id="djCrateFilter"><option value="all">ALLE</option><option value="favorites">★ FAVORITEN</option></select></label>
+<span class="v32-analysis-status" id="djSmartAnalysisStatus">SMART ANALYSE · TECHNO-FOKUS</span>
+</div>
+</div>
+<div class="dj-library-columns"><span>TITEL / ARTIST</span><span>BPM</span><span>TONART</span><span>LÄNGE</span><span>★</span><span>AKTION</span></div>
+<div class="dj-library-list" id="djLibraryList"><div class="dj-empty" data-i18n="djEmpty">Noch keine Songs geladen.</div></div>
+</div>
+<div class="flx4-surface" hidden="" id="flx4Surface">
+<div class="flx4-helpbar">
+<strong>DDJ-FLX4 MODUS · v4.1.6</strong>
+<span>Performance-Ansicht: zwei Decks, Browser, Mixer und Beat FX kompakt zusammen. Beat FX folgt jetzt der echten FLX4-Logik: CH SELECT 1/2/1&amp;2 · FX SELECT vor/zurück mit SHIFT · BEAT ◀/▶ ändert die Beat-Länge.</span>
+</div>
+<section aria-label="Parallele Deck-Wellenformen" class="flx4-parallel-wave">
+<div class="flx4-parallel-head">
+<div><b>PARALLELE DECK-WELLENFORM</b><small>Deck A und B übereinander · Beatgrid-Striche · Mitte = aktuelle Position</small></div>
+<label>ZOOM <select id="flxWaveBeats"><option value="2">2 BEATS</option><option value="4">4 BEATS</option><option value="6">6 BEATS</option><option selected="" value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select></label>
+</div>
+<div class="flx4-stack-row deck-a" data-flx-stack="A">
+<div class="flx4-stack-wavewrap" data-flx-stack-seek="A" data-stack-deck="A"><span class="flx4-wave-deck-tag">A</span><canvas height="160" id="flxAStackWave" width="1600"></canvas><div class="flx4-stack-beats" id="flxAStackBeats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxAPhaseNeedle"></i></div><b class="flx4-grid-readout" id="flxAGridReadout">TAKT — · BEAT —</b></div>
+</div>
+<div class="flx4-stack-row deck-b" data-flx-stack="B">
+<div class="flx4-stack-wavewrap" data-flx-stack-seek="B" data-stack-deck="B"><span class="flx4-wave-deck-tag">B</span><canvas height="160" id="flxBStackWave" width="1600"></canvas><div class="flx4-stack-beats" id="flxBStackBeats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxBPhaseNeedle"></i></div><b class="flx4-grid-readout" id="flxBGridReadout">TAKT — · BEAT —</b></div>
+</div>
+</section>
+<div class="flx4-controller v34-controller">
+<section class="flx4-deck flx4-a">
+<div class="flx4-deck-head"><span>DECK 1 / A</span><strong id="flxATitle">Kein Song</strong><small id="flxAMeta">— BPM · 00:00</small></div>
+<div class="flx4-mini-wave"><div class="flx4-mini-progress" id="flxAProgress"></div><i></i></div>
+<div class="flx4-hardware-top">
+<button data-flx-action="A.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
+<button data-flx-action="A.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
+<button data-flx-action="A.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
+<div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="A.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="A.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
+<button class="flx4-sync" data-flx-action="A.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxATempoRange">±16%</em></button>
+</div>
+<div class="flx4-loop-compact" data-loop-strip="A"><button data-flx-action="A.loop4exit" id="flxALoopState" type="button">LOOP AUS</button><em id="flxAMemoryState">MEM 0</em></div>
+<div class="flx4-jog-trackline deck-a"><span>A</span><strong id="flxAJogTrackTitle">Kein Song</strong></div>
+<div class="flx4-deck-body">
+<div class="flx4-pitch-column">
+<label>TEMPO <b id="flxAPitchVal">0.0%</b><input data-flx-action="A.pitch" id="flxAPitch" max="16" min="-16" step="0.1" type="range" value="0"/></label>
+</div>
+<div class="flx4-jog" data-flx-action="A.jog" id="flxAJog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center flx4-jog-info">
+<span class="flx4-jog-deck">A</span>
+<strong id="flxAJogBpm">— BPM</strong>
+<small id="flxAJogTitle">Kein Song</small>
+<div class="flx4-jog-badges"><em id="flxAJogMaster">MASTER</em><em id="flxAJogSync">SYNC</em></div>
+<i id="flxAJogBeat">TAKT — · BEAT —</i>
+</div></div>
+</div>
+<div class="flx4-shift-row"><button class="flx4-shift" data-flx-action="A.shift" type="button">SHIFT</button></div>
+<div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY/PAUSE</button></div>
+<div class="flx4-padmode-buttons" data-padmode-deck="A">
+<button class="active" data-flx-action="A.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="A.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="A.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="A.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
+</div>
+<div class="flx4-pad-state"><span>PAD MODE</span><b id="flxAPadModeState">HOT CUE</b><small id="flxAPadModeHint">SHIFT + Modus = zweite Ebene</small></div>
+<div class="flx4-pads v34-pads" data-performance-pads="A">
+<button data-flx-action="A.pad1" data-pad="A-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="A.pad2" data-pad="A-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="A.pad3" data-pad="A-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="A.pad4" data-pad="A-4"><b>4</b><span>HOT CUE</span></button>
+<button data-flx-action="A.pad5" data-pad="A-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="A.pad6" data-pad="A-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="A.pad7" data-pad="A-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="A.pad8" data-pad="A-8"><b>8</b><span>HOT CUE</span></button>
+</div>
+</section>
+<aside aria-label="Deck A Mixer Mapping" class="flx4-side-mapper deck-a">
+<div class="flx4-rotary-stack">
+<label><span>TRIM</span><button aria-label="Deck A Trim" class="flx4-rotary" data-map-target="A.trim" type="button"></button><input data-flx-action="A.trim" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>HI</span><button aria-label="Deck A High" class="flx4-rotary" data-map-target="A.eqHigh" type="button"></button><input data-flx-action="A.eqHigh" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>MID</span><button aria-label="Deck A Mid" class="flx4-rotary" data-map-target="A.eqMid" type="button"></button><input data-flx-action="A.eqMid" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>LOW</span><button aria-label="Deck A Low" class="flx4-rotary" data-map-target="A.eqLow" type="button"></button><input data-flx-action="A.eqLow" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>CFX</span><button aria-label="Deck A CFX" class="flx4-rotary" data-map-target="A.filter" type="button"></button><input data-flx-action="A.filter" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+</div>
+<button class="flx4-channel-cue v414-cue" data-flx-action="A.pfl" type="button">CUE 1</button>
+<label class="v414-channel-fader"><span>CH 1</span><input data-flx-action="A.volume" max="1" min="0" step="0.01" type="range" value="0.9"/></label>
+</aside><section class="flx4-mixer-section v34-mixer">
+<div class="flx4-browser-top flx4-browser-top-compact">
+<button data-flx-action="library.loadA" type="button">LOAD A</button>
+<button class="browse-nav" data-flx-action="library.prev" type="button">◀</button>
+<button class="browse-center browse-center-compact" data-flx-action="library.open" type="button"><b>BROWSE</b><small id="flxBrowseTitle">BIBLIOTHEK</small></button>
+<button class="browse-nav" data-flx-action="library.next" type="button">▶</button>
+<button data-flx-action="library.loadB" type="button">LOAD B</button>
+<button class="browse-sub" data-flx-action="library.back" type="button">BACK</button>
+<button class="browse-sub" data-flx-action="library.view" type="button">VIEW</button>
+</div>
+<div class="flx4-browser-panel" id="flxBrowserPanel">
+<div class="flx4-browser-panel-head"><span id="flxBrowserFocus">TRACKS</span><b id="flxBrowserCrate">ALLE SONGS</b><small id="flxBrowserCount">0 / 0</small></div>
+<div class="flx4-browser-columns"><span>TITEL</span><span>BPM</span><span>KEY</span><span>LÄNGE</span></div>
+<div class="flx4-browser-list" id="flxBrowserList"><div class="flx4-browser-empty">Noch keine Songs geladen.</div></div>
+</div>
 
-      <section class="panel glass dj-panel" data-help="djPlayer">
-        <div class="section-head dj-head">
-          <div>
-            <div class="eyebrow amber" data-i18n="djEyebrow">NÉVO PLAYER</div>
-            <h2 data-i18n="djTitle">Fertige Songs abspielen & mixen</h2>
-            <p class="section-copy" data-i18n="djText">Lade deine fertigen WAV/MP3-Dateien, spiele sie wie auf einem DJ-Deck und ziehe sie bei Bedarf direkt in den Arranger.</p>
-          </div>
-          <label class="btn file-btn dj-import-btn">
-            <span data-i18n="djImport">+ SONGS LADEN</span>
-            <input id="djImport" type="file" accept="audio/*" multiple>
-          </label>
-        </div>
-
-        <div class="dj-modebar">
-          <div class="dj-mode-tabs" role="group" aria-label="DJ Ansicht">
-            <button id="djModePro" class="btn small mode-tab active" type="button">DJ PRO</button>
-            <button id="djModeFlx4" class="btn small mode-tab" type="button">DDJ-FLX4</button>
-            <button id="flxCompactToggle" class="btn small mode-tab compact-toggle" type="button">KOMPAKT</button>
-          </div>
-          <div class="flx-midi-strip">
-            <button id="flxMidiConnect" class="btn small" type="button">USB/MIDI VERBINDEN</button>
-            <button id="flxMidiLearn" class="btn small" type="button">MIDI LEARN AUS</button>
-            <button id="flxMidiExport" class="btn small" type="button">MAPPING SICHERN</button>
-            <button id="flxMidiExportDefault" class="btn small" type="button">STANDARDPROFIL EXPORT</button>
-            <button id="flxMidiLoadDefault" class="btn small" type="button">STANDARDPROFIL LADEN</button>
-            <label class="btn small file-btn flx-midi-import">MAPPING LADEN<input id="flxMidiImport" type="file" accept="application/json"></label>
-            <button id="flxMidiMonitorBtn" class="btn small" type="button">MIDI MONITOR AUS</button>
-            <button id="flxMidiReset" class="btn small" type="button">MAPPINGS LÖSCHEN</button>
-            <span id="flxMidiStatus" class="flx-midi-status">Kein MIDI-Gerät verbunden</span>
-            <span id="flxMidiMonitor" class="flx-midi-monitor">Noch kein MIDI-Signal</span>
-            <small class="flx-backup-help">MAPPING SICHERN = persönliches Backup. MAPPING LADEN = Backup später wiederherstellen.</small>
-          </div>
-          <div class="dj-master-strip">
-            <span>MASTER DECK</span>
-            <button id="masterDeckA" class="btn small active" type="button">A</button>
-            <button id="masterDeckB" class="btn small" type="button">B</button>
-            <button id="autoMasterBtn" class="btn small toggle" type="button">AUTO MASTER AUS</button>
-            <button id="globalQuantize" class="btn small toggle on" type="button">QUANTIZE AN</button>
-            <button id="autoAnalyzeBtn" class="btn small toggle on" type="button">AUTO ANALYSE AN</button>
-          </div>
-        </div>
-
-        <div class="dj-library-box">
-          <div class="subhead-row dj-library-head">
-            <div><strong data-i18n="djLibrary">PLAYER-BIBLIOTHEK</strong><span data-i18n="djLibraryHint">Song auswählen und auf Deck A oder B laden.</span></div>
-            <div class="dj-library-tools">
-              <input id="djLibrarySearch" class="dj-search" type="search" placeholder="Titel suchen …" autocomplete="off">
-              <button id="djAnalyzeAll" class="btn small" type="button">⚡ ALLE ANALYSIEREN</button>
-              <button id="djClearLibrary" class="btn small" type="button">BIBLIOTHEK LEEREN</button>
-            </div>
-            <div class="v32-library-controls">
-              <label><span>ANALYSE</span><select id="djAnalysisProfile"><option value="techno">TECHNO 125–165</option><option value="minimal">MINIMAL 135–160</option><option value="psy">PSY 138–158</option><option value="wide">WEIT 80–190</option></select></label>
-              <label><span>SORTIEREN</span><select id="djLibrarySort"><option value="added">NEUE ZUERST</option><option value="title">TITEL A–Z</option><option value="bpm">BPM</option><option value="key">TONART</option><option value="rating">BEWERTUNG</option></select></label>
-              <label><span>PLAYLIST / CRATE</span><select id="djCrateFilter"><option value="all">ALLE</option><option value="favorites">★ FAVORITEN</option></select></label>
-              <span id="djSmartAnalysisStatus" class="v32-analysis-status">SMART ANALYSE · TECHNO-FOKUS</span>
-            </div>
-          </div>
-          <div class="dj-library-columns"><span>TITEL / ARTIST</span><span>BPM</span><span>TONART</span><span>LÄNGE</span><span>★</span><span>AKTION</span></div>
-          <div id="djLibraryList" class="dj-library-list"><div class="dj-empty" data-i18n="djEmpty">Noch keine Songs geladen.</div></div>
-        </div>
-
-        <div id="flx4Surface" class="flx4-surface" hidden>
-          <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v4.1.5</strong>
-            <span>Performance-Ansicht: zwei Decks, Browser, Mixer und Beat FX kompakt zusammen. Beat FX folgt jetzt der echten FLX4-Logik: CH SELECT 1/2/1&2 · FX SELECT vor/zurück mit SHIFT · BEAT ◀/▶ ändert die Beat-Länge.</span>
-          </div>
-
-          <section class="flx4-parallel-wave" aria-label="Parallele Deck-Wellenformen">
-            <div class="flx4-parallel-head">
-              <div><b>PARALLELE DECK-WELLENFORM</b><small>Deck A und B übereinander · Beatgrid-Striche · Mitte = aktuelle Position</small></div>
-              <label>ZOOM <select id="flxWaveBeats"><option value="2">2 BEATS</option><option value="4">4 BEATS</option><option value="6">6 BEATS</option><option value="8" selected>8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select></label>
-            </div>
-            <div class="flx4-stack-row deck-a" data-flx-stack="A">
-              <div class="flx4-stack-wavewrap" data-stack-deck="A" data-flx-stack-seek="A"><span class="flx4-wave-deck-tag">A</span><canvas id="flxAStackWave" width="1600" height="160"></canvas><div id="flxAStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxAPhaseNeedle"></i></div><b id="flxAGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
-            </div>
-            <div class="flx4-stack-row deck-b" data-flx-stack="B">
-              <div class="flx4-stack-wavewrap" data-stack-deck="B" data-flx-stack-seek="B"><span class="flx4-wave-deck-tag">B</span><canvas id="flxBStackWave" width="1600" height="160"></canvas><div id="flxBStackBeats" class="flx4-stack-beats"></div><i class="flx4-stack-playhead"></i><div class="flx4-phase-meter"><span></span><span></span><span></span><span></span><span></span><i id="flxBPhaseNeedle"></i></div><b id="flxBGridReadout" class="flx4-grid-readout">TAKT — · BEAT —</b></div>
-            </div>
-          </section>
-
-          <div class="flx4-controller v34-controller">
-            <section class="flx4-deck flx4-a">
-              <div class="flx4-deck-head"><span>DECK 1 / A</span><strong id="flxATitle">Kein Song</strong><small id="flxAMeta">— BPM · 00:00</small></div>
-              <div class="flx4-mini-wave"><div id="flxAProgress" class="flx4-mini-progress"></div><i></i></div>
-              <div class="flx4-hardware-top">
-                <button data-flx-action="A.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
-                <button data-flx-action="A.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
-                <button data-flx-action="A.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
-                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="A.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="A.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
-                <button class="flx4-sync" data-flx-action="A.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxATempoRange">±16%</em></button>
-              </div>
-              <div class="flx4-loop-compact" data-loop-strip="A"><button id="flxALoopState" data-flx-action="A.loop4exit" type="button">LOOP AUS</button><em id="flxAMemoryState">MEM 0</em></div>
-              <div class="flx4-jog-trackline deck-a"><span>A</span><strong id="flxAJogTrackTitle">Kein Song</strong></div>
-              <div class="flx4-deck-body">
-                <div class="flx4-pitch-column">
-                  <label>TEMPO <b id="flxAPitchVal">0.0%</b><input id="flxAPitch" data-flx-action="A.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
-                </div>
-                <div id="flxAJog" class="flx4-jog" data-flx-action="A.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center flx4-jog-info">
-                  <span class="flx4-jog-deck">A</span>
-                  <strong id="flxAJogBpm">— BPM</strong>
-                  <small id="flxAJogTitle">Kein Song</small>
-                  <div class="flx4-jog-badges"><em id="flxAJogMaster">MASTER</em><em id="flxAJogSync">SYNC</em></div>
-                  <i id="flxAJogBeat">TAKT — · BEAT —</i>
-                </div></div>
-              </div>
-              <div class="flx4-shift-row"><button data-flx-action="A.shift" class="flx4-shift" type="button">SHIFT</button></div>
-              <div class="flx4-transport"><button data-flx-action="A.cue" type="button">CUE</button><button class="play" data-flx-action="A.play" type="button">▶ PLAY/PAUSE</button></div>
-              <div class="flx4-padmode-buttons" data-padmode-deck="A">
-                <button class="active" data-flx-action="A.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="A.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="A.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="A.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
-              </div>
-              <div class="flx4-pad-state"><span>PAD MODE</span><b id="flxAPadModeState">HOT CUE</b><small id="flxAPadModeHint">SHIFT + Modus = zweite Ebene</small></div>
-              <div class="flx4-pads v34-pads" data-performance-pads="A">
-                <button data-flx-action="A.pad1" data-pad="A-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="A.pad2" data-pad="A-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="A.pad3" data-pad="A-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="A.pad4" data-pad="A-4"><b>4</b><span>HOT CUE</span></button>
-                <button data-flx-action="A.pad5" data-pad="A-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="A.pad6" data-pad="A-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="A.pad7" data-pad="A-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="A.pad8" data-pad="A-8"><b>8</b><span>HOT CUE</span></button>
-              </div>
-            </section>
-
-            <section class="flx4-mixer-section v34-mixer">
-              <div class="flx4-browser-top flx4-browser-top-compact">
-                <button data-flx-action="library.loadA" type="button">LOAD A</button>
-                <button class="browse-nav" data-flx-action="library.prev" type="button">◀</button>
-                <button class="browse-center browse-center-compact" data-flx-action="library.open" type="button"><b>BROWSE</b><small id="flxBrowseTitle">BIBLIOTHEK</small></button>
-                <button class="browse-nav" data-flx-action="library.next" type="button">▶</button>
-                <button data-flx-action="library.loadB" type="button">LOAD B</button>
-                <button class="browse-sub" data-flx-action="library.back" type="button">BACK</button>
-                <button class="browse-sub" data-flx-action="library.view" type="button">VIEW</button>
-              </div>
-              <div id="flxBrowserPanel" class="flx4-browser-panel">
-                <div class="flx4-browser-panel-head"><span id="flxBrowserFocus">TRACKS</span><b id="flxBrowserCrate">ALLE SONGS</b><small id="flxBrowserCount">0 / 0</small></div>
-                <div class="flx4-browser-columns"><span>TITEL</span><span>BPM</span><span>KEY</span><span>LÄNGE</span></div>
-                <div id="flxBrowserList" class="flx4-browser-list"><div class="flx4-browser-empty">Noch keine Songs geladen.</div></div>
-              </div>
-              <div class="flx4-center-workspace">
-                <aside class="flx4-side-mapper deck-a" aria-label="Deck A Mixer Mapping">
-                  <div class="flx4-rotary-stack">
-                    <label><span>TRIM</span><button class="flx4-rotary" data-map-target="A.trim" type="button" aria-label="Deck A Trim"></button><input data-flx-action="A.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>HI</span><button class="flx4-rotary" data-map-target="A.eqHigh" type="button" aria-label="Deck A High"></button><input data-flx-action="A.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>MID</span><button class="flx4-rotary" data-map-target="A.eqMid" type="button" aria-label="Deck A Mid"></button><input data-flx-action="A.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>LOW</span><button class="flx4-rotary" data-map-target="A.eqLow" type="button" aria-label="Deck A Low"></button><input data-flx-action="A.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>CFX</span><button class="flx4-rotary" data-map-target="A.filter" type="button" aria-label="Deck A CFX"></button><input data-flx-action="A.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  </div>
-                  <button class="flx4-channel-cue v414-cue" data-flx-action="A.pfl" type="button">CUE 1</button>
-                  <label class="v414-channel-fader"><span>CH 1</span><input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-                </aside>
-
-                <div class="flx4-center-core">
-                  <section class="flx4-beatfx v410-beatfx v415-beatfx-rail">
-                    <div class="v415-beatfx-heading"><b>BEAT FX</b><span id="flxFxName" hidden>ECHO</span></div>
-                    <div class="v415-fx-vertical">
-                      <span class="v415-fx-label">CH SELECT</span>
-                      <div class="flx4-fx-channel-segments v415-fx-channel-stack" id="flxFxChannel" aria-label="Beat FX Kanalwahl">
-                        <button type="button" data-fx-channel="A" data-flx-action="fx.channel1">1</button>
-                        <button type="button" data-fx-channel="B" data-flx-action="fx.channel2">2</button>
-                        <button type="button" data-fx-channel="AB" data-flx-action="fx.channelBoth">1 &amp; 2</button>
-                      </div>
-                      <button class="v415-fx-select" data-flx-action="fx.select" id="flxFxSelectBtn" type="button"><b>FX SELECT</b><small id="flxFxSelectDir">WEITER</small></button>
-                      <div class="v415-fx-beat-controls">
-                        <button data-flx-action="fx.beatDown" id="flxFxPrevBtn" type="button" aria-label="Beat FX kürzer">◀</button>
-                        <div class="flx4-fx-center-readout"><small id="flxFxCenterLabel">BEAT-LÄNGE</small><b id="flxFxBeat">1 BEAT</b></div>
-                        <button data-flx-action="fx.beatUp" id="flxFxNextBtn" type="button" aria-label="Beat FX länger">▶</button>
-                      </div>
-                      <div class="v415-fx-level">
-                        <span>LEVEL / DEPTH</span>
-                        <button id="flxFxLevelKnob" class="v415-fx-knob" data-map-target="fx.level" type="button" aria-label="Beat FX Level Depth"></button>
-                        <input id="flxFxLevelRange" data-flx-action="fx.level" type="range" min="0" max="1" step="0.01" value="0.55" aria-hidden="true" tabindex="-1">
-                      </div>
-                      <button id="flxFxOn" class="v415-fx-on" data-flx-action="fx.on" type="button">ON / OFF<small>SHIFT = RELEASE FX</small></button>
-                    </div>
-                    <div class="flx4-fx-current v415-fx-hidden-state" aria-hidden="true"><span>FX</span><strong id="flxFxCurrentName">ECHO</strong><em id="flxFxTempoMode">AUTO BPM</em></div>
-                    <div id="flxFxMenu" class="flx4-fx-menu v410-hidden-fxmenu" hidden aria-hidden="true"></div>
-                  </section>                  <label class="flx4-cross"><span>A</span><input id="flxCrossfader" data-flx-action="crossfader" type="range" min="-1" max="1" step="0.01" value="0"><span>B</span></label>
-                  <details class="v414-utility-mapping">
-                    <summary>MASTER / MIC / KOPFHÖRER · MAPPING</summary>
-                    <div class="v414-utility-grid">
-                      <label>MASTER<input data-flx-action="master.level" type="range" min="0" max="1.25" step="0.01" value="0.85"></label>
-                      <button id="flxMasterCue" data-flx-action="master.cue" type="button">CUE MASTER</button>
-                      <label>MIC<input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
-                      <label>PHONES MIX<input data-flx-action="headphones.mix" type="range" min="0" max="1" step="0.01" value="0.5"></label>
-                      <label>PHONES LVL<input data-flx-action="cue.level" type="range" min="0" max="1" step="0.01" value="0.75"></label>
-                      <button data-flx-action="smart.cfx" type="button">SMART CFX<small id="flxSmartCfxState">P1 · AUS</small></button>
-                      <button data-flx-action="smart.fader" type="button">SMART FADER<small id="flxSmartFaderState">P1 · AUS</small></button>
-                      <button data-flx-action="A.keylock" type="button">KEY LOCK A</button><button data-flx-action="B.keylock" type="button">KEY LOCK B</button>
-                      <button data-flx-action="A.synclock" type="button">SYNC LOCK A</button><button data-flx-action="B.synclock" type="button">SYNC LOCK B</button>
-                      <div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small></div>
-                    </div>
-                  </details>
-                  <button id="flxResetMixer" class="btn small flx-reset" type="button">MIXER NULLSTELLEN</button>
-                </div>
-
-                <aside class="flx4-side-mapper deck-b" aria-label="Deck B Mixer Mapping">
-                  <div class="flx4-rotary-stack">
-                    <label><span>TRIM</span><button class="flx4-rotary" data-map-target="B.trim" type="button" aria-label="Deck B Trim"></button><input data-flx-action="B.trim" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>HI</span><button class="flx4-rotary" data-map-target="B.eqHigh" type="button" aria-label="Deck B High"></button><input data-flx-action="B.eqHigh" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>MID</span><button class="flx4-rotary" data-map-target="B.eqMid" type="button" aria-label="Deck B Mid"></button><input data-flx-action="B.eqMid" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>LOW</span><button class="flx4-rotary" data-map-target="B.eqLow" type="button" aria-label="Deck B Low"></button><input data-flx-action="B.eqLow" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                    <label><span>CFX</span><button class="flx4-rotary" data-map-target="B.filter" type="button" aria-label="Deck B CFX"></button><input data-flx-action="B.filter" type="range" min="-1" max="1" step="0.01" value="0"></label>
-                  </div>
-                  <button class="flx4-channel-cue v414-cue" data-flx-action="B.pfl" type="button">CUE 2</button>
-                  <label class="v414-channel-fader"><span>CH 2</span><input data-flx-action="B.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-                </aside>
-              </div>
-            </section>
-
-            <section class="flx4-deck flx4-b">
-              <div class="flx4-deck-head"><span>DECK 2 / B</span><strong id="flxBTitle">Kein Song</strong><small id="flxBMeta">— BPM · 00:00</small></div>
-              <div class="flx4-mini-wave"><div id="flxBProgress" class="flx4-mini-progress"></div><i></i></div>
-              <div class="flx4-hardware-top">
-                <button data-flx-action="B.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
-                <button data-flx-action="B.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
-                <button data-flx-action="B.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
-                <div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="B.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="B.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
-                <button class="flx4-sync" data-flx-action="B.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxBTempoRange">±16%</em></button>
-              </div>
-              <div class="flx4-loop-compact" data-loop-strip="B"><button id="flxBLoopState" data-flx-action="B.loop4exit" type="button">LOOP AUS</button><em id="flxBMemoryState">MEM 0</em></div>
-              <div class="flx4-jog-trackline deck-b"><span>B</span><strong id="flxBJogTrackTitle">Kein Song</strong></div>
-              <div class="flx4-deck-body">
-                <div id="flxBJog" class="flx4-jog" data-flx-action="B.jog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center flx4-jog-info">
-                  <span class="flx4-jog-deck">B</span>
-                  <strong id="flxBJogBpm">— BPM</strong>
-                  <small id="flxBJogTitle">Kein Song</small>
-                  <div class="flx4-jog-badges"><em id="flxBJogMaster">MASTER</em><em id="flxBJogSync">SYNC</em></div>
-                  <i id="flxBJogBeat">TAKT — · BEAT —</i>
-                </div></div>
-                <div class="flx4-pitch-column">
-                  <label>TEMPO <b id="flxBPitchVal">0.0%</b><input id="flxBPitch" data-flx-action="B.pitch" type="range" min="-16" max="16" step="0.1" value="0"></label>
-                </div>
-              </div>
-              <div class="flx4-shift-row"><button data-flx-action="B.shift" class="flx4-shift" type="button">SHIFT</button></div>
-              <div class="flx4-transport"><button data-flx-action="B.cue" type="button">CUE</button><button class="play" data-flx-action="B.play" type="button">▶ PLAY/PAUSE</button></div>
-              <div class="flx4-padmode-buttons" data-padmode-deck="B">
-                <button class="active" data-flx-action="B.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="B.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="B.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="B.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
-              </div>
-              <div class="flx4-pad-state"><span>PAD MODE</span><b id="flxBPadModeState">HOT CUE</b><small id="flxBPadModeHint">SHIFT + Modus = zweite Ebene</small></div>
-              <div class="flx4-pads v34-pads" data-performance-pads="B">
-                <button data-flx-action="B.pad1" data-pad="B-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="B.pad2" data-pad="B-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="B.pad3" data-pad="B-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="B.pad4" data-pad="B-4"><b>4</b><span>HOT CUE</span></button>
-                <button data-flx-action="B.pad5" data-pad="B-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="B.pad6" data-pad="B-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="B.pad7" data-pad="B-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="B.pad8" data-pad="B-8"><b>8</b><span>HOT CUE</span></button>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <div class="dj-decks">
-          <article class="dj-deck deck-a" data-deck="A">
-            <div class="dj-deck-top">
-              <span class="deck-badge">DECK A</span>
-              <strong id="deckATitle">—</strong>
-              <div class="deck-meta"><span id="deckADetectedBpm">— BPM</span><span id="deckABeatPhase">GRID —</span></div>
-            </div>
-
-            <div class="dj-performance-display">
-              <div><small>BPM</small><strong id="deckABigBpm">—</strong></div>
-              <div><small>RESTZEIT</small><strong id="deckARemain">-00:00.0</strong></div>
-              <div><small>TONART</small><strong id="deckAKey">—</strong></div>
-              <div><small>PHASE</small><strong id="deckAPhase">—</strong></div>
-            </div>
-
-            <div class="dj-overview-label"><span>GESAMT-WELLENFORM</span><small>Tippen = springen</small></div>
-            <div class="dj-wave-wrap dj-overview-wrap" data-deck="A" data-wave="overview">
-              <canvas id="deckAWave" class="dj-wave" width="1400" height="180"></canvas>
-              <div id="deckABeatgrid" class="dj-beatgrid"></div>
-              <div id="deckAPlayhead" class="dj-wave-playhead"></div>
-              <div id="deckAZoomWindow" class="dj-zoom-window"></div>
-            </div>
-            <div id="deckAPhrases" class="dj-phrase-strip"><span class="phrase-empty">TRACK ANALYSIEREN → PHRASES</span></div>
-
-            <div class="dj-zoom-label"><span>ZOOM-WELLENFORM</span><small id="deckAZoomInfo">± 8 Beats</small></div>
-            <div class="dj-wave-wrap dj-zoom-wrap" data-deck="A" data-wave="zoom">
-              <canvas id="deckAZoomWave" class="dj-wave" width="1400" height="220"></canvas>
-              <div id="deckAZoomBeatgrid" class="dj-beatgrid zoom"></div>
-              <div class="dj-center-playhead"></div>
-            </div>
-
-            <div class="dj-time"><strong id="deckATime">00:00.0</strong><span>/</span><span id="deckADuration">00:00.0</span></div>
-
-            <div class="dj-hotcues" id="deckAHotCues">
-              <button class="hotcue hot-1" data-deck="A" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-2" data-deck="A" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-3" data-deck="A" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-4" data-deck="A" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-5" data-deck="A" data-hotcue="4"><b>5</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-6" data-deck="A" data-hotcue="5"><b>6</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-7" data-deck="A" data-hotcue="6"><b>7</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-8" data-deck="A" data-hotcue="7"><b>8</b><span>HOT CUE</span></button>
-            </div>
-
-            <div class="dj-controls">
-              <button id="deckAPlay" class="btn primary small" type="button">▶ PLAY</button>
-              <button id="deckACue" class="btn small" type="button">CUE</button>
-              <button id="deckASetCue" class="btn small" type="button" data-i18n="djSetCue">SET CUE</button>
-              <button id="deckAStop" class="btn small" type="button">■ STOP</button>
-              <button id="deckASync" class="btn small" type="button">SYNC</button>
-              <button id="deckASyncLock" class="btn small sync-lock-btn" type="button">SYNC LOCK AUS</button>
-              <button id="deckAPfl" class="btn small pfl-btn" type="button">🎧 PFL AUS</button>
-              <button id="deckAAnalyze" class="btn small analyze-btn" type="button">⚡ TRACK ANALYSE</button>
-              <button id="deckAKeyLock" class="btn small toggle on" type="button" data-i18n="djKeyLock">TONHALTE AN</button>
-            </div>
-
-            <div class="dj-advanced-tools">
-              <button id="deckAMaster" class="btn small" type="button">MASTER</button>
-              <button id="deckAQuantize" class="btn small toggle on" type="button">QUANTIZE AN</button>
-              <button id="deckALoopIn" class="btn small" type="button">LOOP IN</button>
-              <button id="deckALoopOut" class="btn small" type="button">LOOP OUT</button>
-              <button id="deckAReloop" class="btn small" type="button">RELOOP</button>
-            </div>
-            <div class="dj-beatjump-tools">
-              <span>BEAT JUMP</span>
-              <button class="btn small" data-beatjump="A:-16" type="button">−16</button>
-              <button class="btn small" data-beatjump="A:-8" type="button">−8</button>
-              <button class="btn small" data-beatjump="A:-4" type="button">−4</button>
-              <button class="btn small" data-beatjump="A:4" type="button">+4</button>
-              <button class="btn small" data-beatjump="A:8" type="button">+8</button>
-              <button class="btn small" data-beatjump="A:16" type="button">+16</button>
-            </div>
-<div class="dj-grid-tools">
-              <span>BEATGRID</span>
-              <button id="deckAGridMinus" class="btn small" type="button">← 10 ms</button>
-              <button id="deckAGridPlus" class="btn small" type="button">10 ms →</button>
-              <button id="deckAHalfBpm" class="btn small" type="button">½ BPM</button>
-              <button id="deckADoubleBpm" class="btn small" type="button">×2 BPM</button>
-              <button id="deckATapBpm" class="btn small" type="button">TAP BPM</button>
-              <button id="deckAGridHere" class="btn small" type="button">DOWNBEAT HIER</button>
-            </div>
-
-            <div class="dj-sliders">
-              <label><span data-i18n="djTrackBpm">TRACK BPM</span><input id="deckABpm" type="number" min="60" max="220" step="0.1" value="150"></label>
-              <label><span data-i18n="djPitch">TEMPO</span><input id="deckAPitch" type="range" min="-16" max="16" step="0.1" value="0"><b id="deckAPitchValue">0.0%</b></label>
-              <label><span data-i18n="djVolume">LAUTSTÄRKE</span><input id="deckAVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-              <label><span>TONART</span><select id="deckAKeySelect"><option value="—">—</option><option value="C">C</option><option value="Cm">Cm</option><option value="C#">C#</option><option value="C#m">C#m</option><option value="D">D</option><option value="Dm">Dm</option><option value="D#">D#</option><option value="D#m">D#m</option><option value="E">E</option><option value="Em">Em</option><option value="F">F</option><option value="Fm">Fm</option><option value="F#">F#</option><option value="F#m">F#m</option><option value="G">G</option><option value="Gm">Gm</option><option value="G#">G#</option><option value="G#m">G#m</option><option value="A">A</option><option value="Am">Am</option><option value="A#">A#</option><option value="A#m">A#m</option><option value="B">B</option><option value="Bm">Bm</option></select></label>
-              <label><span data-i18n="djLoop">LOOP</span>
-                <select id="deckALoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
-              </label>
-            </div>
-            <div class="v32-deck-to-studio"><button id="deckAAddArranger" class="btn small dj-arranger-btn" type="button" data-i18n="djAddArranger">→ SONG IN ARRANGER</button><button id="deckALoopToArranger" class="btn small v32-loop-arranger" type="button">↻ LOOP → ARRANGER</button></div>
-          </article>
-
-          <article class="dj-deck deck-b" data-deck="B">
-            <div class="dj-deck-top">
-              <span class="deck-badge">DECK B</span>
-              <strong id="deckBTitle">—</strong>
-              <div class="deck-meta"><span id="deckBDetectedBpm">— BPM</span><span id="deckBBeatPhase">GRID —</span></div>
-            </div>
-
-            <div class="dj-performance-display">
-              <div><small>BPM</small><strong id="deckBBigBpm">—</strong></div>
-              <div><small>RESTZEIT</small><strong id="deckBRemain">-00:00.0</strong></div>
-              <div><small>TONART</small><strong id="deckBKey">—</strong></div>
-              <div><small>PHASE</small><strong id="deckBPhase">—</strong></div>
-            </div>
-
-            <div class="dj-overview-label"><span>GESAMT-WELLENFORM</span><small>Tippen = springen</small></div>
-            <div class="dj-wave-wrap dj-overview-wrap" data-deck="B" data-wave="overview">
-              <canvas id="deckBWave" class="dj-wave" width="1400" height="180"></canvas>
-              <div id="deckBBeatgrid" class="dj-beatgrid"></div>
-              <div id="deckBPlayhead" class="dj-wave-playhead"></div>
-              <div id="deckBZoomWindow" class="dj-zoom-window"></div>
-            </div>
-            <div id="deckBPhrases" class="dj-phrase-strip"><span class="phrase-empty">TRACK ANALYSIEREN → PHRASES</span></div>
-
-            <div class="dj-zoom-label"><span>ZOOM-WELLENFORM</span><small id="deckBZoomInfo">± 8 Beats</small></div>
-            <div class="dj-wave-wrap dj-zoom-wrap" data-deck="B" data-wave="zoom">
-              <canvas id="deckBZoomWave" class="dj-wave" width="1400" height="220"></canvas>
-              <div id="deckBZoomBeatgrid" class="dj-beatgrid zoom"></div>
-              <div class="dj-center-playhead"></div>
-            </div>
-
-            <div class="dj-time"><strong id="deckBTime">00:00.0</strong><span>/</span><span id="deckBDuration">00:00.0</span></div>
-
-            <div class="dj-hotcues" id="deckBHotCues">
-              <button class="hotcue hot-1" data-deck="B" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-2" data-deck="B" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-3" data-deck="B" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-4" data-deck="B" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-5" data-deck="B" data-hotcue="4"><b>5</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-6" data-deck="B" data-hotcue="5"><b>6</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-7" data-deck="B" data-hotcue="6"><b>7</b><span>HOT CUE</span></button>
-              <button class="hotcue hot-8" data-deck="B" data-hotcue="7"><b>8</b><span>HOT CUE</span></button>
-            </div>
-
-            <div class="dj-controls">
-              <button id="deckBPlay" class="btn primary small" type="button">▶ PLAY</button>
-              <button id="deckBCue" class="btn small" type="button">CUE</button>
-              <button id="deckBSetCue" class="btn small" type="button" data-i18n="djSetCue">SET CUE</button>
-              <button id="deckBStop" class="btn small" type="button">■ STOP</button>
-              <button id="deckBSync" class="btn small" type="button">SYNC</button>
-              <button id="deckBSyncLock" class="btn small sync-lock-btn" type="button">SYNC LOCK AUS</button>
-              <button id="deckBPfl" class="btn small pfl-btn" type="button">🎧 PFL AUS</button>
-              <button id="deckBAnalyze" class="btn small analyze-btn" type="button">⚡ TRACK ANALYSE</button>
-              <button id="deckBKeyLock" class="btn small toggle on" type="button" data-i18n="djKeyLock">TONHALTE AN</button>
-            </div>
+<div class="flx4-center-core">
+<section class="flx4-beatfx v410-beatfx v415-beatfx-rail">
+<div class="v415-beatfx-heading"><b>BEAT FX</b><span hidden="" id="flxFxName">ECHO</span></div>
+<div class="v415-fx-vertical">
+<span class="v415-fx-label">CH SELECT</span>
+<div aria-label="Beat FX Kanalwahl" class="flx4-fx-channel-segments v415-fx-channel-stack" id="flxFxChannel">
+<button data-flx-action="fx.channel1" data-fx-channel="A" type="button">1</button>
+<button data-flx-action="fx.channel2" data-fx-channel="B" type="button">2</button>
+<button data-flx-action="fx.channelBoth" data-fx-channel="AB" type="button">1 &amp; 2</button>
+</div>
+<button class="v415-fx-select" data-flx-action="fx.select" id="flxFxSelectBtn" type="button"><b>FX SELECT</b><small id="flxFxSelectDir">WEITER</small></button>
+<div class="v415-fx-beat-controls">
+<button aria-label="Beat FX kürzer" data-flx-action="fx.beatDown" id="flxFxPrevBtn" type="button">◀</button>
+<div class="flx4-fx-center-readout"><small id="flxFxCenterLabel">BEAT-LÄNGE</small><b id="flxFxBeat">1 BEAT</b></div>
+<button aria-label="Beat FX länger" data-flx-action="fx.beatUp" id="flxFxNextBtn" type="button">▶</button>
+</div>
+<div class="v415-fx-level">
+<span>LEVEL / DEPTH</span>
+<button aria-label="Beat FX Level Depth" class="v415-fx-knob" data-map-target="fx.level" id="flxFxLevelKnob" type="button"></button>
+<input aria-hidden="true" data-flx-action="fx.level" id="flxFxLevelRange" max="1" min="0" step="0.01" tabindex="-1" type="range" value="0.55"/>
+</div>
+<button class="v415-fx-on" data-flx-action="fx.on" id="flxFxOn" type="button">ON / OFF<small>SHIFT = RELEASE FX</small></button>
+</div>
+<div aria-hidden="true" class="flx4-fx-current v415-fx-hidden-state"><span>FX</span><strong id="flxFxCurrentName">ECHO</strong><em id="flxFxTempoMode">AUTO BPM</em></div>
+<div aria-hidden="true" class="flx4-fx-menu v410-hidden-fxmenu" hidden="" id="flxFxMenu"></div>
+</section> <label class="flx4-cross"><span>A</span><input data-flx-action="crossfader" id="flxCrossfader" max="1" min="-1" step="0.01" type="range" value="0"/><span>B</span></label>
+<details class="v414-utility-mapping">
+<summary>MASTER / MIC / KOPFHÖRER · MAPPING</summary>
+<div class="v414-utility-grid">
+<label>MASTER<input data-flx-action="master.level" max="1.25" min="0" step="0.01" type="range" value="0.85"/></label>
+<button data-flx-action="master.cue" id="flxMasterCue" type="button">CUE MASTER</button>
+<label>MIC<input data-flx-action="mic.level" max="1" min="0" step="0.01" type="range" value="0"/></label>
+<label>PHONES MIX<input data-flx-action="headphones.mix" max="1" min="0" step="0.01" type="range" value="0.5"/></label>
+<label>PHONES LVL<input data-flx-action="cue.level" max="1" min="0" step="0.01" type="range" value="0.75"/></label>
+<button data-flx-action="smart.cfx" type="button">SMART CFX<small id="flxSmartCfxState">P1 · AUS</small></button>
+<button data-flx-action="smart.fader" type="button">SMART FADER<small id="flxSmartFaderState">P1 · AUS</small></button>
+<button data-flx-action="A.keylock" type="button">KEY LOCK A</button><button data-flx-action="B.keylock" type="button">KEY LOCK B</button>
+<button data-flx-action="A.synclock" type="button">SYNC LOCK A</button><button data-flx-action="B.synclock" type="button">SYNC LOCK B</button>
+<div class="flx4-midi-card"><b>MIDI LEARN</b><small id="flxLearnHint">AUS</small></div>
+</div>
+</details>
+<button class="btn small flx-reset" id="flxResetMixer" type="button">MIXER NULLSTELLEN</button>
+</div></section>
+<aside aria-label="Deck B Mixer Mapping" class="flx4-side-mapper deck-b">
+<div class="flx4-rotary-stack">
+<label><span>TRIM</span><button aria-label="Deck B Trim" class="flx4-rotary" data-map-target="B.trim" type="button"></button><input data-flx-action="B.trim" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>HI</span><button aria-label="Deck B High" class="flx4-rotary" data-map-target="B.eqHigh" type="button"></button><input data-flx-action="B.eqHigh" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>MID</span><button aria-label="Deck B Mid" class="flx4-rotary" data-map-target="B.eqMid" type="button"></button><input data-flx-action="B.eqMid" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>LOW</span><button aria-label="Deck B Low" class="flx4-rotary" data-map-target="B.eqLow" type="button"></button><input data-flx-action="B.eqLow" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<label><span>CFX</span><button aria-label="Deck B CFX" class="flx4-rotary" data-map-target="B.filter" type="button"></button><input data-flx-action="B.filter" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+</div>
+<button class="flx4-channel-cue v414-cue" data-flx-action="B.pfl" type="button">CUE 2</button>
+<label class="v414-channel-fader"><span>CH 2</span><input data-flx-action="B.volume" max="1" min="0" step="0.01" type="range" value="0.9"/></label>
+</aside><section class="flx4-deck flx4-b">
+<div class="flx4-deck-head"><span>DECK 2 / B</span><strong id="flxBTitle">Kein Song</strong><small id="flxBMeta">— BPM · 00:00</small></div>
+<div class="flx4-mini-wave"><div class="flx4-mini-progress" id="flxBProgress"></div><i></i></div>
+<div class="flx4-hardware-top">
+<button data-flx-action="B.loopIn" type="button"><b>IN</b><small>IN ADJ</small></button>
+<button data-flx-action="B.loopOut" type="button"><b>OUT</b><small>OUT ADJ</small></button>
+<button data-flx-action="B.loop4exit" type="button"><b>4 BEAT</b><small>EXIT</small></button>
+<div class="flx4-cuecall"><span>CUE/LOOP CALL</span><button data-flx-action="B.cuePrev" type="button"><b>◀</b><small>1/2X · DEL</small></button><button data-flx-action="B.cueNext" type="button"><b>▶</b><small>2X · MEMORY</small></button></div>
+<button class="flx4-sync" data-flx-action="B.sync" type="button"><b>BEAT</b><small>SYNC</small><em id="flxBTempoRange">±16%</em></button>
+</div>
+<div class="flx4-loop-compact" data-loop-strip="B"><button data-flx-action="B.loop4exit" id="flxBLoopState" type="button">LOOP AUS</button><em id="flxBMemoryState">MEM 0</em></div>
+<div class="flx4-jog-trackline deck-b"><span>B</span><strong id="flxBJogTrackTitle">Kein Song</strong></div>
+<div class="flx4-deck-body">
+<div class="flx4-jog" data-flx-action="B.jog" id="flxBJog" tabindex="0"><div class="flx4-jog-ring"></div><div class="flx4-jog-center flx4-jog-info">
+<span class="flx4-jog-deck">B</span>
+<strong id="flxBJogBpm">— BPM</strong>
+<small id="flxBJogTitle">Kein Song</small>
+<div class="flx4-jog-badges"><em id="flxBJogMaster">MASTER</em><em id="flxBJogSync">SYNC</em></div>
+<i id="flxBJogBeat">TAKT — · BEAT —</i>
+</div></div>
+<div class="flx4-pitch-column">
+<label>TEMPO <b id="flxBPitchVal">0.0%</b><input data-flx-action="B.pitch" id="flxBPitch" max="16" min="-16" step="0.1" type="range" value="0"/></label>
+</div>
+</div>
+<div class="flx4-shift-row"><button class="flx4-shift" data-flx-action="B.shift" type="button">SHIFT</button></div>
+<div class="flx4-transport"><button data-flx-action="B.cue" type="button">CUE</button><button class="play" data-flx-action="B.play" type="button">▶ PLAY/PAUSE</button></div>
+<div class="flx4-padmode-buttons" data-padmode-deck="B">
+<button class="active" data-flx-action="B.modeHotcue" type="button">HOT CUE<small>KEYBOARD</small></button><button data-flx-action="B.modePadfx" type="button">PAD FX1<small>PAD FX2</small></button><button data-flx-action="B.modeBeatjump" type="button">BEAT JUMP<small>BEAT LOOP</small></button><button data-flx-action="B.modeSampler" type="button">SAMPLER<small>KEY SHIFT</small></button>
+</div>
+<div class="flx4-pad-state"><span>PAD MODE</span><b id="flxBPadModeState">HOT CUE</b><small id="flxBPadModeHint">SHIFT + Modus = zweite Ebene</small></div>
+<div class="flx4-pads v34-pads" data-performance-pads="B">
+<button data-flx-action="B.pad1" data-pad="B-1"><b>1</b><span>HOT CUE</span></button><button data-flx-action="B.pad2" data-pad="B-2"><b>2</b><span>HOT CUE</span></button><button data-flx-action="B.pad3" data-pad="B-3"><b>3</b><span>HOT CUE</span></button><button data-flx-action="B.pad4" data-pad="B-4"><b>4</b><span>HOT CUE</span></button>
+<button data-flx-action="B.pad5" data-pad="B-5"><b>5</b><span>HOT CUE</span></button><button data-flx-action="B.pad6" data-pad="B-6"><b>6</b><span>HOT CUE</span></button><button data-flx-action="B.pad7" data-pad="B-7"><b>7</b><span>HOT CUE</span></button><button data-flx-action="B.pad8" data-pad="B-8"><b>8</b><span>HOT CUE</span></button>
+</div>
+</section>
+</div>
+</div>
+<div class="dj-decks">
+<article class="dj-deck deck-a" data-deck="A">
+<div class="dj-deck-top">
+<span class="deck-badge">DECK A</span>
+<strong id="deckATitle">—</strong>
+<div class="deck-meta"><span id="deckADetectedBpm">— BPM</span><span id="deckABeatPhase">GRID —</span></div>
+</div>
+<div class="dj-performance-display">
+<div><small>BPM</small><strong id="deckABigBpm">—</strong></div>
+<div><small>RESTZEIT</small><strong id="deckARemain">-00:00.0</strong></div>
+<div><small>TONART</small><strong id="deckAKey">—</strong></div>
+<div><small>PHASE</small><strong id="deckAPhase">—</strong></div>
+</div>
+<div class="dj-overview-label"><span>GESAMT-WELLENFORM</span><small>Tippen = springen</small></div>
+<div class="dj-wave-wrap dj-overview-wrap" data-deck="A" data-wave="overview">
+<canvas class="dj-wave" height="180" id="deckAWave" width="1400"></canvas>
+<div class="dj-beatgrid" id="deckABeatgrid"></div>
+<div class="dj-wave-playhead" id="deckAPlayhead"></div>
+<div class="dj-zoom-window" id="deckAZoomWindow"></div>
+</div>
+<div class="dj-phrase-strip" id="deckAPhrases"><span class="phrase-empty">TRACK ANALYSIEREN → PHRASES</span></div>
+<div class="dj-zoom-label"><span>ZOOM-WELLENFORM</span><small id="deckAZoomInfo">± 8 Beats</small></div>
+<div class="dj-wave-wrap dj-zoom-wrap" data-deck="A" data-wave="zoom">
+<canvas class="dj-wave" height="220" id="deckAZoomWave" width="1400"></canvas>
+<div class="dj-beatgrid zoom" id="deckAZoomBeatgrid"></div>
+<div class="dj-center-playhead"></div>
+</div>
+<div class="dj-time"><strong id="deckATime">00:00.0</strong><span>/</span><span id="deckADuration">00:00.0</span></div>
+<div class="dj-hotcues" id="deckAHotCues">
+<button class="hotcue hot-1" data-deck="A" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
+<button class="hotcue hot-2" data-deck="A" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
+<button class="hotcue hot-3" data-deck="A" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
+<button class="hotcue hot-4" data-deck="A" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
+<button class="hotcue hot-5" data-deck="A" data-hotcue="4"><b>5</b><span>HOT CUE</span></button>
+<button class="hotcue hot-6" data-deck="A" data-hotcue="5"><b>6</b><span>HOT CUE</span></button>
+<button class="hotcue hot-7" data-deck="A" data-hotcue="6"><b>7</b><span>HOT CUE</span></button>
+<button class="hotcue hot-8" data-deck="A" data-hotcue="7"><b>8</b><span>HOT CUE</span></button>
+</div>
+<div class="dj-controls">
+<button class="btn primary small" id="deckAPlay" type="button">▶ PLAY</button>
+<button class="btn small" id="deckACue" type="button">CUE</button>
+<button class="btn small" data-i18n="djSetCue" id="deckASetCue" type="button">SET CUE</button>
+<button class="btn small" id="deckAStop" type="button">■ STOP</button>
+<button class="btn small" id="deckASync" type="button">SYNC</button>
+<button class="btn small sync-lock-btn" id="deckASyncLock" type="button">SYNC LOCK AUS</button>
+<button class="btn small pfl-btn" id="deckAPfl" type="button">🎧 PFL AUS</button>
+<button class="btn small analyze-btn" id="deckAAnalyze" type="button">⚡ TRACK ANALYSE</button>
+<button class="btn small toggle on" data-i18n="djKeyLock" id="deckAKeyLock" type="button">TONHALTE AN</button>
+</div>
 <div class="dj-advanced-tools">
-              <button id="deckBMaster" class="btn small" type="button">MASTER</button>
-              <button id="deckBQuantize" class="btn small toggle on" type="button">QUANTIZE AN</button>
-              <button id="deckBLoopIn" class="btn small" type="button">LOOP IN</button>
-              <button id="deckBLoopOut" class="btn small" type="button">LOOP OUT</button>
-              <button id="deckBReloop" class="btn small" type="button">RELOOP</button>
-            </div>
-            <div class="dj-beatjump-tools">
-              <span>BEAT JUMP</span>
-              <button class="btn small" data-beatjump="B:-16" type="button">−16</button>
-              <button class="btn small" data-beatjump="B:-8" type="button">−8</button>
-              <button class="btn small" data-beatjump="B:-4" type="button">−4</button>
-              <button class="btn small" data-beatjump="B:4" type="button">+4</button>
-              <button class="btn small" data-beatjump="B:8" type="button">+8</button>
-              <button class="btn small" data-beatjump="B:16" type="button">+16</button>
-            </div>
-
-            <div class="dj-grid-tools">
-              <span>BEATGRID</span>
-              <button id="deckBGridMinus" class="btn small" type="button">← 10 ms</button>
-              <button id="deckBGridPlus" class="btn small" type="button">10 ms →</button>
-              <button id="deckBHalfBpm" class="btn small" type="button">½ BPM</button>
-              <button id="deckBDoubleBpm" class="btn small" type="button">×2 BPM</button>
-              <button id="deckBTapBpm" class="btn small" type="button">TAP BPM</button>
-              <button id="deckBGridHere" class="btn small" type="button">DOWNBEAT HIER</button>
-            </div>
-
-            <div class="dj-sliders">
-              <label><span data-i18n="djTrackBpm">TRACK BPM</span><input id="deckBBpm" type="number" min="60" max="220" step="0.1" value="150"></label>
-              <label><span data-i18n="djPitch">TEMPO</span><input id="deckBPitch" type="range" min="-16" max="16" step="0.1" value="0"><b id="deckBPitchValue">0.0%</b></label>
-              <label><span data-i18n="djVolume">LAUTSTÄRKE</span><input id="deckBVolume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
-              <label><span>TONART</span><select id="deckBKeySelect"><option value="—">—</option><option value="C">C</option><option value="Cm">Cm</option><option value="C#">C#</option><option value="C#m">C#m</option><option value="D">D</option><option value="Dm">Dm</option><option value="D#">D#</option><option value="D#m">D#m</option><option value="E">E</option><option value="Em">Em</option><option value="F">F</option><option value="Fm">Fm</option><option value="F#">F#</option><option value="F#m">F#m</option><option value="G">G</option><option value="Gm">Gm</option><option value="G#">G#</option><option value="G#m">G#m</option><option value="A">A</option><option value="Am">Am</option><option value="A#">A#</option><option value="A#m">A#m</option><option value="B">B</option><option value="Bm">Bm</option></select></label>
-              <label><span data-i18n="djLoop">LOOP</span>
-                <select id="deckBLoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
-              </label>
-            </div>
-            <div class="v32-deck-to-studio"><button id="deckBAddArranger" class="btn small dj-arranger-btn" type="button" data-i18n="djAddArranger">→ SONG IN ARRANGER</button><button id="deckBLoopToArranger" class="btn small v32-loop-arranger" type="button">↻ LOOP → ARRANGER</button></div>
-          </article>
-        </div>
-
-        <div class="dj-mixer">
-          <div><span>DECK A</span><strong id="deckAStatus">READY</strong></div>
-          <label class="dj-crossfader"><span data-i18n="djCrossfader">CROSSFADER</span><input id="djCrossfader" type="range" min="-1" max="1" step="0.01" value="0"></label>
-          <div><strong id="deckBStatus">READY</strong><span>DECK B</span></div>
-        </div>
-
-        <div class="headphone-monitor glass-inner">
-          <div class="headphone-title">
-            <strong>🎧 KOPFHÖRER / PFL</strong>
-            <span id="cueRoutingStatus">Browser-Monitor · Systemausgang</span>
-          </div>
-          <label>CUE LEVEL <input id="cueLevel" type="range" min="0" max="1" step="0.01" value="0.75"><b id="cueLevelValue">75%</b></label>
-          <label>AUSGANG <select id="cueOutputSelect"><option value="">Systemausgang</option></select></label>
-          <button id="cueRefreshOutputs" class="btn small" type="button">AUSGÄNGE LADEN</button>
-          <small>Auf Desktop-Browsern mit Audio-Ausgangswahl kann PFL auf einen separaten Ausgang gelegt werden. Sonst läuft die Vorschau über den Systemausgang.</small>
-        </div>
-      </section>
-
-      <section class="panel glass techno-panel">
-        <div class="section-head">
-          <div><div class="eyebrow amber">NÉVO TECHNO DNA</div><h2 data-i18n="soundDirection">Sound-Richtung</h2></div>
-          <div class="right-controls">
-            <label class="select-wrap"><span data-i18n="key">TONART</span>
-              <select id="keySelect">
-                <option value="D3" selected>D-MOLL</option>
-                <option value="F3">F-MOLL</option>
-                <option value="C#3">C#-MOLL</option>
-                <option value="A2">A-MOLL</option>
-              </select>
-            </label>
-            <button id="safeNotesBtn" class="btn toggle on" data-i18n="safeOn">PASSENDE TÖNE AN</button>
-          </div>
-        </div>
-        <div class="preset-grid">
-          <button class="preset-card active" data-preset="driving"><strong>TREIBEND 150</strong><span>Trockene Kick · dunkler Bass</span></button>
-          <button class="preset-card" data-preset="hypnotic"><strong>HYPNOTISCH 147</strong><span>Monotoner Sog · subtile Bewegung</span></button>
-          <button class="preset-card" data-preset="acid"><strong>ACID 154</strong><span>Resonanz · Filter · Slide-Feeling</span></button>
-          <button class="preset-card" data-preset="minimal"><strong>MINIMAL 146</strong><span>Wenig Melodie · viel Groove</span></button>
-          <button class="preset-card" data-preset="raw"><strong>ROHER PEAK 152</strong><span>Härter · direkter · dichter</span></button>
-        </div>
-      </section>
-
-      <section class="panel glass library-panel" data-help="library">
-        <div class="section-head library-head">
-          <div>
-            <div class="eyebrow amber" data-i18n="templatesEyebrow">VORLAGEN & LOOPS</div>
-            <h2 data-i18n="templatesTitle">Fertige Beats als Startpunkt</h2>
-            <p class="section-copy" data-i18n="templatesText">Eine Vorlage laden und sofort hören – oder einzelne Kick-, Bass-, Drum-, Acid-, Synth-, Melodie-, Vocal- und FX-Blöcke in deinen eigenen Song setzen.</p>
-          </div>
-        </div>
-
-        <div class="template-strip">
-          <div class="subhead-row">
-            <div><strong data-i18n="demoSongs">DEMO-SONGS</strong><span data-i18n="demoSongsHint">Komplette 16-Takt-Grundlagen zum Zerlegen und Umbauen.</span></div>
-          </div>
-          <div id="demoTemplateGrid" class="demo-template-grid"></div>
-        </div>
-
-        <div class="loop-library-wrap">
-          <div class="subhead-row">
-            <div><strong data-i18n="loopLibrary">LOOP-BIBLIOTHEK</strong><span data-i18n="loopLibraryHint">Vorschau anhören oder als verlängerbaren Block in den Arranger legen.</span></div>
-          </div>
-          <div id="loopCategoryTabs" class="loop-tabs"></div>
-          <div id="loopLibraryGrid" class="loop-library-grid"></div>
-        </div>
-      </section>
-
-      <section class="panel glass arranger-panel">
-        <div class="section-head arranger-head">
-          <div><div class="eyebrow cyan">ARRANGER</div><h2 data-i18n="songView">Song-Ansicht</h2></div>
-          <div class="arranger-actions">
-            <label class="loop-control"><span data-i18n="loop">LOOP</span>
-              <select id="loopStart"></select>
-              <span>→</span>
-              <select id="loopEnd"></select>
-            </label>
-            <label class="song-length-control">
-              <span data-i18n="songLength">SONGLÄNGE</span>
-              <select id="songLengthPreset">
-                <option value="16">16 Takte</option>
-                <option value="32">32 Takte</option>
-                <option value="64">64 Takte</option>
-                <option value="128">128 Takte</option>
-                <option value="5m">5:00 Min</option>
-                <option value="10m">10:00 Min</option>
-              </select>
-            </label>
-            <button id="arrPlayBtn" class="btn small" type="button">▶ SONG</button>
-            <button id="arrStopBtn" class="btn small" type="button">■ STOPP</button>
-            <button id="addTrackBtn" class="btn small" data-i18n="addTrack">+ SPUR</button>
-            <label class="btn small file-btn"><span data-i18n="addAudio">+ AUDIO</span><input id="audioImport" type="file" accept="audio/*"></label>
-          </div>
-        </div>
-
-        <div class="arranger-help" data-i18n="arrangerHelp">Tipp auf eine freie Stelle = Clip hinzufügen · Clip ziehen = verschieben · rechten Griff ziehen = verlängern · lange drücken = Hilfe/Aktionen</div>
-
-        <div class="arranger-scroll" id="arrangerScroll">
-          <div class="timeline-row">
-            <div class="track-label timeline-label" data-i18n="bar">TAKT</div>
-            <div id="timeline" class="timeline"></div>
-          </div>
-          <div id="trackList" class="track-list"></div>
-          <div id="playhead" class="playhead"></div>
-        </div>
-
-        <div class="arranger-bottom-transport">
-          <button id="arrBottomPlayBtn" class="btn primary small" type="button">▶ SONG ABSPIELEN</button>
-          <button id="arrBottomStopBtn" class="btn small" type="button">■ STOPP</button>
-          <div class="song-time-box">
-            <span data-i18n="position">POSITION</span>
-            <strong id="songPositionLabel">00:00 / 00:26</strong>
-          </div>
-          <div class="song-max-hint"><strong data-i18n="maxTenMinutes">MAX. 10 MINUTEN</strong><span id="songBarsInfo">150 BPM · 375 Takte</span></div>
-        </div>
-      </section>
-
-      <section class="panel glass">
-        <div class="section-head">
-          <div><div class="eyebrow amber" data-i18n="quickMacros">SCHNELLREGLER</div><h2 data-i18n="shapeFast">Schnell formen</h2></div>
-          <div class="hint" data-i18n="macroHint">Große Regler für Druck, Helligkeit, Raum und Breite.</div>
-        </div>
-        <div id="macroGrid" class="macro-grid"></div>
-      </section>
-
-      <section class="panel glass">
-        <div class="section-head">
-          <div><div class="eyebrow cyan">SYNTH</div><h2 data-i18n="instrument">Instrument</h2></div>
-          <label class="select-wrap"><span data-i18n="waveform">WELLENFORM</span>
-            <select id="waveform">
-              <option value="sawtooth" selected>Sägezahn</option>
-              <option value="square">Rechteck</option>
-              <option value="triangle">Dreieck</option>
-              <option value="sine">Sinus</option>
-            </select>
-          </label>
-        </div>
-        <div id="knobGrid" class="knob-grid"></div>
-      </section>
-
-      <section class="panel glass keyboard-panel">
-        <div class="section-head">
-          <div><div class="eyebrow amber" data-i18n="keyboard">KLAVIATUR</div><h2 data-i18n="playKeys">Spielen</h2></div>
-          <div class="hint" data-i18n="keyboardHint">Wähle zwischen direktem Spiel und natürlichem Ausklang. Gedrückte Tasten leuchten solange der Ton aktiv ist.</div>
-        </div>
-
-        <div class="keyboard-controls">
-          <div class="keyboard-control-group" data-help="playMode">
-            <span class="control-label" data-i18n="playStyle">SPIELART</span>
-            <div class="segmented">
-              <button id="modeDirect" class="mode-btn" type="button" data-i18n="directMode">DIREKT</button>
-              <button id="modeNatural" class="mode-btn active" type="button" data-i18n="naturalMode">NATÜRLICH</button>
-            </div>
-          </div>
-
-          <button id="sustainBtn" class="btn keyboard-option" type="button" data-help="sustain">
-            <span data-i18n="sustainPedal">SUSTAIN</span>
-            <strong id="sustainState">AUS</strong>
-          </button>
-
-          <div class="keyboard-control-group octave-control">
-            <span class="control-label" data-i18n="octave">OKTAVE</span>
-            <div class="octave-buttons">
-              <button id="octaveDown" class="btn small" type="button">−</button>
-              <strong id="octaveValue">0</strong>
-              <button id="octaveUp" class="btn small" type="button">+</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="keyboard-record-hint">
-          <span class="record-dot"></span>
-          <span data-i18n="keyboardRecordHint">Wenn oben AUFNEHMEN aktiv ist, wird dein Klavierspiel zusätzlich als verschiebbarer Noten-Clip im Arranger gespeichert.</span>
-        </div>
-
-        <div id="keyboard" class="keyboard"></div>
-      </section>
-
-      <section class="panel glass groove-panel">
-        <div class="section-head">
-          <div><div id="grooveStepsEyebrow" class="eyebrow cyan" data-i18n="steps16">16 SCHRITTE</div><h2 data-i18n="grooveEditor">Groove-Editor</h2></div>
-          <div class="seq-controls">
-            <label><span data-i18n="rootNote">GRUNDTON</span> <select id="rootNote"><option>C2</option><option>D2</option><option>E2</option><option>F2</option><option>G2</option><option>A2</option><option>B2</option><option selected>D3</option><option>F3</option><option>A3</option></select></label>
-            <label class="swing-box"><span data-i18n="swing">SWING</span> <input id="swing" type="range" min="0" max="75" value="20"><span id="swingValue">20%</span></label>
-            <button id="groovePlayBtn" class="btn small groove-play" type="button">▶ GROOVE ANHÖREN</button>
-            <button id="grooveStopBtn" class="btn small" type="button">■ STOPP</button>
-            <button id="grooveToArrangerBtn" class="btn small groove-apply" type="button">→ IN SONG ÜBERNEHMEN</button>
-            <button id="clearSeq" class="btn small" data-i18n="clear">LÖSCHEN</button>
-            <button id="fillSeq" class="btn small" data-i18n="demo">DEMO</button>
-            <button id="grooveExpandBtn" class="btn small groove-expand" type="button">ERWEITERN</button>
-            <label id="grooveStepsControl" class="groove-steps-control" hidden><span>LÄNGE</span><select id="grooveStepsSelect"><option value="32">32 SCHRITTE</option><option value="64">64 SCHRITTE</option></select></label>
-          </div>
-        </div>
-        <div id="grooveInfo" class="groove-info">Tippe einen Schritt an = Sound kurz vorhören. GROOVE ANHÖREN spielt nur diesen 16-Schritt-Groove. IN SONG ÜBERNEHMEN legt ihn als eigene Blöcke in den Arranger.</div>
-        <div id="grooveSeqScroll" class="seq-scroll">
-          <div class="seq-table">
-            <div class="seq-row"><div class="seq-name synth">SYNTH</div><div id="synthSteps" class="steps"></div></div>
-            <div class="seq-row"><div class="seq-name kick">KICK</div><div id="kickSteps" class="steps"></div></div>
-            <div class="seq-row"><div class="seq-name hat">HAT</div><div id="hatSteps" class="steps"></div></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel glass footer-panel">
-        <div><div class="eyebrow amber" data-i18n="project">PROJEKT</div><h2 data-i18n="saveProject">Projekt sichern</h2><p data-i18n="projectHint">Automatische Sicherung im Browser, JSON für Projekte und WAV für deinen fertigen Export.</p></div>
-        <div class="project-actions">
-          <button id="downloadProjectBtn" class="btn" data-i18n="projectJson">PROJEKT JSON</button>
-          <label class="btn file-btn"><span data-i18n="importJson">JSON IMPORTIEREN</span><input id="importProject" type="file" accept="application/json"></label>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <div id="helpModal" class="modal hidden">
-    <div class="modal-card glass">
-      <button id="helpClose" class="modal-close">×</button>
-      <div id="helpTitle" class="eyebrow cyan">HILFE</div>
-      <h3 id="helpHeading">Element</h3>
-      <p id="helpText"></p>
-      <div id="helpActions" class="help-actions"></div>
-    </div>
-  </div>
-
-
-  <div id="pianoModal" class="modal hidden piano-modal">
-    <div class="piano-card glass">
-      <div class="piano-modal-head">
-        <div>
-          <div class="eyebrow cyan" data-i18n="pianoRoll">PIANO-ROLL</div>
-          <h3 id="pianoClipTitle">Noten bearbeiten</h3>
-          <p class="piano-sub" data-i18n="pianoSub">Tippe ins Raster für eine Note. Ziehe eine Note zum Verschieben. Ziehe ihren rechten Rand zum Verlängern.</p>
-        </div>
-        <button id="pianoClose" class="modal-close" type="button">×</button>
-      </div>
-
-      <div class="piano-toolbar">
-        <button id="pianoPreview" class="btn small" type="button" data-i18n="preview">▶ VORSCHAU</button>
-        <label class="piano-select"><span data-i18n="snap">RASTER</span>
-          <select id="pianoSnap">
-            <option value="1" selected>1/16</option>
-            <option value="2">1/8</option>
-            <option value="4">1/4</option>
-          </select>
-        </label>
-        <button id="pianoMinusBar" class="btn small" type="button">− 1 <span data-i18n="barOne">Takt</span></button>
-        <button id="pianoPlusBar" class="btn small" type="button">+ 1 <span data-i18n="barOne">Takt</span></button>
-        <button id="pianoDeleteNote" class="btn small danger" type="button" data-i18n="deleteNote">NOTE LÖSCHEN</button>
-        <button id="pianoClear" class="btn small" type="button" data-i18n="clearNotes">ALLE NOTEN LÖSCHEN</button>
-      </div>
-
-      <div class="piano-info">
-        <span id="pianoLengthInfo">1 Takt · 16 Schritte</span>
-        <span data-i18n="pianoLongHelp">Langes Drücken auf einen Noten-Clip öffnet ebenfalls diesen Editor.</span>
-      </div>
-
-      <div id="pianoRollScroll" class="piano-roll-scroll">
-        <div id="pianoRollInner" class="piano-roll-inner">
-          <div id="pianoPitchLabels" class="piano-pitch-labels"></div>
-          <div id="pianoGrid" class="piano-grid"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-
-  <div id="djMetaModal" class="modal hidden">
-    <div class="modal-card v32-meta-card">
-      <div class="modal-head"><div><div class="eyebrow cyan">TRACK INFO</div><h3 id="djMetaHeading">Song bearbeiten</h3></div><button id="djMetaClose" class="modal-x" type="button">×</button></div>
-      <div class="v32-meta-grid">
-        <label>TITEL<input id="djMetaTitle" type="text"></label>
-        <label>ARTIST<input id="djMetaArtist" type="text"></label>
-        <label>PLAYLIST / CRATE<input id="djMetaCrate" type="text" placeholder="z. B. NÉVO Peak Set"></label>
-        <label>BEWERTUNG<select id="djMetaRating"><option value="0">0 – keine</option><option value="1">★</option><option value="2">★★</option><option value="3">★★★</option><option value="4">★★★★</option><option value="5">★★★★★</option></select></label>
-        <label class="wide">NOTIZ<textarea id="djMetaComment" rows="4" placeholder="Mix-In, Break, Stimmung, Idee …"></textarea></label>
-      </div>
-      <div class="audio-editor-footer"><button id="djMetaDelete" class="btn small danger" type="button">TRACK LÖSCHEN</button><button id="djMetaSave" class="btn primary small" type="button">SPEICHERN</button></div>
-    </div>
-  </div>
-
-  <div id="audioEditorModal" class="modal hidden audio-editor-modal">
-    <div class="modal-card audio-editor-card">
-      <div class="modal-head">
-        <div>
-          <div class="eyebrow cyan">AUDIO EDITOR</div>
-          <h3 id="audioEditorTitle">Audio-Clip</h3>
-        </div>
-        <button id="audioEditorClose" class="modal-x" type="button">×</button>
-      </div>
-
-      <p class="audio-editor-help" data-i18n="audioEditorHint">Tippe in die Wellenform, um den Schnitt-Cursor zu setzen. Ziehe START/ENDE zum Trimmen. Fade-Regler bestimmen Ein- und Ausblendung.</p>
-
-      <div class="audio-editor-toolbar">
-        <button id="audioPreviewBtn" class="btn small" type="button">▶ VORSCHAU</button>
-        <button id="audioStopPreviewBtn" class="btn small" type="button">■ STOPP</button>
-        <button id="audioLoopToggleBtn" class="btn small toggle" type="button">LOOP AUS</button>
-        <button id="audioSplitBtn" class="btn small" type="button">✂ AM CURSOR TEILEN</button>
-        <button id="audioNormalizeBtn" class="btn small" type="button">↥ NORMALISIEREN</button>
-        <button id="audioReverseBtn" class="btn small" type="button">↔ AUSWAHL REVERSE</button>
-        <button id="audioDuplicateBtn" class="btn small" type="button">⧉ DUPLIZIEREN</button>
-      </div>
-
-      <div class="audio-wave-editor-wrap" id="audioWaveEditorWrap">
-        <canvas id="audioEditorWaveform" class="audio-editor-waveform" width="1200" height="260"></canvas>
-        <div id="audioTrimShadeLeft" class="audio-trim-shade left"></div>
-        <div id="audioTrimShadeRight" class="audio-trim-shade right"></div>
-        <div id="audioFadeInVisual" class="audio-fade-visual fade-in"></div>
-        <div id="audioFadeOutVisual" class="audio-fade-visual fade-out"></div>
-        <div id="audioTrimStartHandle" class="audio-trim-handle start"><span>START</span></div>
-        <div id="audioTrimEndHandle" class="audio-trim-handle end"><span>ENDE</span></div>
-        <div id="audioCutCursor" class="audio-cut-cursor"><span>✂</span></div>
-      </div>
-
-      <div class="audio-editor-readout">
-        <div><span>START</span><strong id="audioStartReadout">0.00 s</strong></div>
-        <div><span>ENDE</span><strong id="audioEndReadout">0.00 s</strong></div>
-        <div><span>LÄNGE</span><strong id="audioLengthReadout">0.00 s</strong></div>
-        <div><span>CURSOR</span><strong id="audioCursorReadout">0.00 s</strong></div>
-      </div>
-
-      <div class="audio-fade-controls">
-        <label>FADE-IN <input id="audioFadeIn" type="range" min="0" max="5" step="0.01" value="0"><span id="audioFadeInValue">0.00 s</span></label>
-        <label>FADE-OUT <input id="audioFadeOut" type="range" min="0" max="5" step="0.01" value="0"><span id="audioFadeOutValue">0.00 s</span></label>
-        <label>LAUTSTÄRKE <input id="audioClipGain" type="range" min="0" max="1.5" step="0.01" value="1"><span id="audioClipGainValue">100%</span></label>
-      </div>
-
-      <div class="audio-editor-footer">
-        <button id="audioResetEditsBtn" class="btn small" type="button">ZURÜCKSETZEN</button>
-        <button id="audioApplyBtn" class="btn primary small" type="button">ÜBERNEHMEN</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-  <script>
+<button class="btn small" id="deckAMaster" type="button">MASTER</button>
+<button class="btn small toggle on" id="deckAQuantize" type="button">QUANTIZE AN</button>
+<button class="btn small" id="deckALoopIn" type="button">LOOP IN</button>
+<button class="btn small" id="deckALoopOut" type="button">LOOP OUT</button>
+<button class="btn small" id="deckAReloop" type="button">RELOOP</button>
+</div>
+<div class="dj-beatjump-tools">
+<span>BEAT JUMP</span>
+<button class="btn small" data-beatjump="A:-16" type="button">−16</button>
+<button class="btn small" data-beatjump="A:-8" type="button">−8</button>
+<button class="btn small" data-beatjump="A:-4" type="button">−4</button>
+<button class="btn small" data-beatjump="A:4" type="button">+4</button>
+<button class="btn small" data-beatjump="A:8" type="button">+8</button>
+<button class="btn small" data-beatjump="A:16" type="button">+16</button>
+</div>
+<div class="dj-grid-tools">
+<span>BEATGRID</span>
+<button class="btn small" id="deckAGridMinus" type="button">← 10 ms</button>
+<button class="btn small" id="deckAGridPlus" type="button">10 ms →</button>
+<button class="btn small" id="deckAHalfBpm" type="button">½ BPM</button>
+<button class="btn small" id="deckADoubleBpm" type="button">×2 BPM</button>
+<button class="btn small" id="deckATapBpm" type="button">TAP BPM</button>
+<button class="btn small" id="deckAGridHere" type="button">DOWNBEAT HIER</button>
+</div>
+<div class="dj-sliders">
+<label><span data-i18n="djTrackBpm">TRACK BPM</span><input id="deckABpm" max="220" min="60" step="0.1" type="number" value="150"/></label>
+<label><span data-i18n="djPitch">TEMPO</span><input id="deckAPitch" max="16" min="-16" step="0.1" type="range" value="0"/><b id="deckAPitchValue">0.0%</b></label>
+<label><span data-i18n="djVolume">LAUTSTÄRKE</span><input id="deckAVolume" max="1" min="0" step="0.01" type="range" value="0.9"/></label>
+<label><span>TONART</span><select id="deckAKeySelect"><option value="—">—</option><option value="C">C</option><option value="Cm">Cm</option><option value="C#">C#</option><option value="C#m">C#m</option><option value="D">D</option><option value="Dm">Dm</option><option value="D#">D#</option><option value="D#m">D#m</option><option value="E">E</option><option value="Em">Em</option><option value="F">F</option><option value="Fm">Fm</option><option value="F#">F#</option><option value="F#m">F#m</option><option value="G">G</option><option value="Gm">Gm</option><option value="G#">G#</option><option value="G#m">G#m</option><option value="A">A</option><option value="Am">Am</option><option value="A#">A#</option><option value="A#m">A#m</option><option value="B">B</option><option value="Bm">Bm</option></select></label>
+<label><span data-i18n="djLoop">LOOP</span>
+<select id="deckALoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
+</label>
+</div>
+<div class="v32-deck-to-studio"><button class="btn small dj-arranger-btn" data-i18n="djAddArranger" id="deckAAddArranger" type="button">→ SONG IN ARRANGER</button><button class="btn small v32-loop-arranger" id="deckALoopToArranger" type="button">↻ LOOP → ARRANGER</button></div>
+</article>
+<article class="dj-deck deck-b" data-deck="B">
+<div class="dj-deck-top">
+<span class="deck-badge">DECK B</span>
+<strong id="deckBTitle">—</strong>
+<div class="deck-meta"><span id="deckBDetectedBpm">— BPM</span><span id="deckBBeatPhase">GRID —</span></div>
+</div>
+<div class="dj-performance-display">
+<div><small>BPM</small><strong id="deckBBigBpm">—</strong></div>
+<div><small>RESTZEIT</small><strong id="deckBRemain">-00:00.0</strong></div>
+<div><small>TONART</small><strong id="deckBKey">—</strong></div>
+<div><small>PHASE</small><strong id="deckBPhase">—</strong></div>
+</div>
+<div class="dj-overview-label"><span>GESAMT-WELLENFORM</span><small>Tippen = springen</small></div>
+<div class="dj-wave-wrap dj-overview-wrap" data-deck="B" data-wave="overview">
+<canvas class="dj-wave" height="180" id="deckBWave" width="1400"></canvas>
+<div class="dj-beatgrid" id="deckBBeatgrid"></div>
+<div class="dj-wave-playhead" id="deckBPlayhead"></div>
+<div class="dj-zoom-window" id="deckBZoomWindow"></div>
+</div>
+<div class="dj-phrase-strip" id="deckBPhrases"><span class="phrase-empty">TRACK ANALYSIEREN → PHRASES</span></div>
+<div class="dj-zoom-label"><span>ZOOM-WELLENFORM</span><small id="deckBZoomInfo">± 8 Beats</small></div>
+<div class="dj-wave-wrap dj-zoom-wrap" data-deck="B" data-wave="zoom">
+<canvas class="dj-wave" height="220" id="deckBZoomWave" width="1400"></canvas>
+<div class="dj-beatgrid zoom" id="deckBZoomBeatgrid"></div>
+<div class="dj-center-playhead"></div>
+</div>
+<div class="dj-time"><strong id="deckBTime">00:00.0</strong><span>/</span><span id="deckBDuration">00:00.0</span></div>
+<div class="dj-hotcues" id="deckBHotCues">
+<button class="hotcue hot-1" data-deck="B" data-hotcue="0"><b>1</b><span>HOT CUE</span></button>
+<button class="hotcue hot-2" data-deck="B" data-hotcue="1"><b>2</b><span>HOT CUE</span></button>
+<button class="hotcue hot-3" data-deck="B" data-hotcue="2"><b>3</b><span>HOT CUE</span></button>
+<button class="hotcue hot-4" data-deck="B" data-hotcue="3"><b>4</b><span>HOT CUE</span></button>
+<button class="hotcue hot-5" data-deck="B" data-hotcue="4"><b>5</b><span>HOT CUE</span></button>
+<button class="hotcue hot-6" data-deck="B" data-hotcue="5"><b>6</b><span>HOT CUE</span></button>
+<button class="hotcue hot-7" data-deck="B" data-hotcue="6"><b>7</b><span>HOT CUE</span></button>
+<button class="hotcue hot-8" data-deck="B" data-hotcue="7"><b>8</b><span>HOT CUE</span></button>
+</div>
+<div class="dj-controls">
+<button class="btn primary small" id="deckBPlay" type="button">▶ PLAY</button>
+<button class="btn small" id="deckBCue" type="button">CUE</button>
+<button class="btn small" data-i18n="djSetCue" id="deckBSetCue" type="button">SET CUE</button>
+<button class="btn small" id="deckBStop" type="button">■ STOP</button>
+<button class="btn small" id="deckBSync" type="button">SYNC</button>
+<button class="btn small sync-lock-btn" id="deckBSyncLock" type="button">SYNC LOCK AUS</button>
+<button class="btn small pfl-btn" id="deckBPfl" type="button">🎧 PFL AUS</button>
+<button class="btn small analyze-btn" id="deckBAnalyze" type="button">⚡ TRACK ANALYSE</button>
+<button class="btn small toggle on" data-i18n="djKeyLock" id="deckBKeyLock" type="button">TONHALTE AN</button>
+</div>
+<div class="dj-advanced-tools">
+<button class="btn small" id="deckBMaster" type="button">MASTER</button>
+<button class="btn small toggle on" id="deckBQuantize" type="button">QUANTIZE AN</button>
+<button class="btn small" id="deckBLoopIn" type="button">LOOP IN</button>
+<button class="btn small" id="deckBLoopOut" type="button">LOOP OUT</button>
+<button class="btn small" id="deckBReloop" type="button">RELOOP</button>
+</div>
+<div class="dj-beatjump-tools">
+<span>BEAT JUMP</span>
+<button class="btn small" data-beatjump="B:-16" type="button">−16</button>
+<button class="btn small" data-beatjump="B:-8" type="button">−8</button>
+<button class="btn small" data-beatjump="B:-4" type="button">−4</button>
+<button class="btn small" data-beatjump="B:4" type="button">+4</button>
+<button class="btn small" data-beatjump="B:8" type="button">+8</button>
+<button class="btn small" data-beatjump="B:16" type="button">+16</button>
+</div>
+<div class="dj-grid-tools">
+<span>BEATGRID</span>
+<button class="btn small" id="deckBGridMinus" type="button">← 10 ms</button>
+<button class="btn small" id="deckBGridPlus" type="button">10 ms →</button>
+<button class="btn small" id="deckBHalfBpm" type="button">½ BPM</button>
+<button class="btn small" id="deckBDoubleBpm" type="button">×2 BPM</button>
+<button class="btn small" id="deckBTapBpm" type="button">TAP BPM</button>
+<button class="btn small" id="deckBGridHere" type="button">DOWNBEAT HIER</button>
+</div>
+<div class="dj-sliders">
+<label><span data-i18n="djTrackBpm">TRACK BPM</span><input id="deckBBpm" max="220" min="60" step="0.1" type="number" value="150"/></label>
+<label><span data-i18n="djPitch">TEMPO</span><input id="deckBPitch" max="16" min="-16" step="0.1" type="range" value="0"/><b id="deckBPitchValue">0.0%</b></label>
+<label><span data-i18n="djVolume">LAUTSTÄRKE</span><input id="deckBVolume" max="1" min="0" step="0.01" type="range" value="0.9"/></label>
+<label><span>TONART</span><select id="deckBKeySelect"><option value="—">—</option><option value="C">C</option><option value="Cm">Cm</option><option value="C#">C#</option><option value="C#m">C#m</option><option value="D">D</option><option value="Dm">Dm</option><option value="D#">D#</option><option value="D#m">D#m</option><option value="E">E</option><option value="Em">Em</option><option value="F">F</option><option value="Fm">Fm</option><option value="F#">F#</option><option value="F#m">F#m</option><option value="G">G</option><option value="Gm">Gm</option><option value="G#">G#</option><option value="G#m">G#m</option><option value="A">A</option><option value="Am">Am</option><option value="A#">A#</option><option value="A#m">A#m</option><option value="B">B</option><option value="Bm">Bm</option></select></label>
+<label><span data-i18n="djLoop">LOOP</span>
+<select id="deckBLoop"><option value="0">AUS</option><option value="4">4 BEATS</option><option value="8">8 BEATS</option><option value="16">16 BEATS</option><option value="32">32 BEATS</option></select>
+</label>
+</div>
+<div class="v32-deck-to-studio"><button class="btn small dj-arranger-btn" data-i18n="djAddArranger" id="deckBAddArranger" type="button">→ SONG IN ARRANGER</button><button class="btn small v32-loop-arranger" id="deckBLoopToArranger" type="button">↻ LOOP → ARRANGER</button></div>
+</article>
+</div>
+<div class="dj-mixer">
+<div><span>DECK A</span><strong id="deckAStatus">READY</strong></div>
+<label class="dj-crossfader"><span data-i18n="djCrossfader">CROSSFADER</span><input id="djCrossfader" max="1" min="-1" step="0.01" type="range" value="0"/></label>
+<div><strong id="deckBStatus">READY</strong><span>DECK B</span></div>
+</div>
+<div class="headphone-monitor glass-inner">
+<div class="headphone-title">
+<strong>🎧 KOPFHÖRER / PFL</strong>
+<span id="cueRoutingStatus">Browser-Monitor · Systemausgang</span>
+</div>
+<label>CUE LEVEL <input id="cueLevel" max="1" min="0" step="0.01" type="range" value="0.75"/><b id="cueLevelValue">75%</b></label>
+<label>AUSGANG <select id="cueOutputSelect"><option value="">Systemausgang</option></select></label>
+<button class="btn small" id="cueRefreshOutputs" type="button">AUSGÄNGE LADEN</button>
+<small>Auf Desktop-Browsern mit Audio-Ausgangswahl kann PFL auf einen separaten Ausgang gelegt werden. Sonst läuft die Vorschau über den Systemausgang.</small>
+</div>
+</section>
+<section class="panel glass techno-panel">
+<div class="section-head">
+<div><div class="eyebrow amber">NÉVO TECHNO DNA</div><h2 data-i18n="soundDirection">Sound-Richtung</h2></div>
+<div class="right-controls">
+<label class="select-wrap"><span data-i18n="key">TONART</span>
+<select id="keySelect">
+<option selected="" value="D3">D-MOLL</option>
+<option value="F3">F-MOLL</option>
+<option value="C#3">C#-MOLL</option>
+<option value="A2">A-MOLL</option>
+</select>
+</label>
+<button class="btn toggle on" data-i18n="safeOn" id="safeNotesBtn">PASSENDE TÖNE AN</button>
+</div>
+</div>
+<div class="preset-grid">
+<button class="preset-card active" data-preset="driving"><strong>TREIBEND 150</strong><span>Trockene Kick · dunkler Bass</span></button>
+<button class="preset-card" data-preset="hypnotic"><strong>HYPNOTISCH 147</strong><span>Monotoner Sog · subtile Bewegung</span></button>
+<button class="preset-card" data-preset="acid"><strong>ACID 154</strong><span>Resonanz · Filter · Slide-Feeling</span></button>
+<button class="preset-card" data-preset="minimal"><strong>MINIMAL 146</strong><span>Wenig Melodie · viel Groove</span></button>
+<button class="preset-card" data-preset="raw"><strong>ROHER PEAK 152</strong><span>Härter · direkter · dichter</span></button>
+</div>
+</section>
+<section class="panel glass library-panel" data-help="library">
+<div class="section-head library-head">
+<div>
+<div class="eyebrow amber" data-i18n="templatesEyebrow">VORLAGEN &amp; LOOPS</div>
+<h2 data-i18n="templatesTitle">Fertige Beats als Startpunkt</h2>
+<p class="section-copy" data-i18n="templatesText">Eine Vorlage laden und sofort hören – oder einzelne Kick-, Bass-, Drum-, Acid-, Synth-, Melodie-, Vocal- und FX-Blöcke in deinen eigenen Song setzen.</p>
+</div>
+</div>
+<div class="template-strip">
+<div class="subhead-row">
+<div><strong data-i18n="demoSongs">DEMO-SONGS</strong><span data-i18n="demoSongsHint">Komplette 16-Takt-Grundlagen zum Zerlegen und Umbauen.</span></div>
+</div>
+<div class="demo-template-grid" id="demoTemplateGrid"></div>
+</div>
+<div class="loop-library-wrap">
+<div class="subhead-row">
+<div><strong data-i18n="loopLibrary">LOOP-BIBLIOTHEK</strong><span data-i18n="loopLibraryHint">Vorschau anhören oder als verlängerbaren Block in den Arranger legen.</span></div>
+</div>
+<div class="loop-tabs" id="loopCategoryTabs"></div>
+<div class="loop-library-grid" id="loopLibraryGrid"></div>
+</div>
+</section>
+<section class="panel glass arranger-panel">
+<div class="section-head arranger-head">
+<div><div class="eyebrow cyan">ARRANGER</div><h2 data-i18n="songView">Song-Ansicht</h2></div>
+<div class="arranger-actions">
+<label class="loop-control"><span data-i18n="loop">LOOP</span>
+<select id="loopStart"></select>
+<span>→</span>
+<select id="loopEnd"></select>
+</label>
+<label class="song-length-control">
+<span data-i18n="songLength">SONGLÄNGE</span>
+<select id="songLengthPreset">
+<option value="16">16 Takte</option>
+<option value="32">32 Takte</option>
+<option value="64">64 Takte</option>
+<option value="128">128 Takte</option>
+<option value="5m">5:00 Min</option>
+<option value="10m">10:00 Min</option>
+</select>
+</label>
+<button class="btn small" id="arrPlayBtn" type="button">▶ SONG</button>
+<button class="btn small" id="arrStopBtn" type="button">■ STOPP</button>
+<button class="btn small" data-i18n="addTrack" id="addTrackBtn">+ SPUR</button>
+<label class="btn small file-btn"><span data-i18n="addAudio">+ AUDIO</span><input accept="audio/*" id="audioImport" type="file"/></label>
+</div>
+</div>
+<div class="arranger-help" data-i18n="arrangerHelp">Tipp auf eine freie Stelle = Clip hinzufügen · Clip ziehen = verschieben · rechten Griff ziehen = verlängern · lange drücken = Hilfe/Aktionen</div>
+<div class="arranger-scroll" id="arrangerScroll">
+<div class="timeline-row">
+<div class="track-label timeline-label" data-i18n="bar">TAKT</div>
+<div class="timeline" id="timeline"></div>
+</div>
+<div class="track-list" id="trackList"></div>
+<div class="playhead" id="playhead"></div>
+</div>
+<div class="arranger-bottom-transport">
+<button class="btn primary small" id="arrBottomPlayBtn" type="button">▶ SONG ABSPIELEN</button>
+<button class="btn small" id="arrBottomStopBtn" type="button">■ STOPP</button>
+<div class="song-time-box">
+<span data-i18n="position">POSITION</span>
+<strong id="songPositionLabel">00:00 / 00:26</strong>
+</div>
+<div class="song-max-hint"><strong data-i18n="maxTenMinutes">MAX. 10 MINUTEN</strong><span id="songBarsInfo">150 BPM · 375 Takte</span></div>
+</div>
+</section>
+<section class="panel glass">
+<div class="section-head">
+<div><div class="eyebrow amber" data-i18n="quickMacros">SCHNELLREGLER</div><h2 data-i18n="shapeFast">Schnell formen</h2></div>
+<div class="hint" data-i18n="macroHint">Große Regler für Druck, Helligkeit, Raum und Breite.</div>
+</div>
+<div class="macro-grid" id="macroGrid"></div>
+</section>
+<section class="panel glass">
+<div class="section-head">
+<div><div class="eyebrow cyan">SYNTH</div><h2 data-i18n="instrument">Instrument</h2></div>
+<label class="select-wrap"><span data-i18n="waveform">WELLENFORM</span>
+<select id="waveform">
+<option selected="" value="sawtooth">Sägezahn</option>
+<option value="square">Rechteck</option>
+<option value="triangle">Dreieck</option>
+<option value="sine">Sinus</option>
+</select>
+</label>
+</div>
+<div class="knob-grid" id="knobGrid"></div>
+</section>
+<section class="panel glass keyboard-panel">
+<div class="section-head">
+<div><div class="eyebrow amber" data-i18n="keyboard">KLAVIATUR</div><h2 data-i18n="playKeys">Spielen</h2></div>
+<div class="hint" data-i18n="keyboardHint">Wähle zwischen direktem Spiel und natürlichem Ausklang. Gedrückte Tasten leuchten solange der Ton aktiv ist.</div>
+</div>
+<div class="keyboard-controls">
+<div class="keyboard-control-group" data-help="playMode">
+<span class="control-label" data-i18n="playStyle">SPIELART</span>
+<div class="segmented">
+<button class="mode-btn" data-i18n="directMode" id="modeDirect" type="button">DIREKT</button>
+<button class="mode-btn active" data-i18n="naturalMode" id="modeNatural" type="button">NATÜRLICH</button>
+</div>
+</div>
+<button class="btn keyboard-option" data-help="sustain" id="sustainBtn" type="button">
+<span data-i18n="sustainPedal">SUSTAIN</span>
+<strong id="sustainState">AUS</strong>
+</button>
+<div class="keyboard-control-group octave-control">
+<span class="control-label" data-i18n="octave">OKTAVE</span>
+<div class="octave-buttons">
+<button class="btn small" id="octaveDown" type="button">−</button>
+<strong id="octaveValue">0</strong>
+<button class="btn small" id="octaveUp" type="button">+</button>
+</div>
+</div>
+</div>
+<div class="keyboard-record-hint">
+<span class="record-dot"></span>
+<span data-i18n="keyboardRecordHint">Wenn oben AUFNEHMEN aktiv ist, wird dein Klavierspiel zusätzlich als verschiebbarer Noten-Clip im Arranger gespeichert.</span>
+</div>
+<div class="keyboard" id="keyboard"></div>
+</section>
+<section class="panel glass groove-panel">
+<div class="section-head">
+<div><div class="eyebrow cyan" data-i18n="steps16" id="grooveStepsEyebrow">16 SCHRITTE</div><h2 data-i18n="grooveEditor">Groove-Editor</h2></div>
+<div class="seq-controls">
+<label><span data-i18n="rootNote">GRUNDTON</span> <select id="rootNote"><option>C2</option><option>D2</option><option>E2</option><option>F2</option><option>G2</option><option>A2</option><option>B2</option><option selected="">D3</option><option>F3</option><option>A3</option></select></label>
+<label class="swing-box"><span data-i18n="swing">SWING</span> <input id="swing" max="75" min="0" type="range" value="20"/><span id="swingValue">20%</span></label>
+<button class="btn small groove-play" id="groovePlayBtn" type="button">▶ GROOVE ANHÖREN</button>
+<button class="btn small" id="grooveStopBtn" type="button">■ STOPP</button>
+<button class="btn small groove-apply" id="grooveToArrangerBtn" type="button">→ IN SONG ÜBERNEHMEN</button>
+<button class="btn small" data-i18n="clear" id="clearSeq">LÖSCHEN</button>
+<button class="btn small" data-i18n="demo" id="fillSeq">DEMO</button>
+<button class="btn small groove-expand" id="grooveExpandBtn" type="button">ERWEITERN</button>
+<label class="groove-steps-control" hidden="" id="grooveStepsControl"><span>LÄNGE</span><select id="grooveStepsSelect"><option value="32">32 SCHRITTE</option><option value="64">64 SCHRITTE</option></select></label>
+</div>
+</div>
+<div class="groove-info" id="grooveInfo">Tippe einen Schritt an = Sound kurz vorhören. GROOVE ANHÖREN spielt nur diesen 16-Schritt-Groove. IN SONG ÜBERNEHMEN legt ihn als eigene Blöcke in den Arranger.</div>
+<div class="seq-scroll" id="grooveSeqScroll">
+<div class="seq-table">
+<div class="seq-row"><div class="seq-name synth">SYNTH</div><div class="steps" id="synthSteps"></div></div>
+<div class="seq-row"><div class="seq-name kick">KICK</div><div class="steps" id="kickSteps"></div></div>
+<div class="seq-row"><div class="seq-name hat">HAT</div><div class="steps" id="hatSteps"></div></div>
+</div>
+</div>
+</section>
+<section class="panel glass footer-panel">
+<div><div class="eyebrow amber" data-i18n="project">PROJEKT</div><h2 data-i18n="saveProject">Projekt sichern</h2><p data-i18n="projectHint">Automatische Sicherung im Browser, JSON für Projekte und WAV für deinen fertigen Export.</p></div>
+<div class="project-actions">
+<button class="btn" data-i18n="projectJson" id="downloadProjectBtn">PROJEKT JSON</button>
+<label class="btn file-btn"><span data-i18n="importJson">JSON IMPORTIEREN</span><input accept="application/json" id="importProject" type="file"/></label>
+</div>
+</section>
+</main>
+</div>
+<div class="modal hidden" id="helpModal">
+<div class="modal-card glass">
+<button class="modal-close" id="helpClose">×</button>
+<div class="eyebrow cyan" id="helpTitle">HILFE</div>
+<h3 id="helpHeading">Element</h3>
+<p id="helpText"></p>
+<div class="help-actions" id="helpActions"></div>
+</div>
+</div>
+<div class="modal hidden piano-modal" id="pianoModal">
+<div class="piano-card glass">
+<div class="piano-modal-head">
+<div>
+<div class="eyebrow cyan" data-i18n="pianoRoll">PIANO-ROLL</div>
+<h3 id="pianoClipTitle">Noten bearbeiten</h3>
+<p class="piano-sub" data-i18n="pianoSub">Tippe ins Raster für eine Note. Ziehe eine Note zum Verschieben. Ziehe ihren rechten Rand zum Verlängern.</p>
+</div>
+<button class="modal-close" id="pianoClose" type="button">×</button>
+</div>
+<div class="piano-toolbar">
+<button class="btn small" data-i18n="preview" id="pianoPreview" type="button">▶ VORSCHAU</button>
+<label class="piano-select"><span data-i18n="snap">RASTER</span>
+<select id="pianoSnap">
+<option selected="" value="1">1/16</option>
+<option value="2">1/8</option>
+<option value="4">1/4</option>
+</select>
+</label>
+<button class="btn small" id="pianoMinusBar" type="button">− 1 <span data-i18n="barOne">Takt</span></button>
+<button class="btn small" id="pianoPlusBar" type="button">+ 1 <span data-i18n="barOne">Takt</span></button>
+<button class="btn small danger" data-i18n="deleteNote" id="pianoDeleteNote" type="button">NOTE LÖSCHEN</button>
+<button class="btn small" data-i18n="clearNotes" id="pianoClear" type="button">ALLE NOTEN LÖSCHEN</button>
+</div>
+<div class="piano-info">
+<span id="pianoLengthInfo">1 Takt · 16 Schritte</span>
+<span data-i18n="pianoLongHelp">Langes Drücken auf einen Noten-Clip öffnet ebenfalls diesen Editor.</span>
+</div>
+<div class="piano-roll-scroll" id="pianoRollScroll">
+<div class="piano-roll-inner" id="pianoRollInner">
+<div class="piano-pitch-labels" id="pianoPitchLabels"></div>
+<div class="piano-grid" id="pianoGrid"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal hidden" id="djMetaModal">
+<div class="modal-card v32-meta-card">
+<div class="modal-head"><div><div class="eyebrow cyan">TRACK INFO</div><h3 id="djMetaHeading">Song bearbeiten</h3></div><button class="modal-x" id="djMetaClose" type="button">×</button></div>
+<div class="v32-meta-grid">
+<label>TITEL<input id="djMetaTitle" type="text"/></label>
+<label>ARTIST<input id="djMetaArtist" type="text"/></label>
+<label>PLAYLIST / CRATE<input id="djMetaCrate" placeholder="z. B. NÉVO Peak Set" type="text"/></label>
+<label>BEWERTUNG<select id="djMetaRating"><option value="0">0 – keine</option><option value="1">★</option><option value="2">★★</option><option value="3">★★★</option><option value="4">★★★★</option><option value="5">★★★★★</option></select></label>
+<label class="wide">NOTIZ<textarea id="djMetaComment" placeholder="Mix-In, Break, Stimmung, Idee …" rows="4"></textarea></label>
+</div>
+<div class="audio-editor-footer"><button class="btn small danger" id="djMetaDelete" type="button">TRACK LÖSCHEN</button><button class="btn primary small" id="djMetaSave" type="button">SPEICHERN</button></div>
+</div>
+</div>
+<div class="modal hidden audio-editor-modal" id="audioEditorModal">
+<div class="modal-card audio-editor-card">
+<div class="modal-head">
+<div>
+<div class="eyebrow cyan">AUDIO EDITOR</div>
+<h3 id="audioEditorTitle">Audio-Clip</h3>
+</div>
+<button class="modal-x" id="audioEditorClose" type="button">×</button>
+</div>
+<p class="audio-editor-help" data-i18n="audioEditorHint">Tippe in die Wellenform, um den Schnitt-Cursor zu setzen. Ziehe START/ENDE zum Trimmen. Fade-Regler bestimmen Ein- und Ausblendung.</p>
+<div class="audio-editor-toolbar">
+<button class="btn small" id="audioPreviewBtn" type="button">▶ VORSCHAU</button>
+<button class="btn small" id="audioStopPreviewBtn" type="button">■ STOPP</button>
+<button class="btn small toggle" id="audioLoopToggleBtn" type="button">LOOP AUS</button>
+<button class="btn small" id="audioSplitBtn" type="button">✂ AM CURSOR TEILEN</button>
+<button class="btn small" id="audioNormalizeBtn" type="button">↥ NORMALISIEREN</button>
+<button class="btn small" id="audioReverseBtn" type="button">↔ AUSWAHL REVERSE</button>
+<button class="btn small" id="audioDuplicateBtn" type="button">⧉ DUPLIZIEREN</button>
+</div>
+<div class="audio-wave-editor-wrap" id="audioWaveEditorWrap">
+<canvas class="audio-editor-waveform" height="260" id="audioEditorWaveform" width="1200"></canvas>
+<div class="audio-trim-shade left" id="audioTrimShadeLeft"></div>
+<div class="audio-trim-shade right" id="audioTrimShadeRight"></div>
+<div class="audio-fade-visual fade-in" id="audioFadeInVisual"></div>
+<div class="audio-fade-visual fade-out" id="audioFadeOutVisual"></div>
+<div class="audio-trim-handle start" id="audioTrimStartHandle"><span>START</span></div>
+<div class="audio-trim-handle end" id="audioTrimEndHandle"><span>ENDE</span></div>
+<div class="audio-cut-cursor" id="audioCutCursor"><span>✂</span></div>
+</div>
+<div class="audio-editor-readout">
+<div><span>START</span><strong id="audioStartReadout">0.00 s</strong></div>
+<div><span>ENDE</span><strong id="audioEndReadout">0.00 s</strong></div>
+<div><span>LÄNGE</span><strong id="audioLengthReadout">0.00 s</strong></div>
+<div><span>CURSOR</span><strong id="audioCursorReadout">0.00 s</strong></div>
+</div>
+<div class="audio-fade-controls">
+<label>FADE-IN <input id="audioFadeIn" max="5" min="0" step="0.01" type="range" value="0"/><span id="audioFadeInValue">0.00 s</span></label>
+<label>FADE-OUT <input id="audioFadeOut" max="5" min="0" step="0.01" type="range" value="0"/><span id="audioFadeOutValue">0.00 s</span></label>
+<label>LAUTSTÄRKE <input id="audioClipGain" max="1.5" min="0" step="0.01" type="range" value="1"/><span id="audioClipGainValue">100%</span></label>
+</div>
+<div class="audio-editor-footer">
+<button class="btn small" id="audioResetEditsBtn" type="button">ZURÜCKSETZEN</button>
+<button class="btn primary small" id="audioApplyBtn" type="button">ÜBERNEHMEN</button>
+</div>
+</div>
+</div>
+<script src="app.js"></script>
+<script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.error));
     }
