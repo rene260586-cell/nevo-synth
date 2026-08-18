@@ -1308,7 +1308,7 @@ async function v31ApplyCueSink(audio){
 async function v31TogglePfl(letter){
   const d=djDecks[letter];if(!d?.item)return;const a=v31CueAudio(letter);nevoV31.pfl[letter]=!nevoV31.pfl[letter];
   if(nevoV31.pfl[letter]){
-    if(a.src!==d.item.url)a.src=d.item.url;a.currentTime=clamp(d.audio.currentTime||0,0,d.audio.duration||d.buffer?.duration||0);a.playbackRate=d.audio.playbackRate||1;a.preservesPitch=d.keyLock;a.mozPreservesPitch=d.keyLock;a.webkitPreservesPitch=d.keyLock;a.volume=clamp(nevoV31.cueLevel,0,1);await v31ApplyCueSink(a);try{await a.play()}catch(e){console.warn(e)}
+    if(a.src!==d.item.url)a.src=d.item.url;a.currentTime=clamp(d.audio.currentTime||0,0,d.audio.duration||d.buffer?.duration||0);a.playbackRate=d.audio.playbackRate||1;a.preservesPitch=d.keyLock;a.mozPreservesPitch=d.keyLock;a.webkitPreservesPitch=d.keyLock;a.volume=v35CueDeckVolume(letter);await v31ApplyCueSink(a);try{await a.play()}catch(e){console.warn(e)}
   }else a.pause();
   v31RefreshPfl(letter)
 }
@@ -1380,7 +1380,7 @@ function v31Bind(){
 let v31LastTick=0;
 function v31Ticker(ts){
   if(ts-v31LastTick>55){v31LastTick=ts;for(const L of ['A','B']){
-    v31SyncFollower(L);const d=djDecks[L];if(nevoV31.pfl[L]&&d?.item){const a=v31CueAudio(L);a.volume=nevoV31.cueLevel;a.playbackRate=d.audio.playbackRate||1;if(!d.audio.paused&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.12)try{a.currentTime=d.audio.currentTime||0}catch{};if(d.audio.paused&&a.paused===false&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.35)try{a.currentTime=d.audio.currentTime||0}catch{}}}
+    v31SyncFollower(L);const d=djDecks[L];if(nevoV31.pfl[L]&&d?.item){const a=v31CueAudio(L);a.volume=v35CueDeckVolume(L);a.playbackRate=d.audio.playbackRate||1;if(!d.audio.paused&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.12)try{a.currentTime=d.audio.currentTime||0}catch{};if(d.audio.paused&&a.paused===false&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.35)try{a.currentTime=d.audio.currentTime||0}catch{}}}
   }requestAnimationFrame(v31Ticker)
 }
 
@@ -1546,3 +1546,119 @@ function v34Bind(){
   setTimeout(()=>{v34DrawStack('A',true);v34DrawStack('B',true)},300)
 }
 v34Bind();
+
+
+// ===== v3.5: FLX4 LOOP WORKFLOW + MASTER CUE + REAL-TIME BEAT FX =====
+const V35_FX_NAMES=['ECHO','REVERB','DELAY','FLANGER','PHASER','FILTER','ROLL'];
+nevoV34.masterCue=!!nevoV34.masterCue;
+let v35MasterCueAudio=null;
+const v35Fx={ready:false,input:null,wetBus:null,outputs:{},echoDelay:null,echoFeedback:null,delayNode:null,delayFeedback:null,flangerDelay:null,flangerLfo:null,flangerDepth:null,phaser1:null,phaser2:null,phaserLfo:null,phaserDepth:null,filterNode:null,rollGain:null,rollLfo:null,rollDepth:null};
+
+function v35CueDeckVolume(letter){
+  const level=clamp(Number(nevoV31?.cueLevel)||0,0,1),mix=clamp(Number(nevoV34?.headphonesMix)||0,0,1);
+  return level*(nevoV34?.masterCue?(1-mix):1);
+}
+function v35MasterCueVolume(){const level=clamp(Number(nevoV31?.cueLevel)||0,0,1),mix=clamp(Number(nevoV34?.headphonesMix)||0,0,1);return nevoV34?.masterCue?level*mix:0}
+async function v35MasterCueAudioNode(){
+  await initAudio();
+  if(!v35MasterCueAudio){v35MasterCueAudio=new Audio();v35MasterCueAudio.autoplay=false;v35MasterCueAudio.playsInline=true}
+  if(mediaDest?.stream&&v35MasterCueAudio.srcObject!==mediaDest.stream)v35MasterCueAudio.srcObject=mediaDest.stream;
+  if(nevoV31?.cueOutputId&&typeof v35MasterCueAudio.setSinkId==='function')try{await v35MasterCueAudio.setSinkId(nevoV31.cueOutputId)}catch(e){console.warn(e)}
+  return v35MasterCueAudio
+}
+function v35UpdateHeadphoneVolumes(){
+  for(const L of ['A','B']){const a=v31CueAudio(L);a.volume=v35CueDeckVolume(L)}
+  if(v35MasterCueAudio)v35MasterCueAudio.volume=v35MasterCueVolume();
+  $('#flxMasterCue')?.classList.toggle('active',!!nevoV34.masterCue);
+}
+async function v35ToggleMasterCue(){
+  nevoV34.masterCue=!nevoV34.masterCue;v34Save();const a=await v35MasterCueAudioNode();v35UpdateHeadphoneVolumes();
+  if(nevoV34.masterCue){try{await a.play()}catch(e){console.warn(e)}}else a.pause();
+  setStatus(true,'MASTER CUE',nevoV34.masterCue?(currentLang==='de'?'Master-Mix im Kopfhörer AN':'Master mix in headphones ON'):(currentLang==='de'?'AUS':'OFF'));
+}
+const v35OldSetCueOutput=v31SetCueOutput;
+v31SetCueOutput=async function(id){await v35OldSetCueOutput(id);if(v35MasterCueAudio&&typeof v35MasterCueAudio.setSinkId==='function')try{await v35MasterCueAudio.setSinkId(id||'default')}catch(e){console.warn(e)};v35UpdateHeadphoneVolumes()};
+
+function v35LoopBeats(letter){const d=djDecks[letter];if(!d?.item)return 0;const p=djBeatPeriod(letter);if(d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)&&p)return Math.max(.25,(d.manualLoopOut-d.manualLoopIn)/p);return Number(d.loopBeats)||0}
+function v35SetLoopSize(letter,beats,activate=true){
+  const d=djDecks[letter];if(!d?.item)return;beats=clamp(Number(beats)||4,.25,64);const p=djBeatPeriod(letter),wasActive=!!v35LoopBeats(letter);
+  if(d.manualLoopActive&&Number.isFinite(d.manualLoopIn)){d.manualLoopOut=clamp(d.manualLoopIn+beats*p,d.manualLoopIn+.02,d.audio.duration||Infinity);d.manualLoopActive=activate;d.loopBeats=0}
+  else{d.manualLoopActive=false;if(activate&&!wasActive)d.loopStart=v3SnapTime(letter,d.audio.currentTime||0);d.loopBeats=activate?beats:0;if(activate&&!Number.isFinite(d.loopStart))d.loopStart=v3SnapTime(letter,d.audio.currentTime||0)}
+  const sel=$(`#flx${letter}LoopSize`);if(sel)sel.value=String(beats);const std=$(`#deck${letter}Loop`);if(std&&[...std.options].some(o=>Number(o.value)===beats))std.value=String(beats);
+  setStatus(true,'LOOP',`DECK ${letter} · ${beats} Beat${beats===1?'':'s'}`);v35RefreshLoopUi(letter)
+}
+function v35ResizeLoop(letter,factor){const d=djDecks[letter];if(!d?.item)return;let b=v35LoopBeats(letter)||Number($(`#flx${letter}LoopSize`)?.value)||4;b=clamp(b*factor,.25,64);const friendly=[.25,.5,1,2,3,4,6,8,12,16,24,32,64];b=friendly.reduce((a,x)=>Math.abs(x-b)<Math.abs(a-b)?x:a,friendly[0]);v35SetLoopSize(letter,b,true)}
+function v35ExitLoop(letter){const d=djDecks[letter];if(!d)return;d.manualLoopActive=false;d.loopBeats=0;const std=$(`#deck${letter}Loop`);if(std)std.value='0';v35RefreshLoopUi(letter);setStatus(true,'LOOP EXIT',`DECK ${letter}`)}
+function v35RefreshLoopUi(letter){const d=djDecks[letter],b=v35LoopBeats(letter),strip=document.querySelector(`[data-loop-strip="${letter}"]`),state=$(`#flx${letter}LoopState`),sel=$(`#flx${letter}LoopSize`);strip?.classList.toggle('active',!!b);if(state)state.textContent=b?`${Number.isInteger(b)?b:b.toFixed(2)} BEAT${b===1?'':'S'} · AN`:'LOOP AUS';if(sel&&b&&document.activeElement!==sel){const opts=[...sel.options].map(o=>Number(o.value));const near=opts.reduce((a,x)=>Math.abs(x-b)<Math.abs(a-b)?x:a,opts[0]);sel.value=String(near)}}
+// Hardware behavior: 4 BEAT creates a 4-beat loop, while pressing it during a loop exits it.
+v34ToggleLoop4=function(letter){const d=djDecks[letter];if(!d?.item)return;if(v35LoopBeats(letter))return v35ExitLoop(letter);d.manualLoopActive=false;d.loopStart=v3SnapTime(letter,d.audio.currentTime||0);d.loopBeats=4;const sel=$(`#flx${letter}LoopSize`);if(sel)sel.value='4';v35RefreshLoopUi(letter);setStatus(true,'4 BEAT',`DECK ${letter} · 4 Beats`)};
+// CUE/LOOP CALL acts as 1/2X and 2X while a loop is active; otherwise it still calls saved cues.
+const v35OldCueCall=v34CueCall;
+v34CueCall=function(letter,dir){if(v35LoopBeats(letter))return v35ResizeLoop(letter,dir<0?.5:2);return v35OldCueCall(letter,dir)};
+
+async function v35EnsureFxEngine(){
+  await initAudio();if(v35Fx.ready)return;
+  v35Fx.input=ctx.createGain();v35Fx.input.gain.value=1;v35Fx.wetBus=ctx.createGain();v35Fx.wetBus.gain.value=1;v35Fx.wetBus.connect(master);
+  const mkOut=name=>{const g=ctx.createGain();g.gain.value=0;g.connect(v35Fx.wetBus);v35Fx.outputs[name]=g;return g};
+  // Echo
+  v35Fx.echoDelay=ctx.createDelay(4);v35Fx.echoFeedback=ctx.createGain();v35Fx.echoFeedback.gain.value=.35;v35Fx.input.connect(v35Fx.echoDelay);v35Fx.echoDelay.connect(v35Fx.echoFeedback);v35Fx.echoFeedback.connect(v35Fx.echoDelay);v35Fx.echoDelay.connect(mkOut('ECHO'));
+  // Hall / reverb
+  const conv=ctx.createConvolver();conv.buffer=makeImpulse(2.6,2.2);v35Fx.input.connect(conv);conv.connect(mkOut('REVERB'));
+  // Delay
+  v35Fx.delayNode=ctx.createDelay(4);v35Fx.delayFeedback=ctx.createGain();v35Fx.delayFeedback.gain.value=.18;v35Fx.input.connect(v35Fx.delayNode);v35Fx.delayNode.connect(v35Fx.delayFeedback);v35Fx.delayFeedback.connect(v35Fx.delayNode);v35Fx.delayNode.connect(mkOut('DELAY'));
+  // Flanger
+  v35Fx.flangerDelay=ctx.createDelay(.05);v35Fx.flangerDelay.delayTime.value=.006;v35Fx.flangerLfo=ctx.createOscillator();v35Fx.flangerDepth=ctx.createGain();v35Fx.flangerDepth.gain.value=.0035;v35Fx.flangerLfo.connect(v35Fx.flangerDepth);v35Fx.flangerDepth.connect(v35Fx.flangerDelay.delayTime);v35Fx.flangerLfo.start();v35Fx.input.connect(v35Fx.flangerDelay);v35Fx.flangerDelay.connect(mkOut('FLANGER'));
+  // Phaser
+  v35Fx.phaser1=ctx.createBiquadFilter();v35Fx.phaser1.type='allpass';v35Fx.phaser1.frequency.value=500;v35Fx.phaser1.Q.value=1.5;v35Fx.phaser2=ctx.createBiquadFilter();v35Fx.phaser2.type='allpass';v35Fx.phaser2.frequency.value=1300;v35Fx.phaser2.Q.value=1.2;v35Fx.phaserLfo=ctx.createOscillator();v35Fx.phaserDepth=ctx.createGain();v35Fx.phaserDepth.gain.value=380;v35Fx.phaserLfo.connect(v35Fx.phaserDepth);v35Fx.phaserDepth.connect(v35Fx.phaser1.frequency);v35Fx.phaserLfo.start();v35Fx.input.connect(v35Fx.phaser1);v35Fx.phaser1.connect(v35Fx.phaser2);v35Fx.phaser2.connect(mkOut('PHASER'));
+  // Beat filter
+  v35Fx.filterNode=ctx.createBiquadFilter();v35Fx.filterNode.type='bandpass';v35Fx.filterNode.frequency.value=1000;v35Fx.filterNode.Q.value=3;v35Fx.input.connect(v35Fx.filterNode);v35Fx.filterNode.connect(mkOut('FILTER'));
+  // Roll approximation: beat-synced gate on a wet duplicate.
+  v35Fx.rollGain=ctx.createGain();v35Fx.rollGain.gain.value=.5;v35Fx.rollLfo=ctx.createOscillator();v35Fx.rollLfo.type='square';v35Fx.rollDepth=ctx.createGain();v35Fx.rollDepth.gain.value=.5;v35Fx.rollLfo.connect(v35Fx.rollDepth);v35Fx.rollDepth.connect(v35Fx.rollGain.gain);v35Fx.rollLfo.start();v35Fx.input.connect(v35Fx.rollGain);v35Fx.rollGain.connect(mkOut('ROLL'));
+  v35Fx.ready=true;
+}
+async function v35AttachDeckFx(deck){await v35EnsureFxEngine();if(!deck?.gainNode||deck.v35FxSend)return;deck.v35FxSend=ctx.createGain();deck.v35FxSend.gain.value=0;deck.gainNode.connect(deck.v35FxSend);deck.v35FxSend.connect(v35Fx.input)}
+const v35OldEnsureDeckConnected=ensureDeckConnected;
+ensureDeckConnected=async function(deck){await v35OldEnsureDeckConnected(deck);await v35AttachDeckFx(deck);v35ApplyFx()};
+function v35FxReferenceDeck(){if(nevoV34.fx.channel==='B')return 'B';if(nevoV34.fx.channel==='A')return 'A';return nevoV3?.masterDeck||'A'}
+function v35ApplyFx(){
+  if(!ctx||!v35Fx.ready)return;const t=ctx.currentTime,name=V35_FX_NAMES.includes(nevoV34.fx.name)?nevoV34.fx.name:'ECHO',on=!!nevoV34.fx.on,level=clamp(Number(nevoV34.fx.level)||0,0,1);
+  for(const L of ['A','B']){const d=djDecks[L];if(d?.v35FxSend){const selected=nevoV34.fx.channel==='AB'||nevoV34.fx.channel===L;d.v35FxSend.gain.setTargetAtTime(on&&selected?1:0,t,.015)}}
+  for(const [n,g] of Object.entries(v35Fx.outputs))g.gain.setTargetAtTime(on&&n===name?level*1.15:0,t,.02);
+  const ref=v35FxReferenceDeck(),bpm=Math.max(60,v3EffectiveBpm(ref)||Number($('#bpm')?.value)||150),period=60/bpm,beats=Math.max(.0625,Number(nevoV34.fx.beat)||1),time=clamp(period*beats,.02,3.8);
+  if(v35Fx.echoDelay)v35Fx.echoDelay.delayTime.setTargetAtTime(time,t,.02);if(v35Fx.delayNode)v35Fx.delayNode.delayTime.setTargetAtTime(clamp(time*.5,.02,2.5),t,.02);
+  if(v35Fx.echoFeedback)v35Fx.echoFeedback.gain.setTargetAtTime(.20+level*.48,t,.02);if(v35Fx.delayFeedback)v35Fx.delayFeedback.gain.setTargetAtTime(.08+level*.28,t,.02);
+  const hz=clamp(1/Math.max(.08,time),.08,12);if(v35Fx.flangerLfo)v35Fx.flangerLfo.frequency.setTargetAtTime(hz,t,.02);if(v35Fx.phaserLfo)v35Fx.phaserLfo.frequency.setTargetAtTime(clamp(hz*.5,.05,6),t,.02);if(v35Fx.rollLfo)v35Fx.rollLfo.frequency.setTargetAtTime(clamp(hz,1,24),t,.02);
+  if(v35Fx.filterNode){const sweep=600+level*5200;v35Fx.filterNode.frequency.setTargetAtTime(sweep,t,.03);v35Fx.filterNode.Q.setTargetAtTime(1.2+level*7,t,.03)}
+}
+function v35OpenFxMenu(){const m=$('#flxFxMenu');if(!m)return;m.hidden=!m.hidden;v35RefreshFxMenu()}
+function v35RefreshFxMenu(){document.querySelectorAll('#flxFxMenu [data-fx-name]').forEach(b=>b.classList.toggle('active',b.dataset.fxName===nevoV34.fx.name))}
+function v35SelectFx(name){if(!V35_FX_NAMES.includes(name))return;nevoV34.fx.name=name;v34Save();$('#flxFxMenu').hidden=true;v34RefreshFx();v35RefreshFxMenu();v35ApplyFx();setStatus(true,'FX SELECT',name==='REVERB'?'REVERB / HALL':name)}
+// Screen FX SELECT opens the menu; MIDI can still choose from the menu afterwards.
+v34FxCycle=function(){v35OpenFxMenu()};
+const v35OldFxChannel=v34FxChannel;v34FxChannel=function(){v35OldFxChannel();v35ApplyFx()};
+const v35OldFxBeat=v34FxBeat;v34FxBeat=function(dir){v35OldFxBeat(dir);v35ApplyFx()};
+const v35OldFxOn=v34FxOn;v34FxOn=function(){v35OldFxOn();v35ApplyFx()};
+
+const v35OldFlxSetContinuous=flxSetContinuous;
+flxSetContinuous=function(action,norm,fromMidi=false){const r=v35OldFlxSetContinuous(action,norm,fromMidi);if(action==='fx.level')v35ApplyFx();if(action==='cue.level'||action==='headphones.mix')v35UpdateHeadphoneVolumes();return r};
+const v35OldFlxTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  let m=action.match(/^([AB])\.(loopHalf|loopDouble)$/);if(m)return v35ResizeLoop(m[1],m[2]==='loopHalf'?.5:2);
+  if(action==='master.cue')return v35ToggleMasterCue();
+  return v35OldFlxTrigger(action)
+};
+const v35OldFlxLabel=flxActionLabel;
+flxActionLabel=function(action){const map={'master.cue':'Master Cue / Kopfhörer','A.loopHalf':'Deck A Loop halbieren','A.loopDouble':'Deck A Loop verdoppeln','B.loopHalf':'Deck B Loop halbieren','B.loopDouble':'Deck B Loop verdoppeln'};return map[action]||v35OldFlxLabel(action)};
+
+const v35OldRefreshFlx=refreshFlx4Ui;
+refreshFlx4Ui=function(){v35OldRefreshFlx();for(const L of ['A','B'])v35RefreshLoopUi(L);$('#flxMasterCue')?.classList.toggle('active',!!nevoV34.masterCue);v35RefreshFxMenu()};
+
+function v35Bind(){
+  document.querySelectorAll('[data-loop-size]').forEach(sel=>{sel.addEventListener('change',e=>{const L=e.currentTarget.dataset.loopSize;v35SetLoopSize(L,Number(e.currentTarget.value)||4,true)})});
+  document.querySelectorAll('#flxFxMenu [data-fx-name]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();v35SelectFx(b.dataset.fxName)}));
+  document.addEventListener('click',e=>{const m=$('#flxFxMenu');if(m&&!m.hidden&&!e.target.closest('.flx4-beatfx'))m.hidden=true});
+  v35UpdateHeadphoneVolumes();for(const L of ['A','B'])v35RefreshLoopUi(L);v35RefreshFxMenu();
+  setTimeout(async()=>{try{await v35EnsureFxEngine();for(const L of ['A','B'])if(djDecks[L]?.source)await v35AttachDeckFx(djDecks[L]);v35ApplyFx()}catch(e){console.warn('v3.5 FX init',e)}},600);
+}
+let v35Last=0;function v35Ticker(ts){if(ts-v35Last>70){v35Last=ts;v35UpdateHeadphoneVolumes();if(v35Fx.ready&&nevoV34.fx.on)v35ApplyFx()}requestAnimationFrame(v35Ticker)}
+v35Bind();requestAnimationFrame(v35Ticker);
