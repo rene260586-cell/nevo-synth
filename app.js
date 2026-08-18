@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.1.6',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.1.7',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2514,7 +2514,7 @@ v414BindRotaryTargets();
 console.info('NÉVO v4.1.4: rotary mixer mapping sidebars loaded');
 
 
-// ===== v4.1.6: compact vertical Beat FX rail + real Level/Depth screen knob =====
+// ===== v4.1.7: compact vertical Beat FX rail + real Level/Depth screen knob =====
 function v415RefreshFxLevelKnob(){
   const knob=document.getElementById('flxFxLevelKnob');if(!knob)return;
   const v=Math.max(0,Math.min(1,Number(nevoV34?.fx?.level)||0));
@@ -2546,4 +2546,4 @@ flxSetContinuous=function(action,norm,fromMidi=false){const r=v415OldSetContinuo
 const v415OldRefreshFx=v34RefreshFx;
 v34RefreshFx=function(){const r=v415OldRefreshFx();v415RefreshFxLevelKnob();return r};
 v415BindFxLevelKnob();setTimeout(v415BindFxLevelKnob,300);v415RefreshFxLevelKnob();
-console.info('NÉVO v4.1.6: compact vertical Beat FX rail active');
+console.info('NÉVO v4.1.7: compact vertical Beat FX rail active');

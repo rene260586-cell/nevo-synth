@@ -928,3 +928,150 @@ body.flx-compact-mode .flx4-controller>.flx4-side-mapper .v414-channel-fader inp
   .flx4-controller>.flx4-side-mapper,
   body.flx-compact-mode .flx4-controller>.flx4-side-mapper{margin-top:0}
 }
+
+/* ===== v4.1.7: horizontal Beat FX bar UNDER the library =====
+   Keeps the browser as the main center area and compresses Beat FX into one
+   landscape strip: CH 1/2/1&2 | FX SELECT | BEAT -/length/+ | LEVEL/DEPTH | ON/OFF. */
+.flx4-mixer-section .v415-beatfx-rail{
+  width:100%!important;
+  max-width:none!important;
+  margin:2px 0 0!important;
+  padding:5px 6px!important;
+  border-radius:9px!important;
+  justify-self:stretch!important;
+}
+.flx4-mixer-section .v415-beatfx-heading{
+  margin:0 0 3px!important;
+  text-align:left!important;
+  line-height:1;
+}
+.flx4-mixer-section .v415-beatfx-heading b{
+  font-size:6px!important;
+  letter-spacing:.12em!important;
+}
+.flx4-mixer-section .v415-fx-vertical{
+  display:grid!important;
+  grid-template-columns:minmax(84px,1.05fr) minmax(66px,.8fr) minmax(114px,1.35fr) minmax(56px,.7fr) minmax(58px,.75fr)!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding:0!important;
+}
+.flx4-mixer-section .v415-fx-vertical:before{display:none!important}
+.flx4-mixer-section .v415-fx-label{display:none!important}
+.flx4-mixer-section .v415-fx-channel-stack{
+  width:100%!important;
+  margin:0!important;
+  padding:2px!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:2px!important;
+  border-radius:7px!important;
+}
+.flx4-mixer-section .v415-fx-channel-stack button{
+  width:auto!important;
+  min-width:0!important;
+  min-height:27px!important;
+  padding:2px!important;
+  font-size:6px!important;
+  border-radius:5px!important;
+}
+.flx4-mixer-section .v415-fx-select{
+  width:100%!important;
+  min-width:0!important;
+  min-height:31px!important;
+  margin:0!important;
+  padding:3px 4px!important;
+  font-size:6px!important;
+  border-radius:7px!important;
+}
+.flx4-mixer-section .v415-fx-select small{display:none!important}
+.flx4-mixer-section .v415-fx-beat-controls{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:28px minmax(48px,1fr) 28px!important;
+  gap:2px!important;
+}
+.flx4-mixer-section .v415-fx-beat-controls>button{
+  min-height:31px!important;
+  font-size:11px!important;
+  border-radius:7px!important;
+}
+.flx4-mixer-section .v415-fx-beat-controls .flx4-fx-center-readout{
+  min-height:31px!important;
+  border-radius:7px!important;
+  padding:2px!important;
+}
+.flx4-mixer-section .v415-fx-beat-controls .flx4-fx-center-readout small{font-size:3.8px!important}
+.flx4-mixer-section .v415-fx-beat-controls .flx4-fx-center-readout b{font-size:6.2px!important}
+.flx4-mixer-section .v415-fx-level{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  padding:0!important;
+}
+.flx4-mixer-section .v415-fx-level>span{
+  display:none!important;
+}
+.flx4-mixer-section .v415-fx-knob{
+  width:32px!important;
+  height:32px!important;
+  min-height:32px!important;
+}
+.flx4-mixer-section .v415-fx-knob:after{
+  top:4px!important;
+  height:9px!important;
+  transform-origin:50% 12.5px!important;
+}
+.flx4-mixer-section .v415-fx-on{
+  width:100%!important;
+  min-width:0!important;
+  min-height:31px!important;
+  margin:0!important;
+  padding:3px!important;
+  font-size:6.2px!important;
+  border-radius:7px!important;
+}
+
+/* Give the library most of the center column. Roughly ten compact rows fit before Beat FX. */
+body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel{
+  min-height:300px!important;
+  max-height:330px!important;
+  flex:1 1 300px!important;
+}
+body.flx-compact-mode .flx4-mixer-section .flx4-browser-list{
+  max-height:266px!important;
+}
+body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel.expanded{
+  min-height:340px!important;
+  max-height:390px!important;
+}
+body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel.expanded .flx4-browser-list{
+  max-height:326px!important;
+}
+
+/* The rest of the center controls stay thin below the FX strip. */
+.flx4-mixer-section .flx4-center-core{gap:3px!important}
+.flx4-mixer-section .flx4-cross{margin-top:0!important}
+.flx4-mixer-section .v414-utility-mapping{margin-top:0!important}
+.flx4-mixer-section .flx-reset{margin-top:0!important}
+
+/* On narrower center columns allow the FX strip to use two compact rows instead of becoming unreadable. */
+@media(max-width:1180px){
+  .flx4-mixer-section .v415-fx-vertical{
+    grid-template-columns:minmax(86px,1fr) minmax(70px,.8fr) minmax(120px,1.35fr)!important;
+  }
+  .flx4-mixer-section .v415-fx-level,
+  .flx4-mixer-section .v415-fx-on{min-height:30px!important}
+}
+@media(max-width:760px){
+  .flx4-mixer-section .v415-beatfx-rail{width:100%!important}
+  .flx4-mixer-section .v415-fx-vertical{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .flx4-mixer-section .v415-fx-beat-controls{grid-column:1/-1}
+  body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel{min-height:220px!important;max-height:270px!important}
+  body.flx-compact-mode .flx4-mixer-section .flx4-browser-list{max-height:205px!important}
+}
