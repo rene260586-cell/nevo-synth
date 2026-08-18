@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.3',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.4',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2812,7 +2812,7 @@ v422RefreshMixerVisuals();
 console.info('NÉVO v4.2.2: mixer rotaries follow MIDI + adaptive jog rotation/waveform follow active');
 
 
-// ===== v4.2.3: deck touch controls — tempo range / SLIP / Q / MT =====
+// ===== v4.2.4: deck touch controls — tempo range / SLIP / Q / MT =====
 // These compact controls are available on both decks and work with mouse or touch.
 // RANGE cycles ±6 / ±10 / ±16 / WIDE. Q is deck Quantize. MT is Master Tempo
 // (pitch/key preservation). SLIP currently follows the jog/scratch timeline: while
@@ -2923,4 +2923,105 @@ refreshFlx4Ui=function(){
 
 // RANGE is controlled by the dedicated deck button to avoid accidental BEAT SYNC taps.
 for(const L of ['A','B'])v423RefreshDeckOptionUi(L);
-console.info('NÉVO v4.2.3: RANGE / SLIP / Q / MT touch controls active on both decks');
+console.info('NÉVO v4.2.4: RANGE / SLIP / Q / MT touch controls active on both decks');
+
+
+// ===== v4.2.4: library waveform previews + comparison helpers =====
+// Every track in the FLX4 browser gets a compact colored waveform preview.
+// The same color logic as the deck waveform is used so visual comparison is
+// meaningful before a track is loaded. Subtle 4-bar markers appear after BPM
+// analysis, making phrase density and arrangement structure easier to compare.
+const v424MiniWaveObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries=>{
+  for(const entry of entries){
+    if(!entry.isIntersecting)continue;
+    const canvas=entry.target,item=canvas._v424Item;
+    v424MiniWaveObserver.unobserve(canvas);
+    if(item)v424EnsureMiniWave(canvas,item);
+  }
+},{root:null,rootMargin:'180px 0px',threshold:.01}) : null;
+
+function v424BuildMiniWave(buffer,bins=180){
+  if(!buffer)return null;
+  const data=buffer.getChannelData(0),len=data.length,out=new Array(bins);
+  for(let x=0;x<bins;x++){
+    const i0=Math.floor(x/bins*len),i1=Math.max(i0+1,Math.floor((x+1)/bins*len));
+    out[x]=djColumnStats(data,i0,Math.min(len,i1));
+  }
+  return out;
+}
+function v424DrawMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;
+  const rect=canvas.getBoundingClientRect(),w=Math.max(90,Math.round(rect.width||180)),h=Math.max(14,Math.round(rect.height||18));
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+  const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  const bins=item.v424MiniWave;if(!Array.isArray(bins)||!bins.length)return;
+  const bg=c.createLinearGradient(0,0,w,0);bg.addColorStop(0,'rgba(3,9,14,.88)');bg.addColorStop(.5,'rgba(6,17,25,.94)');bg.addColorStop(1,'rgba(3,9,14,.88)');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  c.fillStyle='rgba(255,255,255,.045)';c.fillRect(0,h/2-.5,w,1);
+  // Phrase/grid aid: one subtle line every 4 bars (16 beats) once BPM is known.
+  const bpm=Number(item.bpm)||0,dur=Number(item.duration)||item.buffer?.duration||0,off=Number(item.beatOffset)||0;
+  if(bpm>0&&dur>0){
+    const period=60/bpm,step=period*16;
+    let t=off;while(t<0)t+=step;while(t-step>=0)t-=step;
+    let n=0;for(;t<=dur;t+=step,n++){
+      if(t<0)continue;const x=t/dur*w;c.strokeStyle=n%2?'rgba(255,255,255,.075)':'rgba(255,181,94,.13)';c.lineWidth=1;c.beginPath();c.moveTo(Math.round(x)+.5,1);c.lineTo(Math.round(x)+.5,h-1);c.stroke();
+    }
+  }
+  const mid=h/2;
+  for(let x=0;x<w;x++){
+    const idx=Math.min(bins.length-1,Math.floor(x/w*bins.length)),st=bins[idx]||{peak:0,mean:0,z:0};
+    const amp=Math.max(.8,Math.min(h*.47,(Number(st.peak)||0)*h*.46));
+    c.strokeStyle=djWaveColor(st,.98);c.lineWidth=1;c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke();
+  }
+  // A small warm/cool tint makes the preview read like the large NEVO waveform.
+  const tint=c.createLinearGradient(0,0,w,0);tint.addColorStop(0,'rgba(84,216,255,.06)');tint.addColorStop(.55,'rgba(177,107,255,.035)');tint.addColorStop(1,'rgba(255,181,94,.055)');c.fillStyle=tint;c.fillRect(0,0,w,h);
+}
+async function v424EnsureMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;
+  if(item.v424MiniWave){v424DrawMiniWave(canvas,item);return}
+  if(canvas.dataset.loading==='1')return;canvas.dataset.loading='1';
+  try{
+    const buffer=await ensureDjItemBuffer(item);
+    item.v424MiniWave=v424BuildMiniWave(buffer,180);
+    if(canvas.isConnected)v424DrawMiniWave(canvas,item);
+  }catch(e){console.warn('Mini waveform preview failed',e)}finally{if(canvas?.dataset)canvas.dataset.loading='0'}
+}
+function v424QueueMiniWave(canvas,item){
+  if(!canvas||!item)return;canvas._v424Item=item;
+  if(v424MiniWaveObserver)v424MiniWaveObserver.observe(canvas);else setTimeout(()=>v424EnsureMiniWave(canvas,item),0);
+}
+
+// Replace the compact FLX browser renderer with the same browser behavior plus
+// a waveform preview directly after each title. This keeps the row compact and
+// still lets roughly ten tracks remain visible on a laptop screen.
+v38RenderBrowser=function(){
+  const panel=$('#flxBrowserPanel'),box=$('#flxBrowserList');if(!panel||!box)return;
+  panel.classList.toggle('expanded',!!nevoV38.browserExpanded);panel.classList.toggle('crate-focus',nevoV38.browserFocus==='crates');
+  const focus=$('#flxBrowserFocus'),crate=$('#flxBrowserCrate'),count=$('#flxBrowserCount');
+  if(focus)focus.textContent=nevoV38.browserFocus==='crates'?'PLAYLISTS':(currentLang==='de'?'TRACKS':'TRACKS');
+  if(crate)crate.textContent=v38CrateLabel(nevoV38.browserCrate);
+  box.innerHTML='';
+  if(nevoV38.browserFocus==='crates'){
+    const crates=v38Crates();let idx=Math.max(0,crates.findIndex(x=>x.id===nevoV38.browserCrate));if(count)count.textContent=`${idx+1} / ${crates.length}`;
+    for(const c of crates){const row=document.createElement('button');row.type='button';row.className='flx4-browser-crate'+(c.id===nevoV38.browserCrate?' selected':'');row.innerHTML=`<b>${v38Esc(c.label)}</b><span>${c.id==='all'?djLibrary.length:c.id==='favorites'?djLibrary.filter(x=>(Number(x.rating)||0)>=4).length:djLibrary.filter(x=>(x.crate||'')===c.id.slice(6)).length}</span>`;row.onclick=()=>{nevoV38.browserCrate=c.id;nevoV38.browserCursor=0;v38Save();v38RenderBrowser()};row.ondblclick=()=>{nevoV38.browserFocus='tracks';v38Save();v38RenderBrowser()};box.appendChild(row)}
+    return;
+  }
+  const items=v38BrowserItems();v38ClampCursor();if(count)count.textContent=items.length?`${nevoV38.browserCursor+1} / ${items.length}`:'0 / 0';
+  if(!items.length){box.innerHTML=`<div class="flx4-browser-empty">${currentLang==='de'?'Keine Songs in dieser Auswahl.':'No tracks in this selection.'}</div>`;v31UpdateBrowseTitle();return}
+  items.forEach((item,i)=>{
+    const row=document.createElement('button');row.type='button';row.className='flx4-browser-track v424-wave-row'+(i===nevoV38.browserCursor?' selected':'');row.dataset.id=item.id;
+    row.innerHTML=`<span class="v424-track-main"><span class="v424-track-text"><b>${v38Esc(item.title||cleanDjTitle(item.name))}</b><small>${v38Esc(item.artist||item.name||'')}</small></span><span class="v424-miniwave-shell" title="${currentLang==='de'?'Track-Wellenform':'Track waveform'}"><canvas class="v424-miniwave" width="220" height="32"></canvas></span></span><em>${item.bpm?Number(item.bpm).toFixed(1):'—'}</em><em>${v38Esc(item.key||'—')}</em><em>${item.duration?fmtDeckTime(item.duration):'—'}</em>`;
+    row.onclick=()=>{nevoV38.browserCursor=i;v38Save();v38RenderBrowser()};box.appendChild(row);v424QueueMiniWave(row.querySelector('.v424-miniwave'),item);
+  });
+  requestAnimationFrame(()=>{const sel=box.querySelector('.selected');if(!sel)return;const top=sel.offsetTop,bottom=top+sel.offsetHeight,viewTop=box.scrollTop,viewBottom=viewTop+box.clientHeight;if(top<viewTop)box.scrollTop=top;else if(bottom>viewBottom)box.scrollTop=Math.max(0,bottom-box.clientHeight)});
+  v31UpdateBrowseTitle();
+};
+
+// Redraw previews after analysis so newly available BPM/bar markers appear.
+const v424OldAnalyzeDjItem=analyzeDjItem;
+analyzeDjItem=async function(item,showStatus=true){const r=await v424OldAnalyzeDjItem(item,showStatus);if(item){item.v424MiniWave=null;v38RenderBrowser()}return r};
+const v424OldV32AnalyzeTrack=v32AnalyzeTrack;
+v32AnalyzeTrack=async function(item,showStatus=true){const r=await v424OldV32AnalyzeTrack(item,showStatus);if(item){item.v424MiniWave=null;v38RenderBrowser()}return r};
+
+v38RenderBrowser();
+console.info('NÉVO v4.2.4: colored mini waveforms + 4-bar comparison guides in track browser');

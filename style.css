@@ -1511,3 +1511,24 @@ body.flx-compact-mode .flx4-rotary:after{transform-origin:50% 9px!important}
   .flx4-deck-options{grid-template-columns:minmax(48px,1.3fr) repeat(3,minmax(34px,.7fr));gap:3px}
   .flx4-deck-option{padding:2px 4px;font-size:8px;min-height:25px}
 }
+
+
+/* ===== v4.2.4: compact waveform previews in the FLX4 track library ===== */
+.flx4-browser-track.v424-wave-row{min-height:39px!important}
+.v424-track-main{min-width:0;display:grid!important;grid-template-columns:minmax(66px,.58fr) minmax(82px,1.42fr);gap:6px;align-items:center}
+.v424-track-text{min-width:0;display:block}
+.v424-miniwave-shell{position:relative;display:block;min-width:0;height:17px;border-radius:4px;overflow:hidden;border:1px solid rgba(92,145,176,.14);background:#03090e;box-shadow:inset 0 0 8px rgba(0,0,0,.55)}
+.v424-miniwave{display:block;width:100%;height:100%;pointer-events:none}
+.flx4-browser-track.selected .v424-miniwave-shell{border-color:rgba(84,216,255,.34);box-shadow:inset 0 0 8px rgba(0,0,0,.45),0 0 8px rgba(84,216,255,.08)}
+body.flx-compact-mode .flx4-browser-track.v424-wave-row{min-height:34px!important;padding-top:2px!important;padding-bottom:2px!important}
+body.flx-compact-mode .v424-miniwave-shell{height:14px}
+body.flx-compact-mode .v424-track-main{grid-template-columns:minmax(62px,.58fr) minmax(78px,1.42fr);gap:4px}
+@media(max-width:1180px){
+  .v424-track-main{grid-template-columns:minmax(58px,.62fr) minmax(72px,1.38fr);gap:4px}
+  .v424-miniwave-shell{height:14px}
+}
+@media(max-width:760px){
+  .flx4-browser-track.v424-wave-row{min-height:35px!important}
+  .v424-track-main{grid-template-columns:minmax(54px,.7fr) minmax(60px,1.3fr);gap:3px}
+  .v424-miniwave-shell{height:13px}
+}
