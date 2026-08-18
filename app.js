@@ -919,6 +919,7 @@ bindAudioEditor();bindDjPlayer();
 
 // ===== v2.9: DDJ-FLX4 MODE + GENERIC WEB MIDI LEARN =====
 const FLX_MIDI_STORAGE='nevo-flx4-midi-mappings-v1';
+const FLX_DEFAULT_MAPPING_URL='./flx4-default-mapping.json';
 const FLX_MODE_STORAGE='nevo-dj-view-mode-v1';
 const flxState={mode:'pro',midiAccess:null,learn:false,target:null,mappings:{},lastMidi:new Map(),monitor:false,lastRawMidi:''};
 try{flxState.mappings=JSON.parse(localStorage.getItem(FLX_MIDI_STORAGE)||'{}')||{}}catch{flxState.mappings={}}
@@ -1045,18 +1046,30 @@ function flxMidiMessageKey(data){
   return {key:`${type.toString(16)}:${ch}:${d1}`,norm:clamp(d2/127,0,1)};
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
-function refreshFlxMappingSummary(){const n=Object.keys(flxState.mappings||{}).length;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} Mapping${n===1?'':'s'} gespeichert`}
+function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.0.4',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
-  const payload={app:'NÉVO Studio',version:'3.4',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings};
-  downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
-  flxStatus(currentLang==='de'?'MIDI-Mapping gesichert':'MIDI mapping exported','connected');
+  downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
+  flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
+}
+function exportDefaultFlxMappings(){
+  downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'flx4-default-mapping.json');
+  flxStatus(currentLang==='de'?'Standardprofil exportiert – diese Datei später ins GitHub-Hauptverzeichnis legen':'Default profile exported – place this file in the GitHub root later','connected');
+}
+function cleanFlxMappingCandidate(candidate){const clean={};if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))return clean;for(const [k,v] of Object.entries(candidate))if(typeof k==='string'&&typeof v==='string'&&k&&v)clean[k]=v;return clean}
+async function loadBundledFlxProfile(force=false){
+  try{
+    const res=await fetch(FLX_DEFAULT_MAPPING_URL,{cache:'no-store'});if(!res.ok)throw new Error('profile missing');
+    const data=await res.json(),clean=cleanFlxMappingCandidate(data&&data.mappings?data.mappings:data);if(!Object.keys(clean).length)throw new Error('empty profile');
+    if(!force&&Object.keys(flxState.mappings||{}).length)return false;
+    flxState.mappings=clean;saveFlxMappings();flxStatus(`${Object.keys(clean).length} MIDI-Signale aus DDJ-FLX4-Standardprofil geladen`,'connected');return true;
+  }catch(e){if(force)flxStatus(currentLang==='de'?'Noch kein fertiges Standardprofil hinterlegt':'No finished default profile is bundled yet','error');return false}
 }
 async function importFlxMappings(file){
   if(!file)return;
   try{
     const data=JSON.parse(await file.text()),candidate=data&&data.mappings?data.mappings:data;
-    if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))throw new Error('invalid');
-    const clean={};for(const [k,v] of Object.entries(candidate))if(typeof k==='string'&&typeof v==='string')clean[k]=v;
+    const clean=cleanFlxMappingCandidate(candidate);
     if(!Object.keys(clean).length)throw new Error('empty');
     flxState.mappings=clean;saveFlxMappings();flxStatus(`${Object.keys(clean).length} MIDI-Mappings geladen`,'connected');
   }catch(e){console.warn(e);flxStatus(currentLang==='de'?'Mapping-Datei ungültig':'Invalid mapping file','error')}
@@ -1082,7 +1095,7 @@ function updateFlxMidiMonitor(raw,key,norm){
 }
 function handleFlxMidiMessage(e){
   const raw=e.data||[];const {key,norm}=flxMidiMessageKey(raw);if(!key)return;updateFlxMidiMonitor(raw,key,norm);
-  if(flxState.learn&&flxState.target){if(norm<=.01)return;for(const k of Object.keys(flxState.mappings))if(flxState.mappings[k]===flxState.target)delete flxState.mappings[k];flxState.mappings[key]=flxState.target;saveFlxMappings();const label=flxActionLabel(flxState.target);clearFlxLearnTarget();$('#flxLearnHint').textContent=`Gelernt: ${label}`;flxStatus(`MIDI gelernt: ${label}`,'connected');return}
+  if(flxState.learn&&flxState.target){if(norm<=.01)return;const target=flxState.target,already=Object.values(flxState.mappings).filter(v=>v===target).length;flxState.mappings[key]=target;saveFlxMappings();const label=flxActionLabel(target);clearFlxLearnTarget();$('#flxLearnHint').textContent=`Gelernt: ${label}`;flxStatus(`MIDI gelernt: ${label}${already?' · zusätzliche Pad-Bank/Belegung':''}`,'connected');return}
   const action=flxState.mappings[key];if(!action)return;
   const prev=flxState.lastMidi.get(key)??0;flxState.lastMidi.set(key,norm);
   if(flxIsContinuous(action))flxRunAction(action,norm,true);else if(norm>.45&&prev<=.45)flxRunAction(action,1,true);
@@ -1101,13 +1114,13 @@ function resetFlxMixer(){
 }
 function bindFlx4Mode(){
   if(!$('#flx4Surface'))return;
-  $('#djModePro').onclick=()=>setDjViewMode('pro');$('#djModeFlx4').onclick=()=>setDjViewMode('flx4');$('#flxMidiConnect').onclick=connectFlxMidi;$('#flxMidiLearn').onclick=toggleFlxMidiLearn;$('#flxMidiExport').onclick=exportFlxMappings;$('#flxMidiImport').onchange=e=>{const f=e.target.files?.[0];if(f)importFlxMappings(f);e.target.value=''};$('#flxMidiMonitorBtn').onclick=toggleFlxMidiMonitor;$('#flxMidiReset').onclick=()=>{if(confirm(currentLang==='de'?'Alle MIDI-Zuweisungen löschen?':'Clear all MIDI mappings?')){flxState.mappings={};saveFlxMappings();flxStatus(currentLang==='de'?'MIDI-Zuweisungen gelöscht':'MIDI mappings cleared','')}};$('#flxResetMixer').onclick=resetFlxMixer;
+  $('#djModePro').onclick=()=>setDjViewMode('pro');$('#djModeFlx4').onclick=()=>setDjViewMode('flx4');$('#flxMidiConnect').onclick=connectFlxMidi;$('#flxMidiLearn').onclick=toggleFlxMidiLearn;$('#flxMidiExport').onclick=exportFlxMappings;$('#flxMidiExportDefault').onclick=exportDefaultFlxMappings;$('#flxMidiLoadDefault').onclick=()=>loadBundledFlxProfile(true);$('#flxMidiImport').onchange=e=>{const f=e.target.files?.[0];if(f)importFlxMappings(f);e.target.value=''};$('#flxMidiMonitorBtn').onclick=toggleFlxMidiMonitor;$('#flxMidiReset').onclick=()=>{if(confirm(currentLang==='de'?'Alle MIDI-Zuweisungen löschen?':'Clear all MIDI mappings?')){flxState.mappings={};saveFlxMappings();flxStatus(currentLang==='de'?'MIDI-Zuweisungen gelöscht':'MIDI mappings cleared','')}};$('#flxResetMixer').onclick=resetFlxMixer;
   document.querySelectorAll('#flx4Surface [data-flx-action]').forEach(el=>{
     el.addEventListener('click',e=>{if(flxState.learn){e.preventDefault();e.stopPropagation();selectFlxLearnTarget(el);return}if(el.matches('button'))flxTriggerAction(el.dataset.flxAction)},true);
     if(el.matches('input[type="range"]'))bindFlxRange(el);
   });
   bindFlxJog('A');bindFlxJog('B');
-  const mode=localStorage.getItem(FLX_MODE_STORAGE)||'pro';setDjViewMode(mode);refreshFlxMappingSummary();startFlxTicker();
+  const mode=localStorage.getItem(FLX_MODE_STORAGE)||'pro';setDjViewMode(mode);refreshFlxMappingSummary();loadBundledFlxProfile(false);startFlxTicker();
 }
 
 bindFlx4Mode();
