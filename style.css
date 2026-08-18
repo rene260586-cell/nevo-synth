@@ -1075,3 +1075,110 @@ body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel.expanded .flx4-bro
   body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel{min-height:220px!important;max-height:270px!important}
   body.flx-compact-mode .flx4-mixer-section .flx4-browser-list{max-height:205px!important}
 }
+
+/* ===== v4.1.8: responsive FLX4 center / true horizontal Beat FX =====
+   Fixes the phone/portrait layout from v4.1.7 where the center column became
+   only ~112px wide and forced Beat FX back into a vertical tower. */
+
+/* Beat FX stays LANDSCAPE below the library at normal/laptop widths. */
+.flx4-mixer-section .v415-fx-vertical{
+  grid-template-columns:minmax(92px,1.05fr) minmax(78px,.82fr) minmax(126px,1.35fr) minmax(54px,.65fr) minmax(66px,.72fr)!important;
+  align-items:center!important;
+}
+
+/* Give the library + FX center a useful minimum width on desktop. */
+@media (min-width:761px){
+  .flx4-controller,
+  body.flx-compact-mode .flx4-controller{
+    grid-template-columns:minmax(245px,1fr) 58px minmax(430px,1.25fr) 58px minmax(245px,1fr)!important;
+  }
+  .flx4-mixer-section .v415-fx-vertical{
+    grid-template-columns:minmax(94px,1.05fr) minmax(82px,.82fr) minmax(132px,1.35fr) 58px 72px!important;
+  }
+}
+
+/* Phone / portrait: keep both decks on the first row, mixer strips between
+   them, but move the WHOLE library + Beat FX center to a full-width row below.
+   This removes the cropping seen in v4.1.7 and gives Beat FX room to stay
+   horizontal. */
+@media (max-width:760px){
+  .flx4-controller,
+  body.flx-compact-mode .flx4-controller{
+    grid-template-columns:minmax(0,1fr) 42px 42px minmax(0,1fr)!important;
+    gap:4px!important;
+    overflow:visible!important;
+    width:100%!important;
+  }
+
+  .flx4-controller>.flx4-a{grid-column:1/2!important;grid-row:1!important}
+  .flx4-controller>.flx4-side-mapper.deck-a{grid-column:2/3!important;grid-row:1!important}
+  .flx4-controller>.flx4-side-mapper.deck-b{grid-column:3/4!important;grid-row:1!important}
+  .flx4-controller>.flx4-b{grid-column:4/5!important;grid-row:1!important}
+  .flx4-controller>.flx4-mixer-section{grid-column:1/5!important;grid-row:2!important}
+
+  .flx4-controller>.flx4-side-mapper,
+  body.flx-compact-mode .flx4-controller>.flx4-side-mapper{
+    margin-top:112px!important;
+    padding:4px 2px!important;
+    min-width:0!important;
+  }
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label{
+    grid-template-columns:1fr!important;
+    justify-items:center!important;
+    gap:1px!important;
+  }
+  .flx4-controller>.flx4-side-mapper .flx4-rotary-stack label>span{font-size:4px!important}
+  .flx4-controller>.flx4-side-mapper .flx4-rotary{width:25px!important;height:25px!important;min-height:25px!important}
+  .flx4-controller>.flx4-side-mapper .v414-channel-fader input{height:58px!important}
+
+  .flx4-deck{min-width:0!important;padding:5px!important}
+  .flx4-jog{width:min(100%,150px)!important;max-width:82%!important}
+  .flx4-deck-body{grid-template-columns:34px minmax(0,1fr)!important;gap:2px!important}
+  .flx4-b .flx4-deck-body{grid-template-columns:minmax(0,1fr) 34px!important}
+  .flx4-pitch-column{height:122px!important}
+  .flx4-pitch-column label{height:110px!important}
+  .flx4-pitch-column input{height:82px!important}
+
+  /* Center is now full-width and library-first. */
+  .flx4-mixer-section.v34-mixer{width:100%!important;min-width:0!important}
+  body.flx-compact-mode .flx4-mixer-section .flx4-browser-panel,
+  .flx4-mixer-section .flx4-browser-panel{
+    min-height:250px!important;
+    max-height:330px!important;
+  }
+  body.flx-compact-mode .flx4-mixer-section .flx4-browser-list,
+  .flx4-mixer-section .flx4-browser-list{max-height:270px!important}
+
+  /* Never turn Beat FX into a vertical tower again. If the phone is too
+     narrow, only the FX strip itself can scroll sideways. */
+  .flx4-mixer-section .v415-beatfx-rail{
+    width:100%!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scrollbar-width:thin;
+  }
+  .flx4-mixer-section .v415-fx-vertical{
+    min-width:520px!important;
+    grid-template-columns:100px 82px 140px 58px 70px!important;
+    gap:4px!important;
+  }
+}
+
+/* Very narrow phones: preserve the same physical layout; only reduce the deck
+   chrome. The library remains full width and Beat FX remains horizontal. */
+@media (max-width:480px){
+  .flx4-controller,
+  body.flx-compact-mode .flx4-controller{
+    grid-template-columns:minmax(0,1fr) 34px 34px minmax(0,1fr)!important;
+    gap:2px!important;
+  }
+  .flx4-controller>.flx4-side-mapper,
+  body.flx-compact-mode .flx4-controller>.flx4-side-mapper{margin-top:92px!important}
+  .flx4-controller>.flx4-side-mapper .flx4-rotary{width:21px!important;height:21px!important;min-height:21px!important}
+  .flx4-jog{width:min(100%,126px)!important;max-width:88%!important}
+  .flx4-hardware-top>button{padding:2px!important;font-size:5px!important}
+  .flx4-cuecall span{font-size:4px!important}
+  .flx4-transport button{font-size:7px!important}
+  .flx4-padmode-buttons button{font-size:4.5px!important}
+  .flx4-pads button{min-height:24px!important}
+}
