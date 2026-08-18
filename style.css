@@ -392,3 +392,23 @@ html,body{touch-action:pan-y pinch-zoom;overscroll-behavior-y:auto}
 .flx4-stack-wavewrap{touch-action:pan-y pinch-zoom}
 /* Only controls that genuinely need drag gestures block browser panning. */
 .flx4-jog,.flx4-pads.v34-pads button,.knob{touch-action:none}
+
+
+/* ===== v4.0.2: HARD SCROLL FIX =====
+   Main cause fixed in JS: the FLX ticker no longer rebuilds the song browser
+   every ~80 ms (which repeatedly called scrollIntoView and fought page scroll).
+   These rules also keep nested controls from trapping vertical page gestures. */
+html{overflow-y:auto;scroll-behavior:auto}
+body{overflow-y:visible;-webkit-overflow-scrolling:touch}
+.flx4-browser-list{overscroll-behavior:auto;touch-action:pan-y}
+
+body.nevo-scrolling .glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.nevo-scrolling .ambient{display:none!important}
+body.nevo-scrolling *{scroll-behavior:auto!important}
+
+@media (pointer:coarse), (max-width:900px){
+  .glass{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .ambient{display:none}
+  .knob,.key,.flx4-jog,.flx4-pads.v34-pads button,.clip{touch-action:pan-y!important}
+  .arranger-scroll,.keyboard,.piano-roll-scroll,.flx4-browser-list{overscroll-behavior:auto}
+}

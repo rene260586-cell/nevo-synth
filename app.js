@@ -898,7 +898,7 @@ function syncDeck(letter){const trackBpm=djDeckBpm(letter),masterBpm=clamp(Numbe
 function deckSeekFromWave(letter,e){const d=djDecks[letter];if(!d.item||!Number.isFinite(d.audio.duration))return;const wrap=e.currentTarget,r=wrap.getBoundingClientRect(),ratio=clamp((e.clientX-r.left)/r.width,0,1);if(wrap.dataset.wave==='zoom'){const zr=deckZoomRange(letter);d.audio.currentTime=zr.start+ratio*(zr.end-zr.start)}else d.audio.currentTime=ratio*d.audio.duration;drawDeckZoom(letter,true)}
 function updateCrossfaderGains(){const x=Number($('#djCrossfader')?.value||0),theta=(x+1)*Math.PI/4,a=Math.cos(theta),b=Math.sin(theta);for(const [L,f] of [['A',a],['B',b]]){const d=djDecks[L],vol=Number($(`#deck${L}Volume`)?.value||.9);if(d.gainNode)d.gainNode.gain.setTargetAtTime(vol*f,ctx?.currentTime||0,.01)}}
 function startDjTicker(){
-  let lastUi=0;const tick=ts=>{for(const L of ['A','B']){const d=djDecks[L];if(d.item){const dur=d.audio.duration||d.buffer?.duration||0,cur=d.audio.currentTime||0;if(ts-lastUi>50){$(`#deck${L}Time`).textContent=fmtDeckTime(cur);$(`#deck${L}Duration`).textContent=fmtDeckTime(dur);$(`#deck${L}Playhead`).style.left=(dur?clamp(cur/dur*100,0,100):0)+'%';updateDeckZoomWindow(L)}if(d.loopBeats&&dur){const bpm=djDeckBpm(L),loopEnd=d.loopStart+d.loopBeats*60/bpm;if(cur>=loopEnd-.015)d.audio.currentTime=d.loopStart}drawDeckZoom(L,false)}}if(ts-lastUi>50){lastUi=ts;refreshDeckUi('A');refreshDeckUi('B')}requestAnimationFrame(tick)};requestAnimationFrame(tick)
+  let lastUi=0;const tick=ts=>{const scrolling=!!window.__nevoScrolling;for(const L of ['A','B']){const d=djDecks[L];if(d.item){const dur=d.audio.duration||d.buffer?.duration||0,cur=d.audio.currentTime||0;if(!scrolling&&ts-lastUi>50){$(`#deck${L}Time`).textContent=fmtDeckTime(cur);$(`#deck${L}Duration`).textContent=fmtDeckTime(dur);$(`#deck${L}Playhead`).style.left=(dur?clamp(cur/dur*100,0,100):0)+'%';updateDeckZoomWindow(L)}if(d.loopBeats&&dur){const bpm=djDeckBpm(L),loopEnd=d.loopStart+d.loopBeats*60/bpm;if(cur>=loopEnd-.015)d.audio.currentTime=d.loopStart}if(!scrolling)drawDeckZoom(L,false)}}if(!scrolling&&ts-lastUi>50){lastUi=ts;refreshDeckUi('A');refreshDeckUi('B')}requestAnimationFrame(tick)};requestAnimationFrame(tick)
 }
 function refreshDjV28Labels(){
   const de=currentLang==='de';if($('#djLibrarySearch'))$('#djLibrarySearch').placeholder=de?'Titel suchen …':'Search title …';if($('#djAnalyzeAll'))$('#djAnalyzeAll').textContent=de?'⚡ ALLE ANALYSIEREN':'⚡ ANALYZE ALL';if($('#djClearLibrary'))$('#djClearLibrary').textContent=de?'BIBLIOTHEK LEEREN':'CLEAR LIBRARY';const cols=$$('.dj-library-columns span'),names=de?['TITEL','BPM','LÄNGE','AKTION']:['TITLE','BPM','LENGTH','ACTION'];cols.forEach((x,i)=>x.textContent=names[i]||x.textContent);for(const L of ['A','B']){const deck=document.querySelector(`.dj-deck[data-deck="${L}"]`);if(!deck)continue;const ov=deck.querySelector('.dj-overview-label'),zo=deck.querySelector('.dj-zoom-label');if(ov){ov.querySelector('span').textContent=de?'GESAMT-WELLENFORM':'OVERVIEW WAVEFORM';ov.querySelector('small').textContent=de?'Tippen = springen':'Tap = seek'}if(zo)zo.querySelector('span').textContent=de?'ZOOM-WELLENFORM':'ZOOM WAVEFORM';$(`#deck${L}Analyze`).textContent=de?'⚡ BPM ANALYSE':'⚡ BPM ANALYSIS';$(`#deck${L}TapBpm`).textContent='TAP BPM';$(`#deck${L}GridHere`).textContent=de?'GRID HIER':'GRID HERE';const gt=deck.querySelector('.dj-grid-tools>span');if(gt)gt.textContent='BEATGRID';renderHotCues(L)}renderDjLibrary()
@@ -1037,7 +1037,7 @@ function refreshFlx4Ui(){
   }
   if($('#flxCrossfader')&&document.activeElement!==$('#flxCrossfader'))$('#flxCrossfader').value=$('#djCrossfader')?.value||0;
 }
-function startFlxTicker(){let last=0;const tick=ts=>{if(ts-last>80){last=ts;refreshFlx4Ui()}requestAnimationFrame(tick)};requestAnimationFrame(tick)}
+function startFlxTicker(){let last=0;const tick=ts=>{if(!window.__nevoScrolling&&ts-last>80){last=ts;refreshFlx4Ui()}requestAnimationFrame(tick)};requestAnimationFrame(tick)}
 
 function flxMidiMessageKey(data){
   const status=data[0]||0,type=status&0xF0,ch=status&0x0F,d1=data[1]||0,d2=data[2]||0;
@@ -1238,7 +1238,7 @@ function v3BindControls(){
   v3SetMaster('A');renderDjLibrary();refreshDeckUi('A');refreshDeckUi('B');
 }
 
-function v3Ticker(){for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)&&d.audio.currentTime>=d.manualLoopOut-.012)d.audio.currentTime=d.manualLoopIn;refreshDeckUi(L)}requestAnimationFrame(v3Ticker)}
+function v3Ticker(){for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)&&d.audio.currentTime>=d.manualLoopOut-.012)d.audio.currentTime=d.manualLoopIn}requestAnimationFrame(v3Ticker)}
 
 function refreshV3Labels(){
   const de=currentLang==='de';const cols=$$('.dj-library-columns span'),names=de?['TITEL','BPM','TONART','LÄNGE','AKTION']:['TITLE','BPM','KEY','LENGTH','ACTION'];cols.forEach((x,i)=>x.textContent=names[i]||x.textContent);for(const L of ['A','B']){if($(`#deck${L}Analyze`))$(`#deck${L}Analyze`).textContent=de?'⚡ TRACK ANALYSE':'⚡ TRACK ANALYSIS';const q=$(`#deck${L}Quantize`);if(q)q.textContent=djDecks[L].quantize?(de?'QUANTIZE AN':'QUANTIZE ON'):(de?'QUANTIZE AUS':'QUANTIZE OFF');v3RenderPhrases(L)}const g=$('#globalQuantize');if(g)g.textContent=nevoV3.globalQuantize?(de?'QUANTIZE AN':'QUANTIZE ON'):(de?'QUANTIZE AUS':'QUANTIZE OFF');renderDjLibrary()}
@@ -1694,7 +1694,7 @@ function v36UpdateMeters(){for(const L of ['A','B']){const d=djDecks[L];if(d?.so
 const v36OldRefreshFlx=refreshFlx4Ui;
 refreshFlx4Ui=function(){v36OldRefreshFlx();for(const L of ['A','B'])v36RefreshMemoryUi(L)};
 for(const L of ['A','B'])v36RefreshMemoryUi(L);
-let v36Last=0;function v36Ticker(ts){if(ts-v36Last>55){v36Last=ts;v36UpdateMeters()}requestAnimationFrame(v36Ticker)}requestAnimationFrame(v36Ticker);
+let v36Last=0;function v36Ticker(ts){if(!window.__nevoScrolling&&ts-v36Last>55){v36Last=ts;v36UpdateMeters()}requestAnimationFrame(v36Ticker)}requestAnimationFrame(v36Ticker);
 
 // ===== v3.7: COMPLETE FLX4 PERFORMANCE PADS + SHIFT SECOND LAYER =====
 const V37_SECONDARY={hotcue:'keyboard',padfx:'padfx2',beatjump:'beatloop',sampler:'keyshift'};
@@ -1817,7 +1817,7 @@ function v38ClampCursor(){const n=v38BrowserItems().length;nevoV38.browserCursor
 function v38BrowseItem(){const items=v38BrowserItems();v38ClampCursor();return items[nevoV38.browserCursor]||null}
 function v38RenderBrowser(){const panel=$('#flxBrowserPanel'),box=$('#flxBrowserList');if(!panel||!box)return;panel.classList.toggle('expanded',!!nevoV38.browserExpanded);panel.classList.toggle('crate-focus',nevoV38.browserFocus==='crates');const focus=$('#flxBrowserFocus'),crate=$('#flxBrowserCrate'),count=$('#flxBrowserCount');if(focus)focus.textContent=nevoV38.browserFocus==='crates'?(currentLang==='de'?'PLAYLISTS':'PLAYLISTS'):(currentLang==='de'?'TRACKS':'TRACKS');if(crate)crate.textContent=v38CrateLabel(nevoV38.browserCrate);
   box.innerHTML='';if(nevoV38.browserFocus==='crates'){const crates=v38Crates();let idx=Math.max(0,crates.findIndex(x=>x.id===nevoV38.browserCrate));if(count)count.textContent=`${idx+1} / ${crates.length}`;for(const [i,c] of crates.entries()){const row=document.createElement('button');row.type='button';row.className='flx4-browser-crate'+(c.id===nevoV38.browserCrate?' selected':'');row.innerHTML=`<b>${v38Esc(c.label)}</b><span>${c.id==='all'?djLibrary.length:c.id==='favorites'?djLibrary.filter(x=>(Number(x.rating)||0)>=4).length:djLibrary.filter(x=>(x.crate||'')===c.id.slice(6)).length}</span>`;row.onclick=()=>{nevoV38.browserCrate=c.id;nevoV38.browserCursor=0;v38Save();v38RenderBrowser()};row.ondblclick=()=>{nevoV38.browserFocus='tracks';v38Save();v38RenderBrowser()};box.appendChild(row)}return}
-  const items=v38BrowserItems();v38ClampCursor();if(count)count.textContent=items.length?`${nevoV38.browserCursor+1} / ${items.length}`:'0 / 0';if(!items.length){box.innerHTML=`<div class="flx4-browser-empty">${currentLang==='de'?'Keine Songs in dieser Auswahl.':'No tracks in this selection.'}</div>`;v31UpdateBrowseTitle();return}items.forEach((item,i)=>{const row=document.createElement('button');row.type='button';row.className='flx4-browser-track'+(i===nevoV38.browserCursor?' selected':'');row.dataset.id=item.id;row.innerHTML=`<span><b>${v38Esc(item.title||cleanDjTitle(item.name))}</b><small>${v38Esc(item.artist||item.name||'')}</small></span><em>${item.bpm?Number(item.bpm).toFixed(1):'—'}</em><em>${v38Esc(item.key||'—')}</em><em>${item.duration?fmtDeckTime(item.duration):'—'}</em>`;row.onclick=()=>{nevoV38.browserCursor=i;v38Save();v38RenderBrowser()};box.appendChild(row)});requestAnimationFrame(()=>box.querySelector('.selected')?.scrollIntoView({block:'nearest'}));v31UpdateBrowseTitle()}
+  const items=v38BrowserItems();v38ClampCursor();if(count)count.textContent=items.length?`${nevoV38.browserCursor+1} / ${items.length}`:'0 / 0';if(!items.length){box.innerHTML=`<div class="flx4-browser-empty">${currentLang==='de'?'Keine Songs in dieser Auswahl.':'No tracks in this selection.'}</div>`;v31UpdateBrowseTitle();return}items.forEach((item,i)=>{const row=document.createElement('button');row.type='button';row.className='flx4-browser-track'+(i===nevoV38.browserCursor?' selected':'');row.dataset.id=item.id;row.innerHTML=`<span><b>${v38Esc(item.title||cleanDjTitle(item.name))}</b><small>${v38Esc(item.artist||item.name||'')}</small></span><em>${item.bpm?Number(item.bpm).toFixed(1):'—'}</em><em>${v38Esc(item.key||'—')}</em><em>${item.duration?fmtDeckTime(item.duration):'—'}</em>`;row.onclick=()=>{nevoV38.browserCursor=i;v38Save();v38RenderBrowser()};box.appendChild(row)});requestAnimationFrame(()=>{const sel=box.querySelector('.selected');if(!sel)return;const top=sel.offsetTop,bottom=top+sel.offsetHeight,viewTop=box.scrollTop,viewBottom=viewTop+box.clientHeight;if(top<viewTop)box.scrollTop=top;else if(bottom>viewBottom)box.scrollTop=Math.max(0,bottom-box.clientHeight)});v31UpdateBrowseTitle()}
 function v38BrowseMove(delta){if(nevoV38.browserFocus==='crates'){const list=v38Crates();let i=Math.max(0,list.findIndex(x=>x.id===nevoV38.browserCrate));i=(i+delta+list.length)%list.length;nevoV38.browserCrate=list[i].id;nevoV38.browserCursor=0}else{const n=v38BrowserItems().length;if(n)nevoV38.browserCursor=(nevoV38.browserCursor+delta+n)%n}v38Save();v38RenderBrowser()}
 function v38BrowseOpen(){nevoV38.browserFocus=nevoV38.browserFocus==='crates'?'tracks':'crates';v38Save();v38RenderBrowser();setStatus(true,'BROWSE',nevoV38.browserFocus==='tracks'?(currentLang==='de'?'Track-Liste':'Track list'):(currentLang==='de'?'Playlists':'Playlists'))}
 function v38BrowseBack(){if(nevoV38.browserFocus==='tracks'){nevoV38.browserFocus='crates'}else{nevoV38.browserCrate='all';nevoV38.browserCursor=0}v38Save();v38RenderBrowser()}
@@ -1876,7 +1876,7 @@ const v38OldPadDown=v37PadDown;v37PadDown=async function(letter,index,source='sc
 const v38OldSyncDeck=syncDeck;syncDeck=function(letter){const d=djDecks[letter],M=nevoV3.masterDeck,master=djDecks[M];if(!d?.item)return;if(M===letter||!master?.item)return v38OldSyncDeck(letter);const target=v3EffectiveBpm(M),base=djDeckBpm(letter),limit=v38TempoLimit(letter),pct=clamp((target/base-1)*100,-limit,limit);v38SetPitchPct(letter,pct);if(d.quantize&&nevoV3.globalQuantize){const p=djBeatPeriod(letter),off=djNormalizeOffset(d.beatOffset||0,p),phase=v3PhaseFraction(M),cur=d.audio.currentTime||0,beatFloat=(cur-off)/p,beatIndex=Math.round(beatFloat-phase);d.audio.currentTime=clamp(off+(beatIndex+phase)*p,0,d.audio.duration||0)}setStatus(true,'BEAT SYNC',`DECK ${letter} → MASTER ${M} · ${target.toFixed(2)} BPM · ${v38TempoRangeLabel(letter)}`);drawDeckZoom(letter,true);refreshDeckUi(letter)};
 
 const v38OldEnsureDeck=ensureDeckConnected;ensureDeckConnected=async function(deck){await v38OldEnsureDeck(deck);await v38EnsureSmartFx(deck.letter);v38SmartFxApply(deck.letter)};
-const v38OldRefreshFlx=refreshFlx4Ui;refreshFlx4Ui=function(){v38OldRefreshFlx();v38RefreshSmartUi();v38RefreshTempoRange('A');v38RefreshTempoRange('B');v38RenderBrowser()};
+const v38OldRefreshFlx=refreshFlx4Ui;refreshFlx4Ui=function(){v38OldRefreshFlx();v38RefreshSmartUi();v38RefreshTempoRange('A');v38RefreshTempoRange('B')};
 const v38OldSetLanguage=setLanguage;setLanguage=function(lang){v38OldSetLanguage(lang);v38RenderBrowser();v38RefreshSmartUi()};
 
 function v38Bind(){for(const L of ['A','B']){v38RefreshTempoRange(L);const d=djDecks[L];if(d&&!Number.isFinite(d.v38ManualFilter))d.v38ManualFilter=Number(d.filterValue)||0}v38RefreshSmartUi();v38RenderBrowser();v38Save();setTimeout(()=>{for(const L of ['A','B'])if(djDecks[L]?.source)v38EnsureSmartFx(L).then(()=>v38SmartFxApply(L))},500)}
@@ -2012,13 +2012,14 @@ v40ClearMarkers=function(letter){
 // While the user is physically scrolling the page, pause the expensive moving
 // waveform redraws. Audio keeps playing; visual redraw resumes immediately after.
 function v401ScrollingPulse(){
-  nevoV401.scrolling=true;clearTimeout(nevoV401.scrollTimer);
+  nevoV401.scrolling=true;window.__nevoScrolling=true;document.body?.classList.add('nevo-scrolling');clearTimeout(nevoV401.scrollTimer);
   nevoV401.scrollTimer=setTimeout(()=>{
-    nevoV401.scrolling=false;
+    nevoV401.scrolling=false;window.__nevoScrolling=false;document.body?.classList.remove('nevo-scrolling');
     try{v34DrawStack('A',true);v34DrawStack('B',true);v40RefreshLoopOverlay('A');v40RefreshLoopOverlay('B')}catch{}
-  },140)
+  },220)
 }
 window.addEventListener('scroll',v401ScrollingPulse,{passive:true});
+window.addEventListener('wheel',v401ScrollingPulse,{passive:true});
 document.addEventListener('touchmove',v401ScrollingPulse,{passive:true,capture:true});
 document.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&Math.abs(e.movementY||0)>1)v401ScrollingPulse()},{passive:true,capture:true});
 
@@ -2034,3 +2035,6 @@ for(const el of document.querySelectorAll('[data-flx-stack-seek]')){
   el.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')return;if(Math.abs(e.clientY-sy)>8||Math.abs(e.clientX-sx)>12)moved=true},{passive:true});
   el.addEventListener('click',e=>{if(moved&&e.detail!==0){e.preventDefault();e.stopImmediatePropagation();moved=false}},true)
 }
+
+// ===== v4.0.2: HARD SCROLL FIX =====
+console.info('NÉVO v4.0.2 scroll fix active: browser rebuild removed from FLX ticker');
