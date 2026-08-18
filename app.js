@@ -2229,3 +2229,77 @@ function v405RefreshPhysicalUi(){
 v405BindMomentaryButtons();v405RefreshPhysicalUi();
 setTimeout(()=>{v405BindMomentaryButtons();v405RefreshPhysicalUi();},350);
 console.info('NÉVO v4.0.5: momentary SHIFT, cue hold and safe PFL routing active');
+
+// ===== v4.0.6: BEAT FX 3-POSITION CHANNEL + SELECT/BROWSE/CONFIRM =====
+// The on-screen section now mirrors the physical workflow more clearly:
+// channel target has three explicit positions (1 / 2 / 1&2). FX SELECT opens
+// the effect list; while it is open, BEAT left/right browses the list and a
+// second FX SELECT press confirms. Outside the menu, BEAT left/right still
+// adjusts the effect's beat length so that function is not lost.
+const nevoV406Fx={menuOpen:false,index:0};
+function v406FxList(){return Array.isArray(V35_FX_NAMES)&&V35_FX_NAMES.length?V35_FX_NAMES:['ECHO','REVERB','DELAY','FLANGER','PHASER','FILTER','ROLL']}
+function v406FxDisplayName(name){return name==='REVERB'?'REVERB / HALL':name}
+function v406SetFxChannel(channel){
+  if(!['A','B','AB'].includes(channel))return;
+  nevoV34.fx.channel=channel;v34Save();v34RefreshFx();try{v35ApplyFx()}catch{}
+  setStatus(true,'BEAT FX KANAL',channel==='A'?'KANAL 1':channel==='B'?'KANAL 2':'KANAL 1 & 2');
+}
+function v406RefreshChannelSegments(){
+  document.querySelectorAll('#flxFxChannel [data-fx-channel]').forEach(b=>b.classList.toggle('active',b.dataset.fxChannel===nevoV34.fx.channel));
+}
+function v406RefreshFxBrowse(){
+  const menu=$('#flxFxMenu'),list=v406FxList();if(!menu)return;
+  menu.classList.toggle('fx-browse-open',nevoV406Fx.menuOpen);
+  menu.querySelectorAll('[data-fx-name]').forEach((b,i)=>{
+    b.classList.toggle('preview',nevoV406Fx.menuOpen&&i===nevoV406Fx.index);
+    b.classList.toggle('active',!nevoV406Fx.menuOpen&&b.dataset.fxName===nevoV34.fx.name);
+  });
+  const select=$('#flxFxSelectBtn'),label=$('#flxFxCenterLabel'),readout=$('#flxFxBeat');
+  if(nevoV406Fx.menuOpen){
+    const candidate=list[nevoV406Fx.index]||nevoV34.fx.name;
+    if(select)select.textContent='FX SELECT ✓';
+    if(label)label.textContent='FX AUSWAHL';
+    if(readout)readout.textContent=v406FxDisplayName(candidate);
+  }else{
+    if(select)select.textContent='FX SELECT';
+    if(label)label.textContent='BEAT-LÄNGE';
+    if(readout){const b=Number(nevoV34.fx.beat)||1;readout.textContent=`${b} ${b===1?'BEAT':'BEATS'}`}
+  }
+}
+function v406OpenFxBrowse(){
+  const list=v406FxList();nevoV406Fx.index=Math.max(0,list.indexOf(nevoV34.fx.name));nevoV406Fx.menuOpen=true;
+  const menu=$('#flxFxMenu');if(menu)menu.hidden=false;v406RefreshFxBrowse();
+}
+function v406ConfirmFxBrowse(){
+  const list=v406FxList(),name=list[nevoV406Fx.index]||nevoV34.fx.name;nevoV406Fx.menuOpen=false;
+  v35SelectFx(name);v406RefreshFxBrowse();
+}
+function v406FxSelectPress(){if(nevoV406Fx.menuOpen)v406ConfirmFxBrowse();else v406OpenFxBrowse()}
+function v406FxBrowseStep(dir){
+  const list=v406FxList();if(!list.length)return;
+  nevoV406Fx.index=(nevoV406Fx.index+(dir<0?-1:1)+list.length)%list.length;v406RefreshFxBrowse();
+}
+
+// Override the v3.5 select-cycle hook with the two-step open/confirm workflow.
+v34FxCycle=function(){v406FxSelectPress()};
+const v406AdjustBeat=v34FxBeat;
+v34FxBeat=function(dir){if(nevoV406Fx.menuOpen)return v406FxBrowseStep(dir);const r=v406AdjustBeat(dir);v406RefreshFxBrowse();return r};
+
+// Keep old on-screen cycling behavior available for the single generic mapping,
+// but make the actual screen control explicit with 3 positions.
+const v406RefreshFxBase=v34RefreshFx;
+v34RefreshFx=function(){const r=v406RefreshFxBase();v406RefreshChannelSegments();v406RefreshFxBrowse();return r};
+
+function v406BindFxUi(){
+  document.querySelectorAll('#flxFxChannel [data-fx-channel]').forEach(btn=>{
+    if(btn.dataset.v406Bound)return;btn.dataset.v406Bound='1';
+    btn.addEventListener('click',e=>{if(flxState.learn)return;e.preventDefault();e.stopPropagation();v406SetFxChannel(btn.dataset.fxChannel)});
+  });
+  // Clicking an item with the mouse/touch is still a quick direct selection.
+  document.querySelectorAll('#flxFxMenu [data-fx-name]').forEach(btn=>{
+    btn.addEventListener('click',()=>{nevoV406Fx.menuOpen=false;setTimeout(v406RefreshFxBrowse,0)});
+  });
+  v406RefreshChannelSegments();v406RefreshFxBrowse();
+}
+v406BindFxUi();setTimeout(v406BindFxUi,350);
+console.info('NÉVO v4.0.6: Beat FX channel 1/2/1&2 and FX browse/confirm workflow active');
