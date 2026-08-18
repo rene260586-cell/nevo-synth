@@ -1064,7 +1064,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.5',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.6',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2943,7 +2943,7 @@ for(const L of ['A','B'])v423RefreshDeckOptionUi(L);
 console.info('NÉVO v4.2.4: RANGE / SLIP / Q / MT touch controls active on both decks');
 
 
-// ===== v4.2.5: 32-BEAT TRUE MINI WAVES + INSTANT/FLUID WAVE PIPELINE =====
+// ===== v4.2.6: 32-BEAT TRUE MINI WAVES + INSTANT/FLUID WAVE PIPELINE =====
 // The library preview is now a real 32-beat excerpt using the same waveform
 // statistics, colors and beat grid as the large parallel deck waveform.
 // Analysis/decode work is cached once so live deck waveforms can repaint quickly.
@@ -3077,4 +3077,103 @@ requestAnimationFrame(v425LiveWaveTicker);
 // in the background, with no user click required.
 setTimeout(()=>{for(const item of djLibrary)if(item.bpm&&!item.v425Wave32)v425SchedulePreview(item);v38RenderBrowser()},650);
 setTimeout(()=>{for(const item of djLibrary)if(item.bpm&&!item.v425Wave32)v425SchedulePreview(item);v38RenderBrowser()},1700);
-console.info('NÉVO v4.2.5: true 32-beat minis + immediate decode/analysis UI + cached fluid waveforms active');
+console.info('NÉVO v4.2.6: true 32-beat minis + immediate decode/analysis UI + cached fluid waveforms active');
+
+
+// ===== v4.2.6: PRO PERFORMANCE WAVEFORM — 2/4/6 BEATS MAIN, 32-BEAT MINI ONLY =====
+// The 32-beat rule belongs only to the library mini preview. The large parallel
+// performance waveform stays close around the playhead (2, 4 or 6 beats), just
+// like a DJ deck. It uses raw audio for the short window so the shape is detailed
+// instead of looking like coarse cached blocks.
+const V426_MAIN_WAVE_BEATS=[2,4,6];
+if(!V426_MAIN_WAVE_BEATS.includes(Number(nevoV34.waveBeats)))nevoV34.waveBeats=4;
+try{v34Save()}catch{}
+const v426ZoomSelect=$('#flxWaveBeats');
+if(v426ZoomSelect){
+  v426ZoomSelect.innerHTML='<option value="2">2 BEATS</option><option value="4">4 BEATS</option><option value="6">6 BEATS</option>';
+  v426ZoomSelect.value=String(nevoV34.waveBeats);
+}
+
+function v426RawColumnStats(data,i0,i1){
+  if(!data||i1<=i0)return {peak:0,mean:0,rms:0,z:0,crest:1};
+  const span=i1-i0,stride=Math.max(1,Math.floor(span/72));
+  let peak=0,sum=0,sq=0,n=0,zc=0,last=0,have=false;
+  for(let i=i0;i<i1;i+=stride){
+    const v=data[i]||0,a=Math.abs(v);peak=Math.max(peak,a);sum+=a;sq+=v*v;n++;
+    if(have&&((v>=0)!==(last>=0)))zc++;last=v;have=true;
+  }
+  const mean=n?sum/n:0,rms=n?Math.sqrt(sq/n):0,z=n>1?zc/(n-1):0;
+  return {peak,mean,rms,z,crest:peak/Math.max(.018,rms)};
+}
+function v426ProWaveColor(st,alpha=.98){
+  // Warm = body/low-mid energy, green = transients, cyan/blue = high-frequency detail.
+  const hi=clamp(st.z*4.8,0,1),body=clamp((st.rms||st.mean)*5.2,0,1),tr=clamp(((st.crest||1)-1.35)/4.6,0,1);
+  let hue=12 + hi*178;                 // orange/red -> cyan/blue
+  hue += tr*(1-hi)*28;                 // transient accents move toward yellow/green
+  const sat=88 + 8*tr, light=49 + 10*tr + 4*(1-body);
+  return `hsla(${hue.toFixed(1)},${sat.toFixed(1)}%,${light.toFixed(1)}%,${alpha})`;
+}
+function v426DrawPerformanceWave(buffer,canvas,startSec,endSec,letter='A'){
+  if(!buffer||!canvas)return;
+  const rect=canvas.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(64,Math.round(rect.height||118));
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  const pw=Math.round(w*dpr),ph=Math.round(h*dpr);if(canvas.width!==pw)canvas.width=pw;if(canvas.height!==ph)canvas.height=ph;
+  const c=canvas.getContext('2d',{alpha:false});c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  const dur=buffer.duration||0,end=clamp(endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001));
+  v425PaintWaveBackground(c,w,h);
+  const d=djDecks?.[letter],bpm=d?djDeckBpm(letter):0;v425PaintGrid(c,w,h,start,end,bpm,d?.beatOffset||0,false);
+  const data=buffer.getChannelData(0),sr=buffer.sampleRate,stats=new Array(w),amps=new Float32Array(w);
+  for(let x=0;x<w;x++){
+    const t0=start+(x/w)*(end-start),t1=start+((x+1)/w)*(end-start),i0=clamp(Math.floor(t0*sr),0,data.length-1),i1=clamp(Math.max(i0+1,Math.ceil(t1*sr)),i0+1,data.length);
+    const st=v426RawColumnStats(data,i0,i1);stats[x]=st;
+    // RMS carries musical body; peak keeps kicks/transients sharp without flattening everything.
+    const energy=Math.max(clamp(st.rms*3.25,0,1),clamp(st.peak*.72,0,1));amps[x]=energy;
+  }
+  // Tiny 3-pixel smoothing removes stair steps but preserves kick attacks.
+  const smooth=new Float32Array(w);for(let x=0;x<w;x++){const a=amps[Math.max(0,x-1)],b=amps[x],cc=amps[Math.min(w-1,x+1)];smooth[x]=a*.18+b*.64+cc*.18}
+  const mid=h*.5,maxAmp=h*.455;
+  c.lineWidth=1;
+  for(let x=0;x<w;x++){
+    const amp=Math.max(.75,smooth[x]*maxAmp),st=stats[x];c.strokeStyle=v426ProWaveColor(st,.98);c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke();
+  }
+  // Crisp center reference + subtle deck tint, without washing out waveform colors.
+  c.fillStyle='rgba(255,255,255,.10)';c.fillRect(0,Math.round(mid),w,1);
+  const tint=c.createLinearGradient(0,0,w,0);tint.addColorStop(0,letter==='A'?'rgba(84,216,255,.035)':'rgba(255,181,94,.035)');tint.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=tint;c.fillRect(0,0,w,h);
+}
+
+// Main parallel deck waveform: high-resolution raw short window, never the 32-beat mini cache.
+const v426OldStackRange=v34StackRange;
+v34StackRange=function(letter){
+  if(!V426_MAIN_WAVE_BEATS.includes(Number(nevoV34.waveBeats)))nevoV34.waveBeats=4;
+  return v426OldStackRange(letter);
+};
+v34DrawStack=function(letter,force=false){
+  const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv)return;
+  const r=v34StackRange(letter),key=`${r.start.toFixed(3)}:${r.end.toFixed(3)}:${nevoV34.waveBeats}`;
+  if(!force&&d.v34StackKey===key)return;d.v34StackKey=key;
+  v426DrawPerformanceWave(d.buffer,cv,r.start,r.end,letter);v34BeatOverlay(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter);
+  const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`;
+};
+
+// The library mini remains exactly 32 beats, but adopts the same stronger pro color language.
+const v426OldDrawMini=v425DrawMiniWave;
+v425DrawMiniWave=function(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32;if(!p||!Array.isArray(p.data)||p.v!==425)return v426OldDrawMini(canvas,item);
+  const rect=canvas.getBoundingClientRect(),w=Math.max(72,Math.round(rect.width||180)),h=Math.max(13,Math.round(rect.height||17)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);v425PaintWaveBackground(c,w,h);v425PaintGrid(c,w,h,p.start,p.end,p.bpm,p.beatOffset,false);
+  const mid=h/2;for(let x=0;x<w;x++){const st0=v425PreviewStats(p,x,w),st={...st0,rms:st0.mean,crest:st0.peak/Math.max(.025,st0.mean)};const amp=Math.max(.65,Math.max(st0.mean*3.1,st0.peak*.72)*(h*.45));c.strokeStyle=v426ProWaveColor(st,.96);c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke()}
+};
+
+// More immediate visual cadence for performance/jog movement. The raw window is only
+// 2–6 beats, so this remains light enough while being visibly smoother.
+let v426WaveTick=0;function v426PerformanceTicker(ts){
+  if(!window.__nevoScrolling&&ts-v426WaveTick>=33){v426WaveTick=ts;for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&!d.audio.paused)try{v34DrawStack(L,false)}catch{}}}
+  requestAnimationFrame(v426PerformanceTicker)
+}requestAnimationFrame(v426PerformanceTicker);
+
+// Re-bind zoom because v3.4 attached an older listener before the options were restricted.
+if(v426ZoomSelect){
+  v426ZoomSelect.onchange=e=>{const n=Number(e.target.value);nevoV34.waveBeats=V426_MAIN_WAVE_BEATS.includes(n)?n:4;v34Save();djDecks.A.v34StackKey='';djDecks.B.v34StackKey='';v34DrawStack('A',true);v34DrawStack('B',true)};
+}
+setTimeout(()=>{try{v34DrawStack('A',true);v34DrawStack('B',true);v38RenderBrowser()}catch{}},250);
+console.info('NÉVO v4.2.6: pro detailed 2/4/6-beat performance wave + 32-beat mini only');
