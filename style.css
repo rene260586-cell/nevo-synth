@@ -442,3 +442,12 @@ body{padding:0!important;min-height:0!important}
 /* Dedicated browser list may scroll itself only when the pointer is actually over it. */
 .flx4-browser-list{overscroll-behavior:contain}
 body.nevo-scrolling .ambient{display:none!important}
+
+
+/* v4.0.5 physical-control clarity */
+.flx-backup-help{flex-basis:100%;opacity:.78;font-size:.74rem;padding:.15rem .35rem}
+.flx4-control-section-title{grid-column:1/-1;font-size:.72rem;letter-spacing:.16em;font-weight:900;color:#ffb15d;margin:.1rem 0 .25rem}
+.flx4-master-knob small{display:block;font-size:.62rem;opacity:.66;margin-top:.15rem;letter-spacing:.06em}
+.flx4-master-emphasis{outline:1px solid rgba(255,177,93,.28);border-radius:12px;padding:.5rem}
+.flx4-beatfx-title small{display:block;font-size:.68rem;opacity:.7;margin-top:.2rem}
+.flx4-channel-cue.active{box-shadow:0 0 0 1px rgba(72,215,255,.75),0 0 18px rgba(72,215,255,.25)}

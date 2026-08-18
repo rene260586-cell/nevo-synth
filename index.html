@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="NÉVO Studio" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>NÉVO Studio v4.0.4</title>
+  <title>NÉVO Studio v4.0.5</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <header class="topbar glass">
       <div class="brand">
         <div class="brand-main">NÉVO</div>
-        <div class="brand-sub">STUDIO <span>v4.0.4</span></div>
+        <div class="brand-sub">STUDIO <span>v4.0.5</span></div>
       </div>
 
       <div class="transport">
@@ -99,6 +99,7 @@
             <button id="flxMidiReset" class="btn small" type="button">MAPPINGS LÖSCHEN</button>
             <span id="flxMidiStatus" class="flx-midi-status">Kein MIDI-Gerät verbunden</span>
             <span id="flxMidiMonitor" class="flx-midi-monitor">Noch kein MIDI-Signal</span>
+            <small class="flx-backup-help">MAPPING SICHERN = persönliches Backup. MAPPING LADEN = Backup später wiederherstellen.</small>
           </div>
           <div class="dj-master-strip">
             <span>MASTER DECK</span>
@@ -131,7 +132,7 @@
 
         <div id="flx4Surface" class="flx4-surface" hidden>
           <div class="flx4-helpbar">
-            <strong>DDJ-FLX4 MODUS · v4.0.4</strong>
+            <strong>DDJ-FLX4 MODUS · v4.0.5</strong>
             <span>FLX4 Multi-Bank MIDI: Hot Cue, Pad FX, Beat Jump und Sampler können parallel angelernt werden, ohne sich gegenseitig zu überschreiben. Ein fertiges DDJ-FLX4-Standardprofil kann automatisch für neue Nutzer geladen werden.</span>
           </div>
 
@@ -215,12 +216,13 @@
                   <label class="flx4-fader">CH 1<input data-flx-action="A.volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
                 </div>
                 <div class="flx4-master-column v34-master">
+                  <div class="flx4-control-section-title">MASTER / KOPFHÖRER</div>
                   <div class="flx4-vu-panel" aria-label="Pegelanzeigen"><div><span>CH 1</span><i class="flx4-vu"><b id="flxVuA"></b></i></div><div><span>CH 2</span><i class="flx4-vu"><b id="flxVuB"></b></i></div><div><span>MASTER</span><i class="flx4-vu"><b id="flxVuM"></b></i></div></div>
-                  <label class="flx4-master-knob">MASTER LEVEL<input data-flx-action="master.level" type="range" min="0" max="1.25" step="0.01" value="0.85"></label>
+                  <label class="flx4-master-knob flx4-master-emphasis">MASTER LEVEL <small>GESAMTLAUTSTÄRKE</small><input data-flx-action="master.level" type="range" min="0" max="1.25" step="0.01" value="0.85"></label>
                   <button id="flxMasterCue" class="flx4-master-cue" data-flx-action="master.cue" type="button"><b>CUE</b><small>MASTER</small></button>
-                  <label class="flx4-master-knob">MIC LEVEL<input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
-                  <label class="flx4-master-knob">HEADPHONES MIX<input data-flx-action="headphones.mix" type="range" min="0" max="1" step="0.01" value="0.5"></label>
-                  <label class="flx4-master-knob">CUE LEVEL<input data-flx-action="cue.level" type="range" min="0" max="1" step="0.01" value="0.75"></label>
+                  <label class="flx4-master-knob">MIC LEVEL <small>MIKROFON</small><input data-flx-action="mic.level" type="range" min="0" max="1" step="0.01" value="0"></label>
+                  <label class="flx4-master-knob">KOPFHÖRER MIX <small>CUE ↔ MASTER</small><input data-flx-action="headphones.mix" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+                  <label class="flx4-master-knob">KOPFHÖRER LEVEL <small>LAUTSTÄRKE</small><input data-flx-action="cue.level" type="range" min="0" max="1" step="0.01" value="0.75"></label>
                   <div class="flx4-smart-row"><button data-flx-action="smart.cfx" type="button">SMART CFX<small id="flxSmartCfxState">P1 · AUS</small></button><button data-flx-action="smart.fader" type="button">SMART FADER<small id="flxSmartFaderState">P1 · AUS</small></button></div>
                   <div class="flx4-mid-buttons"><button data-flx-action="A.keylock" type="button">KEY LOCK A</button><button data-flx-action="B.keylock" type="button">KEY LOCK B</button></div>
                   <div class="flx4-mid-buttons v31"><button data-flx-action="A.synclock" type="button">SYNC LOCK A</button><button data-flx-action="B.synclock" type="button">SYNC LOCK B</button></div>
@@ -237,7 +239,7 @@
                 </div>
               </div>
               <section class="flx4-beatfx">
-                <div class="flx4-beatfx-title"><b>BEAT FX</b><span id="flxFxName">ECHO</span></div>
+                <div class="flx4-beatfx-title"><b>BEAT FX</b><span id="flxFxName">ECHO</span><small>CH 1 / CH 2 / 1&2 · FX SELECT · BEAT · LEVEL/DEPTH · ON/OFF</small></div>
                 <div class="flx4-beatfx-grid">
                   <button data-flx-action="fx.channel" id="flxFxChannel" type="button">CH 1</button>
                   <button data-flx-action="fx.select" id="flxFxSelectBtn" type="button">FX SELECT ▾</button>

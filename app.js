@@ -1047,7 +1047,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.0.4',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.0.5',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -2121,3 +2121,111 @@ console.info('NÉVO v4.0.2 scroll fix active: browser rebuild removed from FLX t
 
   console.info('NÉVO v4.0.3 dedicated app scroller active');
 })();
+
+
+// ===== v4.0.5: MOMENTARY SHIFT + REAL CUE HOLD + SAFE PFL ROUTING =====
+// FLX4 sends Note-Off as 0x80 on some controls. Normalize it to the same key as
+// the Note-On so held controls (SHIFT, CUE and pads) get a reliable release event.
+flxMidiMessageKey=function(data){
+  const status=data[0]||0,type=status&0xF0,ch=status&0x0F,d1=data[1]||0,d2=data[2]||0;
+  if(type===0xE0)return {key:`e0:${ch}:pitch`,norm:clamp(((d2<<7)|d1)/16383,0,1)};
+  if(type===0x80)return {key:`90:${ch}:${d1}`,norm:0};
+  if(type===0x90)return {key:`90:${ch}:${d1}`,norm:clamp(d2/127,0,1)};
+  return {key:`${type.toString(16)}:${ch}:${d1}`,norm:clamp(d2/127,0,1)};
+};
+
+function v405SetShift(letter,on){
+  on=!!on;nevoV34.shift[letter]=on;v34Save();
+  document.querySelector(`[data-flx-action="${letter}.shift"]`)?.classList.toggle('active',on);
+  try{v37RefreshPadMode(letter)}catch{}
+}
+
+// A quick CUE press returns to the stored cue point. Holding it turns it into a
+// Cue Point Sampler: play from CUE only while held, then return to CUE on release.
+function v405CuePress(letter){
+  const d=djDecks[letter];if(!d?.item)return;
+  clearTimeout(d._v405CueTimer);d._v405CueHeld=false;d._v405CueDown=true;
+  const cue=clamp(Number(d.cue)||0,0,d.audio.duration||d.buffer?.duration||0);
+  d.audio.pause();try{d.audio.currentTime=cue}catch{};refreshDeckUi(letter);
+  d._v405CueTimer=setTimeout(async()=>{
+    if(!d._v405CueDown)return;d._v405CueHeld=true;
+    try{await ensureDeckConnected(d);await d.audio.play()}catch(e){console.warn(e)}
+    refreshDeckUi(letter);
+  },120);
+}
+function v405CueRelease(letter){
+  const d=djDecks[letter];if(!d?.item)return;
+  d._v405CueDown=false;clearTimeout(d._v405CueTimer);
+  if(d._v405CueHeld){d.audio.pause();try{d.audio.currentTime=clamp(Number(d.cue)||0,0,d.audio.duration||0)}catch{};d._v405CueHeld=false;refreshDeckUi(letter)}
+}
+
+function v405DedicatedCueReady(){
+  return !!(nevoV31?.cueOutputId && typeof v31CueAudio('A').setSinkId==='function');
+}
+
+// PFL/CUE must never suddenly appear on the master speakers. If no dedicated
+// browser output is selected, arm the button visually but keep the cue audio muted
+// and explain what to do. Once a headphone output is selected, CUE is independent
+// from the channel fader and crossfader, as on a DJ mixer.
+const v405OldTogglePfl=v31TogglePfl;
+v31TogglePfl=async function(letter){
+  const d=djDecks[letter];if(!d?.item)return;
+  const turningOn=!nevoV31.pfl[letter];
+  if(turningOn&&!v405DedicatedCueReady()){
+    nevoV31.pfl[letter]=true;const a=v31CueAudio(letter);a.pause();a.volume=0;v31RefreshPfl(letter);
+    setStatus(true,'KOPFHÖRER CUE',currentLang==='de'?'CUE ist vorgemerkt. Unter KOPFHÖRER / PFL zuerst AUSGÄNGE LADEN und den Kopfhörer-Ausgang wählen – sonst wird nichts auf die Boxen geschickt.':'CUE armed. Load outputs and select a headphone output first; it will not be sent to the speakers.');
+    return;
+  }
+  return v405OldTogglePfl(letter);
+};
+
+// When a dedicated cue output is selected after CUE was armed, start that PFL path.
+const v405OldSetCueOutput=v31SetCueOutput;
+v31SetCueOutput=async function(id){
+  await v405OldSetCueOutput(id);
+  if(id){for(const L of ['A','B'])if(nevoV31.pfl[L]){const d=djDecks[L],a=v31CueAudio(L);if(d?.item){if(a.src!==d.item.url)a.src=d.item.url;try{a.currentTime=d.audio.currentTime||0}catch{};a.playbackRate=d.audio.playbackRate||1;a.volume=v35CueDeckVolume(L);try{await a.play()}catch(e){console.warn(e)}}}}
+  else{for(const L of ['A','B']){const a=v31CueAudio(L);a.pause();a.volume=0}}
+  v35UpdateHeadphoneVolumes();
+};
+
+// The screen SHIFT buttons are momentary too. Suppress their old click-toggle.
+// The large deck CUE buttons also use press/release instead of a click toggle.
+const v405OldFlxTrigger=flxTriggerAction;
+flxTriggerAction=function(action){
+  if(/^([AB])\.shift$/.test(action||''))return;
+  if(/^([AB])\.cue$/.test(action||''))return;
+  return v405OldFlxTrigger(action);
+};
+
+function v405BindMomentaryButtons(){
+  for(const L of ['A','B']){
+    const shift=document.querySelector(`[data-flx-action="${L}.shift"]`);
+    if(shift&&!shift.dataset.v405Bound){shift.dataset.v405Bound='1';shift.addEventListener('pointerdown',e=>{if(flxState.learn)return;e.preventDefault();v405SetShift(L,true)});const up=e=>{if(flxState.learn)return;v405SetShift(L,false)};shift.addEventListener('pointerup',up);shift.addEventListener('pointercancel',up);shift.addEventListener('lostpointercapture',up)}
+    const cue=document.querySelector(`#flx4Surface [data-flx-action="${L}.cue"]`);
+    if(cue&&!cue.dataset.v405Bound){cue.dataset.v405Bound='1';cue.addEventListener('pointerdown',e=>{if(flxState.learn)return;e.preventDefault();try{cue.setPointerCapture(e.pointerId)}catch{};v405CuePress(L)});const cup=e=>{if(flxState.learn)return;v405CueRelease(L)};cue.addEventListener('pointerup',cup);cue.addEventListener('pointercancel',cup);cue.addEventListener('lostpointercapture',cup)}
+  }
+}
+
+// Final MIDI handler: SHIFT and deck CUE need both press and release. Pad handling
+// from v3.7 stays intact; all other controls continue through the existing chain.
+const v405OldMidiHandler=handleFlxMidiMessage;
+handleFlxMidiMessage=function(e){
+  const raw=e.data||[],parsed=flxMidiMessageKey(raw);if(!parsed?.key)return v405OldMidiHandler(e);
+  const {key,norm}=parsed;const action=flxState.mappings[key];
+  if(flxState.learn)return v405OldMidiHandler(e);
+  let m=action?.match(/^([AB])\.shift$/);if(m){updateFlxMidiMonitor(raw,key,norm);flxState.lastMidi.set(key,norm);v405SetShift(m[1],norm>.45);return}
+  m=action?.match(/^([AB])\.cue$/);if(m){updateFlxMidiMonitor(raw,key,norm);const prev=flxState.lastMidi.get(key)??0;flxState.lastMidi.set(key,norm);if(norm>.45&&prev<=.45)v405CuePress(m[1]);else if(norm<=.45&&prev>.45)v405CueRelease(m[1]);return}
+  return v405OldMidiHandler(e);
+};
+
+// Keep cue/master headphone labels and physical-control hints obvious.
+function v405RefreshPhysicalUi(){
+  document.querySelectorAll('.flx4-channel-cue').forEach(b=>{const L=b.dataset.flxAction?.startsWith('A.')?'A':'B';b.textContent=`CUE ${L==='A'?'1':'2'}`;b.title='PFL: nur Kopfhörer, unabhängig vom Kanal-Fader';});
+  const hm=document.querySelector('[data-flx-action="headphones.mix"]');if(hm)hm.title='Links = CUE/PFL · Rechts = MASTER';
+  const ml=document.querySelector('[data-flx-action="master.level"]');if(ml)ml.title='Gesamtlautstärke des Master-Ausgangs';
+  const fx=document.querySelector('[data-flx-action="fx.level"]');if(fx)fx.title='Beat FX LEVEL / DEPTH: Effektstärke MIN ↔ MAX';
+}
+
+v405BindMomentaryButtons();v405RefreshPhysicalUi();
+setTimeout(()=>{v405BindMomentaryButtons();v405RefreshPhysicalUi();},350);
+console.info('NÉVO v4.0.5: momentary SHIFT, cue hold and safe PFL routing active');
