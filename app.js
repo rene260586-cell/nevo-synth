@@ -3570,3 +3570,67 @@ v38RenderBrowser=function(){const r=v4212BaseRenderBrowser();requestAnimationFra
 setTimeout(()=>{v4212InstallResizers();try{v428RedrawMiniWaves()}catch{}},180);
 window.addEventListener('resize',()=>requestAnimationFrame(()=>{v4212PositionResizers();try{v428RedrawMiniWaves()}catch{}}),{passive:true});
 console.info('NÉVO v4.2.12: restored balanced playlist proportions, draggable column dividers and stronger 3-band mini-wave contrast active');
+
+
+// ===== v4.2.13: FULL-TRACK 3-BAND MINI WAVEFORMS =====
+// The playlist preview now summarizes the complete analyzed track instead of
+// only 32 beats. The live A/B performance waveform remains the short 2/4/6-beat view.
+const V4213_PREVIEW_VERSION=4213;
+function v4213BuildFullTrack3Band(item,buffer){
+  if(!buffer)return null;const dur=buffer.duration||0;if(!(dur>0))return null;
+  const cols=384,data=new Array(cols*4).fill(0),counts=new Uint32Array(cols),lowSq=new Float64Array(cols),midSq=new Float64Array(cols),highSq=new Float64Array(cols),peak=new Float32Array(cols);
+  const ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null,sr=buffer.sampleRate||44100;
+  const span=ch0.length,stride=Math.max(1,Math.floor(span/240000)),effSr=sr/stride;
+  const aLow=1-Math.exp(-2*Math.PI*180/effSr),aMid=1-Math.exp(-2*Math.PI*2600/effSr);
+  let lpLow=0,lpMid=0;
+  for(let i=0;i<span;i+=stride){
+    const s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0);lpLow+=aLow*(s-lpLow);lpMid+=aMid*(s-lpMid);
+    const lo=lpLow,mi=lpMid-lpLow,hi=s-lpMid,x=Math.min(cols-1,Math.floor(i/Math.max(1,span)*cols));
+    lowSq[x]+=lo*lo;midSq[x]+=mi*mi;highSq[x]+=hi*hi;counts[x]++;peak[x]=Math.max(peak[x],Math.abs(s));
+  }
+  const energy=[];for(let x=0;x<cols;x++){const n=Math.max(1,counts[x]);energy.push(Math.sqrt((lowSq[x]+midSq[x]+highSq[x])/n))}
+  const sorted=[...energy].sort((a,b)=>a-b),ref=Math.max(.006,sorted[Math.min(sorted.length-1,Math.floor(sorted.length*.96))]||.01);
+  for(let x=0;x<cols;x++){
+    const n=Math.max(1,counts[x]),lo=lowSq[x]/n,mi=midSq[x]/n,hi=highSq[x]/n,sum=Math.max(1e-10,lo+mi+hi),amp=clamp(Math.pow(energy[x]/ref,.68),0,1);
+    const o=x*4;data[o]=Math.round(amp*255);data[o+1]=Math.round(lo/sum*255);data[o+2]=Math.round(mi/sum*255);data[o+3]=Math.round(hi/sum*255)
+  }
+  return {v:V4213_PREVIEW_VERSION,scope:'full-track',start:0,end:dur,duration:dur,bpm:Number(item?.bpm)||0,beatOffset:Number(item?.beatOffset)||0,cols,data,mode:'3band'}
+}
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing)return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;
+  if(item.v425Wave32?.v===V4213_PREVIEW_VERSION)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.v425Wave32=v4213BuildFullTrack3Band(item,buffer);if(persist&&item.v425Wave32)try{await saveDjItem(item)}catch{};return item.v425Wave32})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false}
+};
+v425SchedulePreview=function(item){if(!item||item.v425Wave32?.v===V4213_PREVIEW_VERSION||item.analyzing||item.v425PreviewQueued)return;item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()};
+
+// Complete-track preview: no dense beat grid. Quarter markers show rough song structure.
+v425DrawMiniWave=function(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32;const rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(18,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010305';c.fillRect(0,0,w,h);
+  if(!p||p.v!==V4213_PREVIEW_VERSION||!Array.isArray(p.data)){
+    c.fillStyle='rgba(160,185,201,.78)';c.font=`600 ${Math.max(6,Math.min(8,h*.36))}px system-ui`;c.textAlign='center';c.fillText(item.analyzing||item.v425AnalysisQueued?(currentLang==='de'?'ANALYSE …':'ANALYZING …'):(currentLang==='de'?'TRACK':'TRACK'),w/2,h*.64);c.textAlign='left';return
+  }
+  c.strokeStyle='rgba(255,255,255,.09)';c.lineWidth=1;for(const f of [.25,.5,.75]){const x=Math.round(w*f)+.5;c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke()}
+  const midY=h*.5,maxA=h*.47;
+  for(let x=0;x<w;x++){
+    const st=v4211PreviewAt(p,x,w),amp=Math.max(.8,Math.pow(st.amp,.78)*maxA);
+    let lo=Math.pow(st.low,1.45),mi=Math.pow(st.mid,1.45),hi=Math.pow(st.high,1.45),sum=Math.max(.0001,lo+mi+hi);lo/=sum;mi/=sum;hi/=sum;
+    const dom=Math.max(lo,mi,hi);if(lo===dom)lo*=1.42;else if(mi===dom)mi*=1.42;else hi*=1.42;sum=lo+mi+hi;lo/=sum;mi/=sum;hi/=sum;
+    const core=Math.max(1,amp*(.18+.48*lo)),midBand=Math.max(.45,amp*(.10+.40*mi)),topBand=Math.max(.35,amp*(.08+.36*hi));
+    const draw=(y1,y2,color)=>{if(y2<=y1)return;c.fillStyle=color;c.fillRect(x,y1,1,Math.max(1,y2-y1))};
+    draw(midY-core,midY+core,'rgba(255,87,24,.99)');
+    draw(Math.max(0,midY-core-midBand),midY-core,'rgba(74,244,90,.99)');draw(midY+core,Math.min(h,midY+core+midBand),'rgba(74,244,90,.99)');
+    draw(Math.max(0,midY-core-midBand-topBand),Math.max(0,midY-core-midBand),'rgba(37,174,255,.99)');draw(Math.min(h,midY+core+midBand),Math.min(h,midY+core+midBand+topBand),'rgba(37,174,255,.99)');
+    c.fillStyle=v4211BandColor(lo,mi,hi,1);c.fillRect(x,Math.max(0,midY-amp),1,1);c.fillRect(x,Math.min(h-1,midY+amp),1,1);
+  }
+  c.fillStyle='rgba(255,255,255,.12)';c.fillRect(0,Math.round(midY),w,1)
+};
+
+function v4213RefreshFullTrackPreviews(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4213_PREVIEW_VERSION&&!item.analyzing)v425SchedulePreview(item)}
+const v4213BaseRenderBrowser=v38RenderBrowser;
+v38RenderBrowser=function(){const r=v4213BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Komplette Song-Wellenform · 3-Band':'Full-track waveform · 3-band');try{v428RedrawMiniWaves()}catch{}});return r};
+setTimeout(()=>{v4213RefreshFullTrackPreviews();try{v38RenderBrowser();renderDjLibrary()}catch{}},260);
+setTimeout(v4213RefreshFullTrackPreviews,1500);
+console.info('NÉVO v4.2.13: full-track high-contrast 3-band playlist mini-waveforms active; live deck wave remains 2/4/6 beats');
