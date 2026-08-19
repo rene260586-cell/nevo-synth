@@ -938,10 +938,44 @@ bindAudioEditor();bindDjPlayer();
 const FLX_MIDI_STORAGE='nevo-flx4-midi-mappings-v1';
 const FLX_DEFAULT_MAPPING_URL='./flx4-default-mapping.json';
 const FLX_MODE_STORAGE='nevo-dj-view-mode-v1';
-const flxState={mode:'pro',midiAccess:null,learn:false,target:null,mappings:{},lastMidi:new Map(),monitor:false,lastRawMidi:''};
+const flxState={mode:'pro',midiAccess:null,learn:false,target:null,mappings:{},lastMidi:new Map(),monitor:false,lastRawMidi:'',learnCandidates:new Map()};
 try{flxState.mappings=JSON.parse(localStorage.getItem(FLX_MIDI_STORAGE)||'{}')||{}}catch{flxState.mappings={}}
 
 function flxIsContinuous(action){return /\.(pitch|volume|trim|eqHigh|eqMid|eqLow|filter)$/.test(action)||action==='crossfader'||action==='master.level'||action==='cue.level'||action==='mic.level'||action==='headphones.mix'||action==='fx.level'}
+
+function flxIsContinuousMidiKey(key){return /^b0:/i.test(key)||/^e0:/i.test(key)}
+function flxRemoveMappingsForAction(action,exceptKey=''){
+  let removed=0;
+  for(const [k,v] of Object.entries(flxState.mappings||{})){
+    if(v===action&&k!==exceptKey){delete flxState.mappings[k];removed++}
+  }
+  return removed;
+}
+function flxBeginContinuousLearn(action){
+  flxState.learnCandidates=new Map();
+  flxStatus(`Bewege ${flxActionLabel(action)} langsam über ein gutes Stück – NÉVO erkennt den echten Fader/Regler automatisch`,'connected');
+}
+function flxTryLearnContinuous(raw,key,norm,target){
+  if(!flxIsContinuousMidiKey(key))return false;
+  const now=performance.now();
+  let c=flxState.learnCandidates.get(key);
+  if(!c)c={min:norm,max:norm,count:0,last:norm,first:now,lastAt:now};
+  c.min=Math.min(c.min,norm);c.max=Math.max(c.max,norm);c.count++;c.last=norm;c.lastAt=now;
+  flxState.learnCandidates.set(key,c);
+  const travel=c.max-c.min;
+  // Continuous controls must produce several distinct values. This avoids accidentally
+  // learning a button/touch companion message and prevents the visible fader flicker.
+  if(c.count<4||travel<0.035)return false;
+  const removed=flxRemoveMappingsForAction(target,key);
+  flxState.mappings[key]=target;saveFlxMappings();
+  // Apply the value that completed learning immediately, so the screen fader/knob
+  // lands on the controller's current position without requiring another movement.
+  flxSetContinuous(target,norm,true);
+  clearFlxLearnTarget();flxState.learnCandidates=new Map();
+  $('#flxLearnHint').textContent=`Gelernt: ${flxActionLabel(target)}`;
+  flxStatus(`MIDI sauber gelernt: ${flxActionLabel(target)}${removed?` · ${removed} alte Zuordnung${removed===1?'':'en'} ersetzt`:''}`,'connected');
+  return true;
+}
 function flxActionLabel(action){
   const map={
     'A.play':'Deck A Play/Pause','A.cue':'Deck A Cue','A.sync':'Deck A Sync','A.keylock':'Deck A Key Lock',
@@ -1064,7 +1098,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.6',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.7',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -1095,7 +1129,7 @@ function toggleFlxMidiMonitor(){
   flxState.monitor=!flxState.monitor;const b=$('#flxMidiMonitorBtn');if(b){b.textContent=flxState.monitor?(currentLang==='de'?'MIDI MONITOR AN':'MIDI MONITOR ON'):(currentLang==='de'?'MIDI MONITOR AUS':'MIDI MONITOR OFF');b.classList.toggle('active',flxState.monitor)}
   const el=$('#flxMidiMonitor');if(el){el.classList.toggle('active',flxState.monitor);el.textContent=flxState.monitor?(flxState.lastRawMidi||'Warte auf MIDI-Signal …'):'MIDI Monitor aus'}
 }
-function clearFlxLearnTarget(){document.querySelectorAll('.learn-target').forEach(x=>x.classList.remove('learn-target'));flxState.target=null}
+function clearFlxLearnTarget(){document.querySelectorAll('.learn-target').forEach(x=>x.classList.remove('learn-target'));flxState.target=null;flxState.learnCandidates=new Map()}
 function selectFlxLearnTarget(el){
   clearFlxLearnTarget();
   const action=el.dataset.flxAction;
@@ -1104,7 +1138,7 @@ function selectFlxLearnTarget(el){
     flxStatus(currentLang==='de'?'Jogwheel wird separat gemappt. MIDI MONITOR einschalten und Jogwheel bewegen.':'Jog wheel uses a separate mapping. Turn on MIDI MONITOR and move the jog wheel.','error');
     return;
   }
-  flxState.target=action;el.classList.add('learn-target');$('#flxLearnHint').textContent=`Warte: ${flxActionLabel(flxState.target)}`;flxStatus(`Bewege jetzt am Controller: ${flxActionLabel(flxState.target)}`,'connected')
+  flxState.target=action;el.classList.add('learn-target');$('#flxLearnHint').textContent=`Warte: ${flxActionLabel(flxState.target)}`;if(flxIsContinuous(action))flxBeginContinuousLearn(action);else flxStatus(`Bewege jetzt am Controller: ${flxActionLabel(flxState.target)}`,'connected')
 }
 function updateFlxMidiMonitor(raw,key,norm){
   flxState.lastRawMidi=`${key} · ${Math.round(norm*127)}/127 · RAW ${[...raw].join(' ')}`;
@@ -1112,7 +1146,7 @@ function updateFlxMidiMonitor(raw,key,norm){
 }
 function handleFlxMidiMessage(e){
   const raw=e.data||[];const {key,norm}=flxMidiMessageKey(raw);if(!key)return;updateFlxMidiMonitor(raw,key,norm);
-  if(flxState.learn&&flxState.target){if(norm<=.01)return;const target=flxState.target,already=Object.values(flxState.mappings).filter(v=>v===target).length;flxState.mappings[key]=target;saveFlxMappings();const label=flxActionLabel(target);clearFlxLearnTarget();$('#flxLearnHint').textContent=`Gelernt: ${label}`;flxStatus(`MIDI gelernt: ${label}${already?' · zusätzliche Pad-Bank/Belegung':''}`,'connected');return}
+  if(flxState.learn&&flxState.target){const target=flxState.target;if(flxIsContinuous(target)){flxTryLearnContinuous(raw,key,norm,target);return}if(norm<=.01)return;const already=Object.values(flxState.mappings).filter(v=>v===target).length;flxState.mappings[key]=target;saveFlxMappings();const label=flxActionLabel(target);clearFlxLearnTarget();$('#flxLearnHint').textContent=`Gelernt: ${label}`;flxStatus(`MIDI gelernt: ${label}${already?' · zusätzliche Pad-Bank/Belegung':''}`,'connected');return}
   const action=flxState.mappings[key];if(!action)return;
   const prev=flxState.lastMidi.get(key)??0;flxState.lastMidi.set(key,norm);
   if(flxIsContinuous(action))flxRunAction(action,norm,true);else if(norm>.45&&prev<=.45)flxRunAction(action,1,true);
@@ -2943,7 +2977,7 @@ for(const L of ['A','B'])v423RefreshDeckOptionUi(L);
 console.info('NÉVO v4.2.4: RANGE / SLIP / Q / MT touch controls active on both decks');
 
 
-// ===== v4.2.6: 32-BEAT TRUE MINI WAVES + INSTANT/FLUID WAVE PIPELINE =====
+// ===== v4.2.7: 32-BEAT TRUE MINI WAVES + INSTANT/FLUID WAVE PIPELINE =====
 // The library preview is now a real 32-beat excerpt using the same waveform
 // statistics, colors and beat grid as the large parallel deck waveform.
 // Analysis/decode work is cached once so live deck waveforms can repaint quickly.
@@ -3077,10 +3111,10 @@ requestAnimationFrame(v425LiveWaveTicker);
 // in the background, with no user click required.
 setTimeout(()=>{for(const item of djLibrary)if(item.bpm&&!item.v425Wave32)v425SchedulePreview(item);v38RenderBrowser()},650);
 setTimeout(()=>{for(const item of djLibrary)if(item.bpm&&!item.v425Wave32)v425SchedulePreview(item);v38RenderBrowser()},1700);
-console.info('NÉVO v4.2.6: true 32-beat minis + immediate decode/analysis UI + cached fluid waveforms active');
+console.info('NÉVO v4.2.7: true 32-beat minis + immediate decode/analysis UI + cached fluid waveforms active');
 
 
-// ===== v4.2.6: PRO PERFORMANCE WAVEFORM — 2/4/6 BEATS MAIN, 32-BEAT MINI ONLY =====
+// ===== v4.2.7: PRO PERFORMANCE WAVEFORM — 2/4/6 BEATS MAIN, 32-BEAT MINI ONLY =====
 // The 32-beat rule belongs only to the library mini preview. The large parallel
 // performance waveform stays close around the playhead (2, 4 or 6 beats), just
 // like a DJ deck. It uses raw audio for the short window so the shape is detailed
@@ -3176,4 +3210,7 @@ if(v426ZoomSelect){
   v426ZoomSelect.onchange=e=>{const n=Number(e.target.value);nevoV34.waveBeats=V426_MAIN_WAVE_BEATS.includes(n)?n:4;v34Save();djDecks.A.v34StackKey='';djDecks.B.v34StackKey='';v34DrawStack('A',true);v34DrawStack('B',true)};
 }
 setTimeout(()=>{try{v34DrawStack('A',true);v34DrawStack('B',true);v38RenderBrowser()}catch{}},250);
-console.info('NÉVO v4.2.6: pro detailed 2/4/6-beat performance wave + 32-beat mini only');
+console.info('NÉVO v4.2.7: pro detailed 2/4/6-beat performance wave + 32-beat mini only');
+
+// ===== v4.2.7: stable continuous MIDI relearn / duplicate mapping protection =====
+console.info('NÉVO v4.2.7: continuous MIDI learn now replaces stale mappings and rejects button-like signals');

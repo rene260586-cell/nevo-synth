@@ -1548,7 +1548,7 @@ body.flx-compact-mode .v425-track-main{grid-template-columns:minmax(62px,.55fr) 
 @media(max-width:520px){.flx4-browser-track.v425-wave-row{min-height:36px!important}.v425-track-main{grid-template-columns:minmax(54px,.66fr) minmax(64px,1.34fr);gap:3px}.v425-miniwave-shell{height:14px}}
 
 
-/* ===== v4.2.6: denser Rekordbox-style performance waveform ===== */
+/* ===== v4.2.7: denser Rekordbox-style performance waveform ===== */
 .flx4-stack-wavewrap{background:linear-gradient(180deg,#020609 0%,#061019 50%,#020609 100%);box-shadow:inset 0 0 20px rgba(0,0,0,.62)}
 .flx4-stack-wave{image-rendering:auto!important;filter:saturate(1.12) contrast(1.04)}
 .flx4-stack-beats span{font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.95)}
