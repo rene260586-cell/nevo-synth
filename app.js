@@ -3333,7 +3333,7 @@ v428RefreshFxUi();
 setTimeout(()=>{renderDjLibrary();v38RenderBrowser();v428RedrawMiniWaves();v428RefreshFxUi()},160);
 console.info('NÉVO v4.2.8: instant mini waves, Camelot/rating library, jog-button layout and full Beat FX browse workflow active');
 
-// ===== v4.2.9: READABLE LIBRARY + DIRECT 1..5 STAR RATING + SONG IMPORT IN BROWSER =====
+// ===== v4.2.10: READABLE LIBRARY + DIRECT 1..5 STAR RATING + SONG IMPORT IN BROWSER =====
 function v429Pulse(){try{navigator.vibrate?.(12)}catch{}}
 function v429StarButtons(rating,compact=false){
   const n=clamp(Math.round(Number(rating)||0),0,5);
@@ -3397,4 +3397,4 @@ v38RenderBrowser=function(){
 
 v429InstallImportButtons();
 setTimeout(()=>{v429InstallImportButtons();renderDjLibrary();v38RenderBrowser();v428RedrawMiniWaves()},120);
-console.info('NÉVO v4.2.9: larger readable library, direct 1–5 star rating and playlist song import buttons active');
+console.info('NÉVO v4.2.10: larger readable library, direct 1–5 star rating and playlist song import buttons active');
