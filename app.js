@@ -4618,44 +4618,72 @@ v32AnalyzeTrack=async function(item,showStatus=true){const result=await v4219Bas
 function v4221RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4221_PREVIEW_VERSION||item.phrases?.[0]?.v!==V4221_PHRASE_VERSION)v425SchedulePreview(item);try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.();v34DrawStack('A',true);v34DrawStack('B',true)}catch{}}
 const v4221BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4221BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Phrasenbewusste Analyse · Rot = Bass/Action · Grün = Melodie/ruhiger · Blau = Höhen':'Phrase-aware analysis · red = bass/action · green = melody/quiet · blue = highs');try{v428RedrawMiniWaves?.()}catch{}});return r};
 setTimeout(v4221RefreshAll,280);setTimeout(v4221RefreshAll,1750);
-console.info('NÉVO v4.2.23: beatgrid-aligned phrase-aware action envelope and arrangement analysis active');
+console.info('NÉVO v4.2.24: beatgrid-aligned phrase-aware action envelope and arrangement analysis active');
 
 // ===== v4.2.23: CLEAN TOP UI + NO LONG-PRESS HELP =====
 console.info('NÉVO v4.2.23: legacy top transport/hero hidden; long-press help disabled');
 
 
-// ===== v4.2.23: compact top controls + dock PFL inside FLX4 centre =====
+// ===== v4.2.24: compact top controls + reliable PFL dock inside FLX4 centre =====
 (function(){
   const pfl=document.querySelector('.headphone-monitor');
   if(!pfl)return;
-  document.querySelector('.topbar')?.classList.add('v4223-compact-header');
-  // Keep an exact return point so DJ PRO can still use the original full-width PFL block.
+  document.querySelector('.topbar')?.classList.add('v4224-compact-header');
+
+  // Keep an exact return point for DJ PRO mode.
   const home=document.createComment('nevo-pfl-home');
   pfl.parentNode?.insertBefore(home,pfl);
   const refreshButton=pfl.querySelector('#cueRefreshOutputs');
   if(refreshButton){
-    refreshButton.dataset.v4223FullText=refreshButton.textContent||'AUSGÄNGE LADEN';
+    refreshButton.dataset.v4224FullText=refreshButton.textContent||'AUSGÄNGE LADEN';
     refreshButton.title='Audio-Ausgänge neu laden';
   }
+
+  const flxVisible=()=>{
+    const panel=document.querySelector('.dj-panel');
+    const surf=document.querySelector('#flx4Surface');
+    return !!(
+      panel?.classList.contains('flx4-active') ||
+      (surf && surf.hidden===false) ||
+      (typeof flxState!=='undefined' && flxState.mode==='flx4')
+    );
+  };
+
   function dockPfl(){
-    const isFlx=typeof flxState!=='undefined'&&flxState.mode==='flx4';
     const core=document.querySelector('.flx4-center-core');
-    if(isFlx&&core){
-      if(pfl.parentNode!==core)core.appendChild(pfl);
-      pfl.classList.add('v4223-pfl-dock');
-      if(refreshButton)refreshButton.textContent='AUSGÄNGE';
-    }else{
-      if(home.parentNode&&pfl.previousSibling!==home)home.parentNode.insertBefore(pfl,home.nextSibling);
+    if(flxVisible() && core){
+      // Put the tiny PFL strip directly below the crossfader, before the optional mapping drawer.
+      const mapping=core.querySelector('.v414-utility-mapping');
+      if(pfl.parentNode!==core || (mapping && pfl.nextSibling!==mapping)){
+        if(mapping)core.insertBefore(pfl,mapping); else core.appendChild(pfl);
+      }
+      pfl.classList.add('v4224-pfl-dock');
       pfl.classList.remove('v4223-pfl-dock');
-      if(refreshButton)refreshButton.textContent=refreshButton.dataset.v4223FullText||'AUSGÄNGE LADEN';
+      if(refreshButton){refreshButton.textContent='↻';refreshButton.setAttribute('aria-label','Ausgänge neu laden')}
+    }else{
+      if(home.parentNode)home.parentNode.insertBefore(pfl,home.nextSibling);
+      pfl.classList.remove('v4224-pfl-dock','v4223-pfl-dock');
+      if(refreshButton)refreshButton.textContent=refreshButton.dataset.v4224FullText||'AUSGÄNGE LADEN';
     }
   }
+
   const oldSetDjViewMode=window.setDjViewMode||setDjViewMode;
   if(typeof oldSetDjViewMode==='function'){
-    window.setDjViewMode=setDjViewMode=function(mode){const r=oldSetDjViewMode(mode);requestAnimationFrame(dockPfl);return r};
+    window.setDjViewMode=setDjViewMode=function(mode){
+      const r=oldSetDjViewMode(mode);
+      requestAnimationFrame(dockPfl);
+      setTimeout(dockPfl,80);
+      return r;
+    };
   }
-  // Re-dock after layout/mode restoration and on responsive changes.
-  setTimeout(dockPfl,30);setTimeout(dockPfl,400);setTimeout(dockPfl,1300);
+
+  // Watch the actual surface/panel state. This fixes the previous case where FLX4 was visible
+  // while the saved mode flag had not yet been restored when the dock code ran.
+  const panel=document.querySelector('.dj-panel'), surf=document.querySelector('#flx4Surface');
+  const observer=new MutationObserver(()=>requestAnimationFrame(dockPfl));
+  if(panel)observer.observe(panel,{attributes:true,attributeFilter:['class']});
+  if(surf)observer.observe(surf,{attributes:true,attributeFilter:['hidden','style','class']});
+  [0,50,200,600,1400,2600].forEach(ms=>setTimeout(dockPfl,ms));
   window.addEventListener('resize',()=>requestAnimationFrame(dockPfl),{passive:true});
 })();
-console.info('NÉVO v4.2.23: compact project header and FLX4 PFL dock active');
+console.info('NÉVO v4.2.24: reliable compact FLX4 PFL dock active');

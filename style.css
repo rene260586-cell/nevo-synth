@@ -2316,3 +2316,69 @@ body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{background:#0103
   .headphone-monitor.v4223-pfl-dock label{min-width:0!important}
   .headphone-monitor.v4223-pfl-dock select{max-width:none!important;width:100%!important}
 }
+
+
+/* ===== v4.2.24: RELIABLE TINY PFL DOCK =====
+   FLX4 mode: no separate full-width headphone block. The controls live as a
+   small utility strip inside the black centre area under the browser/Beat FX. */
+.headphone-monitor.v4224-pfl-dock{
+  width:min(100%,440px)!important;
+  max-width:440px!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:38px!important;
+  margin:2px 0 1px auto!important;
+  padding:4px 5px!important;
+  justify-self:end!important;
+  align-self:start!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+  border-radius:9px!important;
+  border:1px solid rgba(123,160,205,.11)!important;
+  background:rgba(3,8,13,.72)!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+.headphone-monitor.v4224-pfl-dock .headphone-title{
+  display:flex!important;align-items:center!important;flex:0 0 auto!important;min-width:0!important;
+}
+.headphone-monitor.v4224-pfl-dock .headphone-title strong{
+  font-size:0!important;white-space:nowrap!important;margin:0!important;
+}
+.headphone-monitor.v4224-pfl-dock .headphone-title strong::after{
+  content:"🎧 PFL";font-size:8px!important;letter-spacing:.06em!important;color:#d9e9f6!important;
+}
+.headphone-monitor.v4224-pfl-dock .headphone-title span,
+.headphone-monitor.v4224-pfl-dock>small{display:none!important}
+.headphone-monitor.v4224-pfl-dock label{
+  display:flex!important;align-items:center!important;gap:4px!important;margin:0!important;
+  font-size:7px!important;font-weight:850!important;white-space:nowrap!important;color:#8da1b8!important;
+  min-width:0!important;
+}
+.headphone-monitor.v4224-pfl-dock label:first-of-type{flex:1 1 170px!important;max-width:190px!important}
+.headphone-monitor.v4224-pfl-dock input[type="range"]{
+  flex:1 1 auto!important;min-width:70px!important;width:105px!important;height:13px!important;margin:0!important;
+}
+.headphone-monitor.v4224-pfl-dock b{min-width:24px!important;font-size:7.5px!important;color:#eff8ff!important}
+.headphone-monitor.v4224-pfl-dock select{
+  min-width:92px!important;width:105px!important;max-width:105px!important;height:27px!important;
+  padding:2px 6px!important;border-radius:7px!important;font-size:7.5px!important;margin:0!important;
+}
+.headphone-monitor.v4224-pfl-dock .btn{
+  width:28px!important;min-width:28px!important;max-width:28px!important;height:27px!important;min-height:27px!important;
+  padding:0!important;border-radius:7px!important;font-size:13px!important;line-height:1!important;margin:0!important;
+}
+/* Let the little dock sit to the right of the centre column instead of stretching it. */
+.flx4-center-core>.headphone-monitor.v4224-pfl-dock{justify-self:end!important}
+@media(max-width:1050px){
+  .headphone-monitor.v4224-pfl-dock{width:min(100%,390px)!important;max-width:390px!important;gap:4px!important}
+  .headphone-monitor.v4224-pfl-dock label:first-of-type{max-width:155px!important}
+  .headphone-monitor.v4224-pfl-dock select{width:90px!important;min-width:82px!important}
+}
+@media(max-width:720px){
+  .headphone-monitor.v4224-pfl-dock{width:100%!important;max-width:none!important;height:34px!important}
+  .headphone-monitor.v4224-pfl-dock .headphone-title{display:none!important}
+  .headphone-monitor.v4224-pfl-dock label:first-of-type{max-width:none!important}
+}
