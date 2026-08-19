@@ -1584,3 +1584,151 @@ body.flx-compact-mode .v428-jog-quick{gap:3px}.v428-jog-quick+.flx4-jog{min-widt
 .flx4-mixer-section .flx4-fx-menu{left:4px!important;right:4px!important;top:auto!important;bottom:calc(100% + 6px)!important;max-height:min(330px,55vh);overflow:auto;grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:7px!important;z-index:120!important}
 .flx4-mixer-section .flx4-fx-menu button{min-height:39px!important;padding:6px 7px!important}.flx4-mixer-section .flx4-fx-menu button b{font-size:7px!important}.flx4-mixer-section .flx4-fx-menu button small{font-size:5px!important}.flx4-mixer-section .flx4-fx-menu button.preview{border-color:#54d8ff!important;background:rgba(84,216,255,.14)!important;box-shadow:0 0 0 1px rgba(84,216,255,.12) inset!important}.flx4-mixer-section .v415-fx-select.active{border-color:#54d8ff!important;box-shadow:0 0 10px rgba(84,216,255,.12)!important}
 @media(max-width:760px){.flx4-mixer-section .flx4-fx-menu{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-height:45vh}}
+
+/* ===== v4.2.9: readable DJ library + direct star rating + import button ===== */
+/* Full player library */
+.dj-library-columns{
+  font-size:10px!important;
+  padding-top:9px!important;
+  padding-bottom:7px!important;
+}
+.dj-lib-item.v429-main-lib-row{
+  min-height:54px!important;
+  padding:10px 10px!important;
+  align-items:center!important;
+}
+.v429-main-lib-row .dj-lib-title strong{
+  font-size:14px!important;
+  line-height:1.15!important;
+  color:#f2f8fc!important;
+}
+.v429-main-lib-row .dj-lib-title small{
+  font-size:9px!important;
+  line-height:1.15!important;
+}
+.v429-main-lib-row .dj-lib-bpm,
+.v429-main-lib-row .dj-lib-key,
+.v429-main-lib-row .dj-lib-duration{
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:950!important;
+}
+.v429-main-lib-row .dj-lib-bpm{color:#eef9ff!important}
+.v429-main-lib-row .dj-lib-key{color:#c8a9ff!important}
+.v429-main-lib-row .dj-lib-duration{color:#e2edf5!important}
+.v429-rating-direct{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:2px;
+  min-width:0;
+}
+.v429-star{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:#64717c;
+  width:22px;
+  height:24px;
+  min-width:22px;
+  padding:0;
+  display:inline-grid;
+  place-items:center;
+  font-size:18px;
+  line-height:1;
+  cursor:pointer;
+  border-radius:6px;
+  touch-action:manipulation;
+}
+.v429-star:hover,.v429-star:focus-visible{
+  outline:none;
+  background:rgba(255,196,93,.11);
+  color:#ffd47a;
+}
+.v429-star.filled{
+  color:#ffc65d;
+  text-shadow:0 0 8px rgba(255,190,78,.24);
+}
+.v429-star:active{transform:scale(.91)}
+
+/* Compact FLX4 browser in the main DJ view */
+.flx4-browser-columns.v428-browser-columns{
+  font-size:8px!important;
+  min-height:22px!important;
+  align-items:center!important;
+}
+.flx4-browser-track.v429-browser-row{
+  min-height:48px!important;
+  padding:5px 7px!important;
+  cursor:pointer;
+}
+.flx4-browser-track.v429-browser-row .v425-track-text b{
+  font-size:10px!important;
+  line-height:1.12!important;
+  color:#f2f8fc!important;
+}
+.flx4-browser-track.v429-browser-row .v425-track-text small{
+  font-size:7px!important;
+  line-height:1.1!important;
+}
+.flx4-browser-track.v429-browser-row .v428-bpm,
+.flx4-browser-track.v429-browser-row .v428-key,
+.flx4-browser-track.v429-browser-row .v428-duration{
+  font-size:9px!important;
+  line-height:1!important;
+  font-weight:950!important;
+}
+.flx4-browser-track.v429-browser-row .v428-bpm{color:#e8f7ff!important}
+.flx4-browser-track.v429-browser-row .v428-key{color:#c8a9ff!important}
+.flx4-browser-track.v429-browser-row .v428-duration{color:#d9e7f0!important}
+.v429-browser-row .v425-track-main{
+  grid-template-columns:minmax(76px,.88fr) minmax(84px,1.12fr)!important;
+  gap:7px!important;
+}
+.v429-browser-rating{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:0;
+  white-space:nowrap;
+}
+.v429-browser-rating .v429-star{
+  width:14px;
+  min-width:14px;
+  height:20px;
+  font-size:12px;
+  border-radius:3px;
+}
+
+/* Song import buttons directly where the playlists live. */
+.v429-import-songs{
+  border-color:rgba(84,216,255,.33)!important;
+  color:#a9efff!important;
+  background:linear-gradient(180deg,rgba(84,216,255,.10),rgba(84,216,255,.035))!important;
+  font-weight:950!important;
+  letter-spacing:.03em!important;
+}
+.flx4-browser-top.flx4-browser-top-compact.v429-has-import{
+  grid-template-columns:auto 28px minmax(90px,1fr) 28px auto auto auto auto!important;
+}
+
+@media(max-width:1040px){
+  .flx4-browser-track.v429-browser-row{min-height:45px!important}
+  .flx4-browser-track.v429-browser-row .v425-track-text b{font-size:9px!important}
+  .flx4-browser-track.v429-browser-row .v428-bpm,
+  .flx4-browser-track.v429-browser-row .v428-key,
+  .flx4-browser-track.v429-browser-row .v428-duration{font-size:8px!important}
+  .v429-browser-rating .v429-star{width:12px;min-width:12px;font-size:10px}
+}
+@media(max-width:760px){
+  .v429-main-lib-row .dj-lib-title strong{font-size:13px!important}
+  .v429-main-lib-row .dj-lib-bpm,.v429-main-lib-row .dj-lib-key,.v429-main-lib-row .dj-lib-duration{font-size:11px!important}
+  .v429-star{width:20px;min-width:20px;height:22px;font-size:16px}
+  .flx4-browser-track.v429-browser-row{min-height:44px!important}
+  .flx4-browser-track.v429-browser-row .v425-track-text b{font-size:8.5px!important}
+  .flx4-browser-track.v429-browser-row .v425-track-text small{font-size:6.5px!important}
+  .flx4-browser-track.v429-browser-row .v428-bpm,
+  .flx4-browser-track.v429-browser-row .v428-key,
+  .flx4-browser-track.v429-browser-row .v428-duration{font-size:7.5px!important}
+  .v429-browser-rating .v429-star{width:11px;min-width:11px;font-size:9.5px}
+}

@@ -3332,3 +3332,69 @@ v428RefreshFxUi();
 // A final startup paint after all overrides are installed.
 setTimeout(()=>{renderDjLibrary();v38RenderBrowser();v428RedrawMiniWaves();v428RefreshFxUi()},160);
 console.info('NÉVO v4.2.8: instant mini waves, Camelot/rating library, jog-button layout and full Beat FX browse workflow active');
+
+// ===== v4.2.9: READABLE LIBRARY + DIRECT 1..5 STAR RATING + SONG IMPORT IN BROWSER =====
+function v429Pulse(){try{navigator.vibrate?.(12)}catch{}}
+function v429StarButtons(rating,compact=false){
+  const n=clamp(Math.round(Number(rating)||0),0,5);
+  return Array.from({length:5},(_,i)=>`<button type="button" class="v429-star${i<n?' filled':''}" data-v429-rate="${i+1}" aria-label="${i+1} ${i===0?'Stern':'Sterne'}" title="${i+1} ${i===0?'Stern':'Sterne'}">★</button>`).join('');
+}
+async function v429SetRating(item,value){
+  if(!item)return;item.rating=clamp(Math.round(Number(value)||0),0,5);v429Pulse();try{await saveDjItem(item)}catch{};renderDjLibrary();v38RenderBrowser();
+}
+function v429WireRating(root,item){
+  root?.querySelectorAll('[data-v429-rate]').forEach(star=>{
+    star.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();v429SetRating(item,Number(star.dataset.v429Rate)||0)});
+  });
+}
+function v429OpenSongPicker(){
+  const input=$('#djImport');if(!input)return;try{input.value=''}catch{};input.click();
+}
+function v429InstallImportButtons(){
+  const top=document.querySelector('.flx4-browser-top.flx4-browser-top-compact');
+  if(top&&!top.querySelector('.v429-import-songs')){
+    top.classList.add('v429-has-import');
+    const b=document.createElement('button');b.type='button';b.className='v429-import-songs';b.textContent='+ SONGS';b.title='Songs in die Playlist laden';b.onclick=v429OpenSongPicker;top.appendChild(b);
+  }
+  const tools=document.querySelector('.dj-library-tools');
+  if(tools&&!tools.querySelector('.v429-import-songs')){
+    const b=document.createElement('button');b.type='button';b.className='btn small v429-import-songs';b.textContent='+ SONGS LADEN';b.onclick=v429OpenSongPicker;tools.prepend(b);
+  }
+}
+
+renderDjLibrary=function(){
+  const box=$('#djLibraryList');if(!box)return;v32RefreshCrateOptions();const q=($('#djLibrarySearch')?.value||'').trim().toLowerCase();let items=djLibrary.filter(item=>!q||`${item.title||''} ${item.name||''} ${item.artist||''} ${item.crate||''} ${item.comment||''}`.toLowerCase().includes(q));
+  const f=nevoV32.crate||'all';if(f==='favorites')items=items.filter(x=>(Number(x.rating)||0)>=4);else if(f.startsWith('crate:'))items=items.filter(x=>(x.crate||'')===f.slice(6));
+  const sort=nevoV32.sort||'added';items.sort((a,b)=>sort==='title'?(a.title||a.name).localeCompare(b.title||b.name):sort==='bpm'?(Number(a.bpm)||999)-(Number(b.bpm)||999):sort==='key'?String(v428Camelot(a.key)).localeCompare(String(v428Camelot(b.key))):sort==='rating'?(Number(b.rating)||0)-(Number(a.rating)||0):(b.addedAt||0)-(a.addedAt||0));
+  if(!items.length){box.innerHTML=`<div class="dj-empty">${djLibrary.length?(currentLang==='de'?'Keine Treffer in diesem Filter.':'No tracks in this filter.'):t('djEmpty')}</div>`;v429InstallImportButtons();return}
+  box.innerHTML='';items.forEach(item=>{
+    const el=document.createElement('div');el.className='dj-lib-item v428-main-lib-row v429-main-lib-row';el.dataset.id=item.id;
+    const bpm=item.analyzing?(currentLang==='de'?'ANALYSE…':'ANALYZING…'):(item.bpm?Number(item.bpm).toFixed(1):'—'),dur=item.duration?fmtDeckTime(item.duration):'—',artist=item.artist||item.name,crate=item.crate?`<span class="v32-crate">${v32Esc(item.crate)}</span>`:'';
+    el.innerHTML=`<div class="dj-lib-title"><div class="v428-main-titlewave"><span class="v428-main-text"><strong>${v32Esc(item.title||cleanDjTitle(item.name))}</strong><small class="v32-artist">${v32Esc(artist)}</small></span><span class="v428-main-wave-shell"><canvas class="v428-main-miniwave" width="256" height="34"></canvas></span></div>${crate}</div><div class="dj-lib-bpm ${item.analyzing?'analyzing':''}">${bpm}</div><div class="dj-lib-key" title="${v32Esc(item.key||'—')}">${v32Esc(v428Camelot(item.key))}</div><div class="dj-lib-duration">${dur}</div><div class="dj-lib-rating v429-rating-direct" title="Wertung direkt auswählen">${v429StarButtons(item.rating)}</div><div class="dj-lib-actions"><button class="btn small fav-mini ${(Number(item.rating)||0)>=4?'active':''}" title="Favorit">★</button><button class="btn small meta-mini" title="Track Info">⚙</button><button class="btn small analyze-mini" title="Smart Analyse">⚡</button><button class="btn small load-a">A</button><button class="btn small load-b">B</button></div>`;
+    const fav=el.querySelector('.fav-mini'),meta=el.querySelector('.meta-mini'),an=el.querySelector('.analyze-mini'),a=el.querySelector('.load-a'),b=el.querySelector('.load-b');
+    fav.onclick=async()=>{item.rating=(Number(item.rating)||0)>=4?0:5;await saveDjItem(item);renderDjLibrary();v38RenderBrowser()};meta.onclick=()=>v32OpenMeta(item);an.onclick=()=>v32AnalyzeTrack(item,true);a.onclick=()=>loadItemToDeck(item,'A');b.onclick=()=>loadItemToDeck(item,'B');el.querySelector('.dj-lib-title strong').ondblclick=()=>v32OpenMeta(item);v429WireRating(el,item);longPress(el,()=>v32OpenMeta(item));box.appendChild(el);
+    const cv=el.querySelector('.v428-main-miniwave');requestAnimationFrame(()=>v425DrawMiniWave(cv,item));if(!item.v425Wave32&&item.bpm&&!item.analyzing)v425SchedulePreview(item);
+  });v429InstallImportButtons();
+};
+
+v38RenderBrowser=function(){
+  const panel=$('#flxBrowserPanel'),box=$('#flxBrowserList');if(!panel||!box)return;v429InstallImportButtons();
+  panel.classList.toggle('expanded',!!nevoV38.browserExpanded);panel.classList.toggle('crate-focus',nevoV38.browserFocus==='crates');
+  const focus=$('#flxBrowserFocus'),crate=$('#flxBrowserCrate'),count=$('#flxBrowserCount');if(focus)focus.textContent=nevoV38.browserFocus==='crates'?'PLAYLISTS':'TRACKS';if(crate)crate.textContent=v38CrateLabel(nevoV38.browserCrate);box.innerHTML='';
+  if(nevoV38.browserFocus==='crates'){
+    const crates=v38Crates();let idx=Math.max(0,crates.findIndex(x=>x.id===nevoV38.browserCrate));if(count)count.textContent=`${idx+1} / ${crates.length}`;
+    for(const c of crates){const row=document.createElement('button');row.type='button';row.className='flx4-browser-crate'+(c.id===nevoV38.browserCrate?' selected':'');row.innerHTML=`<b>${v38Esc(c.label)}</b><span>${c.id==='all'?djLibrary.length:c.id==='favorites'?djLibrary.filter(x=>(Number(x.rating)||0)>=4).length:djLibrary.filter(x=>(x.crate||'')===c.id.slice(6)).length}</span>`;row.onclick=()=>{nevoV38.browserCrate=c.id;nevoV38.browserCursor=0;v38Save();v38RenderBrowser()};row.ondblclick=()=>{nevoV38.browserFocus='tracks';v38Save();v38RenderBrowser()};box.appendChild(row)}return;
+  }
+  const items=v38BrowserItems();v38ClampCursor();if(count)count.textContent=items.length?`${nevoV38.browserCursor+1} / ${items.length}`:'0 / 0';if(!items.length){box.innerHTML=`<div class="flx4-browser-empty">${currentLang==='de'?'Keine Songs in dieser Auswahl.':'No tracks in this selection.'}</div>`;v31UpdateBrowseTitle();return}
+  items.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='flx4-browser-track v425-wave-row v428-browser-row v429-browser-row'+(i===nevoV38.browserCursor?' selected':'');row.dataset.id=item.id;row.setAttribute('role','button');row.tabIndex=0;
+    row.innerHTML=`<span class="v425-track-main"><span class="v425-track-text"><b>${v38Esc(item.title||cleanDjTitle(item.name))}</b><small>${v38Esc(item.artist||item.name||'')}</small></span><span class="v425-miniwave-shell" title="32 Beat · analysierte Track-Wellenform"><canvas class="v425-miniwave" width="256" height="32"></canvas></span></span><em class="v428-bpm">${item.bpm?Number(item.bpm).toFixed(1):'—'}</em><em class="v428-key" title="${v38Esc(item.key||'—')}">${v38Esc(v428Camelot(item.key))}</em><span class="v429-browser-rating" title="Wertung direkt auswählen">${v429StarButtons(item.rating,true)}</span><em class="v428-duration">${item.duration?fmtDeckTime(item.duration):'—'}</em>`;
+    const select=()=>{nevoV38.browserCursor=i;v38Save();v38RenderBrowser()};row.addEventListener('click',e=>{if(!e.target.closest('[data-v429-rate]'))select()});row.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('[data-v429-rate]')){e.preventDefault();select()}});v429WireRating(row,item);box.appendChild(row);
+    const cv=row.querySelector('.v425-miniwave');requestAnimationFrame(()=>v425DrawMiniWave(cv,item));if(!item.v425Wave32&&item.bpm&&!item.analyzing)v425SchedulePreview(item);
+  });
+  requestAnimationFrame(()=>{const sel=box.querySelector('.selected');if(!sel)return;const top=sel.offsetTop,bottom=top+sel.offsetHeight,viewTop=box.scrollTop,viewBottom=viewTop+box.clientHeight;if(top<viewTop)box.scrollTop=top;else if(bottom>viewBottom)box.scrollTop=Math.max(0,bottom-box.clientHeight);v428RedrawMiniWaves()});v31UpdateBrowseTitle();
+};
+
+v429InstallImportButtons();
+setTimeout(()=>{v429InstallImportButtons();renderDjLibrary();v38RenderBrowser();v428RedrawMiniWaves()},120);
+console.info('NÉVO v4.2.9: larger readable library, direct 1–5 star rating and playlist song import buttons active');
