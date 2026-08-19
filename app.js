@@ -3336,15 +3336,27 @@ console.info('NÉVO v4.2.8: instant mini waves, Camelot/rating library, jog-butt
 // ===== v4.2.10: READABLE LIBRARY + DIRECT 1..5 STAR RATING + SONG IMPORT IN BROWSER =====
 function v429Pulse(){try{navigator.vibrate?.(12)}catch{}}
 function v429StarButtons(rating,compact=false){
-  const n=clamp(Math.round(Number(rating)||0),0,5);
-  return Array.from({length:5},(_,i)=>`<button type="button" class="v429-star${i<n?' filled':''}" data-v429-rate="${i+1}" aria-label="${i+1} ${i===0?'Stern':'Sterne'}" title="${i+1} ${i===0?'Stern':'Sterne'}">★</button>`).join('');
+  const n=clamp(Math.round((Number(rating)||0)*2)/2,0,5);
+  return Array.from({length:5},(_,i)=>{
+    const full=n>=i+1,half=!full&&n>=i+.5;
+    const cls=full?' filled':half?' half':'';
+    const value=i+1;
+    return `<button type="button" class="v429-star${cls}" data-v429-rate="${value}" aria-label="${value}. Stern · halb oder ganz" title="Klick 1 = ${i+.5} Sterne · Klick 2 = ${value} Sterne"><span aria-hidden="true">★</span></button>`
+  }).join('');
 }
 async function v429SetRating(item,value){
-  if(!item)return;item.rating=clamp(Math.round(Number(value)||0),0,5);v429Pulse();try{await saveDjItem(item)}catch{};renderDjLibrary();v38RenderBrowser();
+  if(!item)return;item.rating=clamp(Math.round((Number(value)||0)*2)/2,0,5);v429Pulse();try{await saveDjItem(item)}catch{};renderDjLibrary();v38RenderBrowser();
 }
 function v429WireRating(root,item){
   root?.querySelectorAll('[data-v429-rate]').forEach(star=>{
-    star.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();v429SetRating(item,Number(star.dataset.v429Rate)||0)});
+    star.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      const target=Number(star.dataset.v429Rate)||1,current=clamp(Number(item?.rating)||0,0,5),half=target-.5;
+      // Requested behaviour: first click on a star = half, second click on the same star = whole.
+      let next=Math.abs(current-half)<.01?target:half;
+      if(Math.abs(current-target)<.01)next=half;
+      v429SetRating(item,next);
+    });
   });
 }
 function v429OpenSongPicker(){
@@ -3498,10 +3510,10 @@ let v4212Cols={...v4212ColDefaults};
 try{const saved=JSON.parse(localStorage.getItem(V4212_COLS_STORAGE)||'{}');for(const k of Object.keys(v4212Cols))if(Number.isFinite(Number(saved?.[k])))v4212Cols[k]=Number(saved[k])}catch{}
 function v4212SaveCols(){try{localStorage.setItem(V4212_COLS_STORAGE,JSON.stringify(v4212Cols))}catch{}}
 function v4212ClampCols(){
-  v4212Cols.bpm=clamp(Number(v4212Cols.bpm)||54,40,130);
-  v4212Cols.key=clamp(Number(v4212Cols.key)||48,38,120);
-  v4212Cols.rating=clamp(Number(v4212Cols.rating)||88,68,180);
-  v4212Cols.duration=clamp(Number(v4212Cols.duration)||58,48,135);
+  v4212Cols.bpm=clamp(Number(v4212Cols.bpm)||54,34,130);
+  v4212Cols.key=clamp(Number(v4212Cols.key)||48,32,120);
+  v4212Cols.rating=clamp(Number(v4212Cols.rating)||82,56,180);
+  v4212Cols.duration=clamp(Number(v4212Cols.duration)||58,42,135);
 }
 function v4212ApplyCols(){
   v4212ClampCols();const panel=$('#flxBrowserPanel');if(!panel)return;
@@ -4690,7 +4702,7 @@ console.info('NÉVO v4.2.24: reliable compact FLX4 PFL dock active');
 
 console.info('NÉVO v4.2.25: compact library reduced by roughly two visible songs');
 
-// ===== v4.2.26: MODULAR, MOVABLE + RESIZABLE FLX4 WORKSPACE =====
+// ===== v4.2.27: MODULAR, MOVABLE + RESIZABLE FLX4 WORKSPACE =====
 (function(){
   const controller=document.querySelector('.flx4-controller.v34-controller');
   const editBtn=document.querySelector('#flxLayoutEdit');
@@ -4706,10 +4718,10 @@ console.info('NÉVO v4.2.25: compact library reduced by roughly two visible song
   const centerCore=oldMixer?.querySelector('.flx4-center-core');
   if(!oldMixer||!deckA||!mapA||!mapB||!deckB||!browserTop||!browserPanel||!centerCore)return;
 
-  const KEY='nevo.flx4.modularLayout.v1';
+  const KEY='nevo.flx4.modularLayout.v2';
   let edit=false,z=10,raf=0;
-  const min={deckA:[245,420],mapA:[52,285],library:[330,235],fx:[330,145],mapB:[52,285],deckB:[245,420]};
-  const labels={deckA:'DECK A',mapA:'MIX A',library:'BIBLIOTHEK',fx:'BEAT FX / PFL',mapB:'MIX B',deckB:'DECK B'};
+  const min={deckA:[235,315],padA:[220,118],mapA:[46,275],library:[315,225],fx:[315,140],mapB:[46,275],deckB:[235,315],padB:[220,118]};
+  const labels={deckA:'DECK A',padA:'PADS A',mapA:'MIX A',library:'BIBLIOTHEK',fx:'BEAT FX / PFL',mapB:'MIX B',deckB:'DECK B',padB:'PADS B'};
   const panels={};
 
   function makeShell(id,classes=''){
@@ -4722,11 +4734,18 @@ console.info('NÉVO v4.2.25: compact library reduced by roughly two visible song
   library.append(browserTop,browserPanel);
   const fx=makeShell('fx','v4226-fx-panel');
   fx.append(centerCore);
+  const padA=makeShell('padA','v4227-pad-panel deck-a');
+  const padB=makeShell('padB','v4227-pad-panel deck-b');
+  const padNodesA=[deckA.querySelector('.flx4-padmode-buttons'),deckA.querySelector('.flx4-pad-state'),deckA.querySelector('.flx4-pads')].filter(Boolean);
+  const padNodesB=[deckB.querySelector('.flx4-padmode-buttons'),deckB.querySelector('.flx4-pad-state'),deckB.querySelector('.flx4-pads')].filter(Boolean);
+  padA.append(...padNodesA);padB.append(...padNodesB);
   oldMixer.classList.add('v4226-old-mixer');
+  controller.insertBefore(padA,mapA);
   controller.insertBefore(library,mapB);
   controller.insertBefore(fx,mapB);
+  controller.insertBefore(padB,deckB.nextSibling);
 
-  for(const [id,el] of Object.entries({deckA,mapA,library,fx,mapB,deckB})){
+  for(const [id,el] of Object.entries({deckA,padA,mapA,library,fx,mapB,deckB,padB})){
     panels[id]=el;
     el.classList.add('v4226-panel');
     el.dataset.v4226Panel=id;
@@ -4738,15 +4757,17 @@ console.info('NÉVO v4.2.25: compact library reduced by roughly two visible song
 
   function defaults(){
     return {
-      deckA:{x:.000,y:.000,w:.252,h:.985},
-      mapA:{x:.255,y:.180,w:.052,h:.755},
-      library:{x:.311,y:.000,w:.374,h:.615},
-      fx:{x:.311,y:.628,w:.374,h:.350},
-      mapB:{x:.689,y:.180,w:.052,h:.755},
-      deckB:{x:.745,y:.000,w:.255,h:.985}
+      deckA:{x:.000,y:.000,w:.247,h:.705},
+      padA:{x:.000,y:.720,w:.247,h:.260},
+      mapA:{x:.251,y:.145,w:.047,h:.795},
+      library:{x:.302,y:.000,w:.394,h:.605},
+      fx:{x:.302,y:.620,w:.394,h:.360},
+      mapB:{x:.700,y:.145,w:.047,h:.795},
+      deckB:{x:.751,y:.000,w:.249,h:.705},
+      padB:{x:.751,y:.720,w:.249,h:.260}
     };
   }
-  function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');return s&&s.deckA&&s.library&&s.fx?s:defaults()}catch{return defaults()}}
+  function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');return s&&s.deckA&&s.padA&&s.library&&s.fx&&s.padB?s:defaults()}catch{return defaults()}}
   let state=load();
   function clampN(v,a,b){return Math.max(a,Math.min(b,v))}
   function apply(){
@@ -4816,5 +4837,43 @@ console.info('NÉVO v4.2.25: compact library reduced by roughly two visible song
   // Keep the library/FX contents fluid while their cards are resized.
   if('ResizeObserver'in window){const ro=new ResizeObserver(()=>refreshVisuals());Object.values(panels).forEach(p=>ro.observe(p))}
   syncLayoutButtons();requestAnimationFrame(apply);setTimeout(()=>{apply();syncLayoutButtons()},180);setTimeout(()=>{apply();syncLayoutButtons()},700);
-  console.info('NÉVO v4.2.26: movable/resizable six-panel FLX4 workspace active');
+  console.info('NÉVO v4.2.27: movable/resizable eight-panel FLX4 workspace active');
 })();
+
+
+// ===== v4.2.27: TITLE/WAVE SPLIT RESIZER + HALF-STAR UI =====
+(function(){
+  const STORE='nevo.v4227.titleWaveWidth';
+  let titleWidth=Number(localStorage.getItem(STORE)||104);
+  function clampTitle(){
+    const first=document.querySelector('.flx4-browser-columns.v428-browser-columns > span:first-child');
+    const max=Math.max(72,(first?.clientWidth||260)-78);titleWidth=clamp(Number(titleWidth)||104,62,max);return titleWidth;
+  }
+  function apply(){
+    const panel=document.querySelector('#flxBrowserPanel');if(!panel)return;
+    clampTitle();panel.style.setProperty('--v4227-title',`${Math.round(titleWidth)}px`);
+  }
+  function install(){
+    const head=document.querySelector('.flx4-browser-columns.v428-browser-columns');if(!head)return;
+    const first=head.querySelector(':scope > span:first-child');if(!first)return;
+    if(!first.classList.contains('v4227-titlewave-head')){
+      first.classList.add('v4227-titlewave-head');
+      first.innerHTML='<b>TITEL</b><b>WELLE</b><i class="v4227-titlewave-resizer" title="Titel / Welle verschieben · Doppelklick = Standard"></i>';
+      const h=first.querySelector('.v4227-titlewave-resizer');
+      h.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation();titleWidth=104;try{localStorage.setItem(STORE,String(titleWidth))}catch{};apply();v428RedrawMiniWaves?.()});
+      h.addEventListener('pointerdown',e=>{
+        if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
+        h.setPointerCapture?.(e.pointerId);const sx=e.clientX,start=titleWidth;h.classList.add('dragging');
+        const move=ev=>{titleWidth=start+(ev.clientX-sx);apply();v428RedrawMiniWaves?.()};
+        const up=()=>{h.classList.remove('dragging');try{localStorage.setItem(STORE,String(titleWidth))}catch{};window.removeEventListener('pointermove',move,true);window.removeEventListener('pointerup',up,true);window.removeEventListener('pointercancel',up,true)};
+        window.addEventListener('pointermove',move,true);window.addEventListener('pointerup',up,true);window.addEventListener('pointercancel',up,true);
+      });
+    }
+    apply();requestAnimationFrame(()=>{v4212PositionResizers?.();v428RedrawMiniWaves?.()});
+  }
+  const prevRender=v38RenderBrowser;
+  v38RenderBrowser=function(){const r=prevRender.apply(this,arguments);requestAnimationFrame(install);return r};
+  window.addEventListener('resize',()=>requestAnimationFrame(install),{passive:true});
+  [0,120,650].forEach(ms=>setTimeout(install,ms));
+})();
+console.info('NÉVO v4.2.27: separate pad cards, compact mixer strips, hidden scrollbar, orange key, half stars and title/wave resizing active');

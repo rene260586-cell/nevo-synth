@@ -2414,7 +2414,7 @@ body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browse
   }
 }
 
-/* ===== v4.2.26: MODULAR FLX4 WORKSPACE =====
+/* ===== v4.2.27: MODULAR FLX4 WORKSPACE =====
    The six important FLX4 blocks are independent cards on desktop:
    Deck A | CH1 | Library | Beat FX + PFL | CH2 | Deck B.
    LAYOUT mode exposes drag + edge/corner resize handles; normal DJ use stays clean. */
@@ -2584,4 +2584,103 @@ body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browse
   .v4226-library-panel{order:1}.flx4-a.v4226-panel{order:2}.flx4-side-mapper.deck-a.v4226-panel{order:3}.v4226-fx-panel{order:4}.flx4-side-mapper.deck-b.v4226-panel{order:5}.flx4-b.v4226-panel{order:6}
   .v4226-library-panel .flx4-browser-panel{max-height:330px!important;min-height:220px!important}
   .v4226-library-panel .flx4-browser-list{max-height:275px!important}
+}
+
+
+/* ===== v4.2.27: modular refinements requested from the FLX4 workspace ===== */
+/* 1) MIX A / MIX B: label ABOVE every knob and keep the card barely wider than its controls. */
+@media (min-width:901px){
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel{
+    padding:5px 4px!important;gap:4px!important;align-items:center!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary-stack{
+    display:flex!important;flex-direction:column!important;align-items:center!important;gap:3px!important;width:100%!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary-stack label{
+    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+    gap:2px!important;width:max-content!important;max-width:100%!important;margin:0 auto!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary-stack label>span{
+    order:-1!important;display:block!important;width:100%!important;text-align:center!important;font-size:6px!important;line-height:1!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary{width:31px!important;height:31px!important;min-height:31px!important}
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-channel-cue{width:46px!important;max-width:100%!important;padding-left:3px!important;padding-right:3px!important}
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .v414-channel-fader{width:42px!important;max-width:100%!important}
+}
+
+/* 2) Browser scrollbar is invisible. Mouse wheel, touchpad and touch scrolling continue to work. */
+.v4226-library-panel .flx4-browser-list{scrollbar-width:none!important;-ms-overflow-style:none!important}
+.v4226-library-panel .flx4-browser-list::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}
+
+/* 3) Dedicated movable/resizable performance-pad cards. */
+.v4227-pad-panel{
+  border:1px solid rgba(86,135,171,.17)!important;border-radius:13px!important;
+  background:linear-gradient(180deg,rgba(5,12,18,.97),rgba(2,7,11,.97))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.018),0 10px 28px rgba(0,0,0,.18)!important;
+  padding:6px!important;gap:5px!important;justify-content:flex-start!important;
+}
+.v4227-pad-panel .flx4-padmode-buttons{flex:0 0 auto!important;margin:0!important}
+.v4227-pad-panel .flx4-pad-state{flex:0 0 auto!important;margin:0!important}
+.v4227-pad-panel .flx4-pads{flex:1 1 auto!important;min-height:0!important;margin:0!important;align-content:stretch!important}
+.v4227-pad-panel .flx4-pads button{min-height:28px!important}
+
+/* 4) Camelot key uses the same warm orange as the rating stars. */
+.flx4-browser-track.v429-browser-row .v428-key,
+.flx4-browser-columns.v428-browser-columns > span:nth-child(3),
+.dj-lib-key{color:#ffb55e!important}
+
+/* 5) Half-star capable rating. The button remains one tap target; the glyph itself can be half filled. */
+.v429-star{position:relative!important;color:#75818c!important;background:transparent!important}
+.v429-star>span{display:inline-block!important;line-height:1!important;color:#75818c!important}
+.v429-star.filled>span{color:#ffb55e!important;text-shadow:0 0 8px rgba(255,181,94,.16)!important}
+.v429-star.half>span{
+  color:transparent!important;
+  background:linear-gradient(90deg,#ffb55e 0 50%,#75818c 50% 100%)!important;
+  -webkit-background-clip:text!important;background-clip:text!important;
+  text-shadow:none!important;
+}
+/* Let the stars shrink with their user-resizable column instead of overflowing into KEY/Länge. */
+.v429-browser-rating .v429-star{
+  width:clamp(10px,calc((var(--v4212-rating) - 8px)/5),15px)!important;
+  min-width:clamp(10px,calc((var(--v4212-rating) - 8px)/5),15px)!important;
+  font-size:clamp(10px,calc((var(--v4212-rating) - 8px)/5),15px)!important;
+  padding:0!important;
+}
+
+/* 6) TITLE and WAVE are independently resizable inside the first browser column. */
+.flx4-browser-panel{--v4227-title:104px}
+.v429-browser-row .v425-track-main{
+  grid-template-columns:minmax(62px,var(--v4227-title)) minmax(72px,1fr)!important;
+  gap:7px!important;
+}
+.v4227-titlewave-head{
+  position:relative!important;display:grid!important;
+  grid-template-columns:minmax(62px,var(--v4227-title)) minmax(72px,1fr)!important;
+  gap:7px!important;align-items:center!important;min-width:0!important;text-align:left!important;
+}
+.v4227-titlewave-head>b{font:950 7px/1 system-ui,sans-serif!important;color:#99adbb!important;letter-spacing:.04em!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.v4227-titlewave-head>b:nth-child(2){text-align:center!important}
+.v4227-titlewave-resizer{
+  position:absolute!important;z-index:90!important;left:var(--v4227-title)!important;top:-3px!important;bottom:-3px!important;
+  width:16px!important;margin-left:-8px!important;cursor:col-resize!important;touch-action:none!important;background:transparent!important;
+}
+.v4227-titlewave-resizer::after{content:"";position:absolute;left:7px;top:2px;width:2px;height:5px;border-radius:3px;background:rgba(147,219,241,.34);opacity:.55}
+.v4227-titlewave-resizer:hover::after,.v4227-titlewave-resizer.dragging::after{background:#69ddff;box-shadow:0 0 7px rgba(84,216,255,.5);opacity:1}
+
+/* Existing BPM/KEY/STAR/LENGTH boundaries remain user-resizable but may be made smaller. */
+.flx4-browser-panel{--v4212-bpm:54px;--v4212-key:48px;--v4212-rating:82px;--v4212-duration:58px}
+
+@media(max-width:900px){
+  .v4227-pad-panel{order:initial!important}
+  .v4227-titlewave-resizer{display:none!important}
+}
+@media(max-width:900px){
+  .v4226-library-panel{order:1!important}
+  .flx4-a.v4226-panel{order:2!important}
+  .v4227-pad-panel.deck-a{order:3!important}
+  .flx4-side-mapper.deck-a.v4226-panel{order:4!important}
+  .v4226-fx-panel{order:5!important}
+  .flx4-side-mapper.deck-b.v4226-panel{order:6!important}
+  .flx4-b.v4226-panel{order:7!important}
+  .v4227-pad-panel.deck-b{order:8!important}
 }
