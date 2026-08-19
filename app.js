@@ -3916,3 +3916,255 @@ function v4216RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V
 const v4216BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4216BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Komplette 3-Band-Songwelle + Phrase':'Full 3-band waveform + phrase');try{v428RedrawMiniWaves()}catch{}});return r};
 setTimeout(v4216RefreshAll,220);setTimeout(v4216RefreshAll,1350);
 console.info('NÉVO v4.2.16: stronger true 3-band deck/library waveforms, phrase estimation/strip and SPACE full-library mode active');
+
+// ===== v4.2.17: SPECTRAL 3-BAND FIX + CLEAR PHRASE STRIPS =====
+// v4.2.16 could collapse towards orange because the frequency split was evaluated
+// after aggressive decimation. v4.2.17 samples short windows at the ORIGINAL sample
+// rate, then stores a dense full-track colour map. This keeps bass / mids / highs
+// visually independent while preserving the real waveform envelope.
+const V4217_PREVIEW_VERSION=4217;
+const V4217_PHRASE_VERSION=4217;
+const V4217_COLS=1536;
+
+function v4217Percentile(arr,p=.95,floor=.00001){
+  const s=Array.from(arr||[]).filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!s.length)return floor;return Math.max(floor,s[Math.min(s.length-1,Math.max(0,Math.floor((s.length-1)*p)))]||floor)
+}
+function v4217WindowFeature(buffer,centerSample,win=1024){
+  const ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null,sr=buffer.sampleRate||44100,n0=ch0.length;
+  const half=win>>1,start=Math.max(0,Math.min(n0-1,(centerSample|0)-half)),end=Math.min(n0,start+win);
+  const aLow=1-Math.exp(-2*Math.PI*190/sr),aMid=1-Math.exp(-2*Math.PI*2700/sr);
+  let first=ch1?((ch0[start]||0)+(ch1[start]||0))*.5:(ch0[start]||0),lpLow=first,lpMid=first,lo2=0,mi2=0,hi2=0,total2=0,peak=0,n=0;
+  for(let i=start;i<end;i++){
+    const s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0);
+    lpLow+=aLow*(s-lpLow);lpMid+=aMid*(s-lpMid);
+    const lo=lpLow,mi=lpMid-lpLow,hi=s-lpMid;
+    lo2+=lo*lo;mi2+=mi*mi;hi2+=hi*hi;total2+=s*s;peak=Math.max(peak,Math.abs(s));n++;
+  }
+  n=Math.max(1,n);return {low:Math.sqrt(lo2/n),mid:Math.sqrt(mi2/n),high:Math.sqrt(hi2/n),rms:Math.sqrt(total2/n),peak};
+}
+function v4217BuildFullTrack3Band(item,buffer){
+  if(!buffer)return null;const dur=buffer.duration||0;if(!(dur>0))return null;
+  const cols=V4217_COLS,span=buffer.length||1,ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null;
+  const low=new Float32Array(cols),mid=new Float32Array(cols),high=new Float32Array(cols),amp=new Float32Array(cols),envRms=new Float32Array(cols),envCount=new Uint32Array(cols);
+  // Real full-song envelope in one pass. Stride is bounded so analysis remains fast on phones.
+  const stride=Math.max(1,Math.floor(span/1800000));
+  for(let i=0;i<span;i+=stride){const s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0),x=Math.min(cols-1,Math.floor(i/span*cols));amp[x]=Math.max(amp[x],Math.abs(s));envRms[x]+=s*s;envCount[x]++}
+  // Spectral colour windows are evaluated at original sample-rate; no decimation aliasing.
+  for(let x=0;x<cols;x++){
+    const center=Math.min(span-1,Math.max(0,Math.floor((x+.5)/cols*span))),f=v4217WindowFeature(buffer,center,1024);
+    low[x]=f.low;mid[x]=f.mid;high[x]=f.high;
+    const n=Math.max(1,envCount[x]);amp[x]=Math.max(amp[x],Math.sqrt(envRms[x]/n)*2.25,f.peak*.72);
+  }
+  const lr=v4217Percentile(low,.94,.00015),mr=v4217Percentile(mid,.94,.00015),hr=v4217Percentile(high,.94,.00015),ar=v4217Percentile(amp,.965,.001);
+  const data=new Array(cols*4);
+  for(let x=0;x<cols;x++){
+    // Independent per-band normalization is what makes different musical content visible.
+    let l=clamp(low[x]/lr,0,1.35),m=clamp(mid[x]/mr,0,1.35),h=clamp(high[x]/hr,0,1.35);
+    l=Math.pow(l,.78);m=Math.pow(m,.78);h=Math.pow(h,.78);
+    const sum=Math.max(.0001,l+m+h);l/=sum;m/=sum;h/=sum;
+    // Increase separation without forcing everything to a single dominant colour.
+    l=Math.pow(l,1.45);m=Math.pow(m,1.45);h=Math.pow(h,1.45);const s2=Math.max(.0001,l+m+h);l/=s2;m/=s2;h/=s2;
+    const o=x*4;data[o]=Math.round(clamp(Math.pow(amp[x]/ar,.66),0,1)*255);data[o+1]=Math.round(l*255);data[o+2]=Math.round(m*255);data[o+3]=Math.round(h*255);
+  }
+  return {v:V4217_PREVIEW_VERSION,scope:'full-track',start:0,end:dur,duration:dur,bpm:Number(item?.bpm)||0,beatOffset:Number(item?.beatOffset)||0,cols,data,mode:'spectral-3band-phrase'};
+}
+function v4217PreviewAt(p,x,width){const cols=p?.cols||V4217_COLS,i=clamp(Math.floor(x/Math.max(1,width)*cols),0,Math.max(0,cols-1)),o=i*4,d=p?.data||[];return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255}}
+function v4217PreviewAtTime(item,time){const p=item?.v425Wave32;if(!p||p.v!==V4217_PREVIEW_VERSION||!Array.isArray(p.data))return null;const dur=Math.max(.001,Number(p.duration)||Number(item?.duration)||1),cols=p.cols||V4217_COLS,i=clamp(Math.floor(clamp(time,0,dur)/dur*cols),0,cols-1),o=i*4,d=p.data;return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255}}
+function v4217BandRGB(low,mid,high,a=.98){
+  const sum=Math.max(.001,low+mid+high),l=low/sum,m=mid/sum,h=high/sum;
+  // Warm bass, green mids, cyan/blue highs. We keep channels separated rather than yellowing everything.
+  const r=Math.min(255,255*l+48*m+18*h),g=Math.min(255,54*l+255*m+118*h),b=Math.min(255,20*l+54*m+255*h);
+  const mx=Math.max(80,r,g,b),boost=255/mx;return `rgba(${Math.min(255,r*boost)|0},${Math.min(255,g*boost)|0},${Math.min(255,b*boost)|0},${a})`;
+}
+function v4217DrawBandColumn(c,x,midY,amp,st){
+  let l=Math.max(0,st?.low||0),m=Math.max(0,st?.mid||0),h=Math.max(0,st?.high||0),sum=Math.max(.0001,l+m+h);l/=sum;m/=sum;h/=sum;
+  // 3-band stacked waveform: red/orange core, green mids, cyan/blue outer detail.
+  const lowH=Math.max(.25,amp*l),midH=Math.max(.18,amp*m),highH=Math.max(.14,amp*h),total=Math.max(.7,lowH+midH+highH),scale=amp/total;
+  const L=lowH*scale,M=midH*scale,H=highH*scale;
+  c.fillStyle='rgba(255,76,24,.98)';c.fillRect(x,midY-L,1,Math.max(1,L*2));
+  c.fillStyle='rgba(69,236,85,.98)';c.fillRect(x,midY-L-M,1,Math.max(.8,M));c.fillRect(x,midY+L,1,Math.max(.8,M));
+  c.fillStyle='rgba(34,171,255,.98)';c.fillRect(x,midY-L-M-H,1,Math.max(.7,H));c.fillRect(x,midY+L+M,1,Math.max(.7,H));
+  c.fillStyle=v4217BandRGB(l,m,h,.92);c.fillRect(x,Math.max(0,midY-amp),1,1);c.fillRect(x,midY+amp-1,1,1);
+}
+
+function v4217PhraseFeature(buffer,startSec,endSec){
+  const sr=buffer.sampleRate||44100,start=Math.max(0,startSec),end=Math.min(buffer.duration||0,endSec),windows=12;let low=0,mid=0,high=0,rms=0,peak=0,n=0;
+  if(!(end>start))return {low:0,mid:0,high:0,energy:0,peak:0,lowShare:0,midShare:0,highShare:0};
+  for(let j=0;j<windows;j++){const t=start+(j+.5)/windows*(end-start),f=v4217WindowFeature(buffer,Math.floor(t*sr),1024);low+=f.low;mid+=f.mid;high+=f.high;rms+=f.rms;peak=Math.max(peak,f.peak);n++}
+  low/=n;mid/=n;high/=n;rms/=n;const sum=Math.max(1e-8,low+mid+high);return {low,mid,high,energy:rms,peak,lowShare:low/sum,midShare:mid/sum,highShare:high/sum};
+}
+function v4217AnalyzePhrases(buffer,bpm){
+  const dur=buffer?.duration||0,b=Number(bpm)||0;if(!(dur>0)||!(b>0))return [];
+  const bar=60/b*4,chunk=Math.max(bar*8,8),count=Math.max(1,Math.ceil(dur/chunk)),F=[];
+  for(let i=0;i<count;i++){const start=i*chunk,end=Math.min(dur,(i+1)*chunk);F.push({...v4217PhraseFeature(buffer,start,end),start,end})}
+  const es=F.map(x=>x.energy).sort((a,b)=>a-b),q=(p)=>es[Math.min(es.length-1,Math.floor((es.length-1)*p))]||0,e30=q(.30),e55=q(.55),e78=q(.78),e92=Math.max(.0001,q(.92));
+  const out=[];
+  for(let i=0;i<F.length;i++){
+    const f=F[i],prev=F[Math.max(0,i-1)],next=F[Math.min(F.length-1,i+1)],rise=(f.energy-prev.energy)/e92,fall=(next.energy-f.energy)/e92;let label='VERSE';
+    if(i===0||(i<=1&&f.energy<e55*.82))label='INTRO';
+    else if(i===F.length-1||(i>=F.length-2&&f.energy<e55*.80))label='OUTRO';
+    else if(f.energy>=e78&&f.lowShare>=.34)label='BRIDGE';
+    else if(f.energy>=e55&&f.midShare>=.34&&f.lowShare<.38)label='CHORUS';
+    else if(rise>.20&&f.energy>=e55)label='UP';
+    else if(fall<-.20&&f.energy>=e55)label='DOWN';
+    else if(f.energy<=e30)label='VERSE';
+    else label='VERSE';
+    out.push({v:V4217_PHRASE_VERSION,start:f.start,end:f.end,label,energy:f.energy,low:f.lowShare,mid:f.midShare,high:f.highShare});
+  }
+  const merged=[];for(const p of out){const last=merged.at(-1);if(last&&last.label===p.label){last.end=p.end;last.energy=Math.max(last.energy,p.energy)}else merged.push({...p})}return merged;
+}
+v3AnalyzePhrases=v4217AnalyzePhrases;
+
+function v4217PaintPhraseStrip(c,w,h,item,withLabels=false){
+  const ph=Array.isArray(item?.phrases)?item.phrases:[],dur=Number(item?.duration)||Number(item?.v425Wave32?.duration)||0;if(!ph.length||!(dur>0))return 0;
+  const strip=withLabels?14:6,y=h-strip;c.fillStyle='#020507';c.fillRect(0,y,w,strip);
+  for(const p of ph){const x1=clamp(Number(p.start||0)/dur*w,0,w),x2=clamp(Number(p.end||dur)/dur*w,x1,w),ww=Math.max(1,x2-x1),col=v4216PhraseColor(p.label);c.fillStyle=col;c.globalAlpha=.96;c.fillRect(x1,y,ww,strip);c.globalAlpha=1;if(withLabels&&ww>34){c.save();c.beginPath();c.rect(x1,y,ww,strip);c.clip();c.fillStyle='#071016';c.font='900 8px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(String(p.label||''),x1+ww/2,y+strip/2+.3);c.restore()}}
+  return strip;
+}
+function v4217DrawMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32,rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(20,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#010405');bg.addColorStop(.55,'#071016');bg.addColorStop(1,'#010405');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  if(!p||p.v!==V4217_PREVIEW_VERSION||!Array.isArray(p.data)){c.fillStyle='rgba(135,190,215,.78)';c.font=`800 ${Math.max(6,Math.min(9,h*.33))}px system-ui`;c.textAlign='center';c.fillText(item.analyzing||item.v425PreviewQueued?(currentLang==='de'?'ANALYSE …':'ANALYSIS …'):(currentLang==='de'?'WELLE':'WAVE'),w/2,h*.55);c.textAlign='left';if(!item.analyzing&&!item.v425PreviewQueued)v425SchedulePreview(item);return}
+  const withLabels=document.body.classList.contains('v4216-library-focus')&&h>=40,phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?(withLabels?14:6):0,waveH=h-phraseH,midY=waveH*.5,maxA=waveH*.47;
+  c.strokeStyle='rgba(255,255,255,.09)';c.lineWidth=1;for(const f of [.25,.5,.75]){const xx=Math.round(w*f)+.5;c.beginPath();c.moveTo(xx,0);c.lineTo(xx,waveH);c.stroke()}
+  for(let x=0;x<w;x++){const st=v4217PreviewAt(p,x,w),a=Math.max(.8,Math.pow(st.amp,.70)*maxA);v4217DrawBandColumn(c,x,midY,a,st)}
+  c.fillStyle='rgba(255,255,255,.15)';c.fillRect(0,Math.round(midY),w,1);if(phraseH)v4217PaintPhraseStrip(c,w,h,item,withLabels);
+}
+v425DrawMiniWave=v4217DrawMiniWave;
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing)return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;if(item.v425Wave32?.v===V4217_PREVIEW_VERSION&&item.phrases?.[0]?.v===V4217_PHRASE_VERSION)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.duration=buffer.duration||item.duration;if(Number(item.bpm)>0)item.phrases=v4217AnalyzePhrases(buffer,item.bpm);item.v425Wave32=v4217BuildFullTrack3Band(item,buffer);if(persist)try{await saveDjItem(item)}catch{};return item.v425Wave32})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false}
+};
+v425SchedulePreview=function(item){if(!item||item.v425Wave32?.v===V4217_PREVIEW_VERSION&&item.phrases?.[0]?.v===V4217_PHRASE_VERSION||item.analyzing||item.v425PreviewQueued)return;item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()};
+v4215NeedsLibraryAnalysis=function(item){if(!item)return false;const hasBpm=Number(item.bpm)>0,hasKey=!!item.key&&item.key!=='—',hasDur=Number(item.duration)>0,hasWave=item.v425Wave32?.v===V4217_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data),hasPhrase=item.phrases?.[0]?.v===V4217_PHRASE_VERSION;return !hasBpm||!hasKey||!hasDur||!hasWave||!hasPhrase};
+
+function v4217DrawPerformanceWave(buffer,canvas,startSec,endSec,letter='A'){
+  if(!buffer||!canvas)return;const rect=canvas.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(64,Math.round(rect.height||118)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),pw=Math.round(w*dpr),ph=Math.round(h*dpr);if(canvas.width!==pw)canvas.width=pw;if(canvas.height!==ph)canvas.height=ph;
+  const c=canvas.getContext('2d',{alpha:false});c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const dur=buffer.duration||0,end=clamp(endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001)),d=djDecks?.[letter],bpm=d?djDeckBpm(letter):0;v425PaintWaveBackground(c,w,h);v425PaintGrid(c,w,h,start,end,bpm,d?.beatOffset||0,false);
+  const B=v4216WindowBands(buffer,start,end,w),aRef=v4217Percentile(B.amp,.94,.003),midY=h*.5,maxA=h*.455,p=d?.item?.v425Wave32;
+  for(let x=0;x<w;x++){
+    const t=start+(x+.5)/w*(end-start),st=v4217PreviewAtTime(d?.item,t)||{low:clamp(B.low[x]/Math.max(.0001,B.lr),0,1),mid:clamp(B.mid[x]/Math.max(.0001,B.mr),0,1),high:clamp(B.high[x]/Math.max(.0001,B.hr),0,1)},a=Math.max(.9,Math.pow(clamp(B.amp[x]/aRef,0,1),.72)*maxA);v4217DrawBandColumn(c,x,midY,a,st)
+  }
+  c.fillStyle='rgba(255,255,255,.14)';c.fillRect(0,Math.round(midY),w,1);
+  const phrase=v4216CurrentPhrase(d?.item,d?.audio?.currentTime||0);if(phrase){const col=v4216PhraseColor(phrase.label);c.fillStyle=col;c.globalAlpha=.98;c.fillRect(0,h-5,w,5);c.globalAlpha=1;c.fillStyle='rgba(1,6,10,.82)';c.fillRect(w-74,5,68,14);c.fillStyle=col;c.font='900 8px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(String(phrase.label||''),w-40,12);c.textAlign='left';c.textBaseline='alphabetic'}
+  if(d?.item&&(!p||p.v!==V4217_PREVIEW_VERSION)&&!d.item.analyzing)v425SchedulePreview(d.item);
+}
+v34DrawStack=function(letter,force=false){const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv)return;const r=v34StackRange(letter),key=`${r.start.toFixed(3)}:${r.end.toFixed(3)}:${nevoV34.waveBeats}:${d.item?.v425Wave32?.v||0}:${d.phrases?.length||0}`;if(!force&&d.v34StackKey===key)return;d.v34StackKey=key;v4217DrawPerformanceWave(d.buffer,cv,r.start,r.end,letter);v34BeatOverlay(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter);const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`};
+
+function v4217Refresh(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4217_PREVIEW_VERSION||item.phrases?.[0]?.v!==V4217_PHRASE_VERSION)v425SchedulePreview(item);try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.();v34DrawStack('A',true);v34DrawStack('B',true)}catch{}}
+const v4217BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4217BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Spektrale 3-Band-Songwelle + Songteile':'Spectral 3-band waveform + phrases');try{v428RedrawMiniWaves()}catch{}});return r};
+setTimeout(v4217Refresh,220);setTimeout(v4217Refresh,1500);
+console.info('NÉVO v4.2.17: corrected original-rate spectral 3-band colours, separated RGB waveform bands and clearer phrase strips active');
+
+// ===== v4.2.18: DYNAMIC RED-BASS 3-BAND + FULL-TRACK DECK OVERVIEW =====
+// Goal: keep quiet/melodic sections visibly thin, let bass-heavy sections grow,
+// avoid the yellow wash, and show a whole-song overview directly under each live 2/4/6-beat wave.
+const V4218_PREVIEW_VERSION=4218;
+const V4218_COLS=1800;
+
+function v4218WeightedShares(low,mid,high){
+  // The simple filters naturally over-represent mids/highs. These weights make kick/bass
+  // visually read as red while leaving melodic material green/cyan instead of yellow.
+  let l=Math.max(0,Number(low)||0)*2.35,m=Math.max(0,Number(mid)||0)*1.08,h=Math.max(0,Number(high)||0)*.68;
+  const sum=Math.max(1e-9,l+m+h);return {low:l/sum,mid:m/sum,high:h/sum}
+}
+function v4218WaveColor(st,alpha=.98){
+  const sum=Math.max(.001,(Number(st?.low)||0)+(Number(st?.mid)||0)+(Number(st?.high)||0)),l=(Number(st?.low)||0)/sum,m=(Number(st?.mid)||0)/sum,h=(Number(st?.high)||0)/sum;
+  // Deliberately avoid bright yellow: bass = red/coral, mids = green, highs = cyan/blue.
+  if(l>=.46 && l>=m*1.08)return `rgba(255,48,38,${alpha})`;
+  if(l>=.38 && l>=m*.88)return `rgba(255,88,42,${alpha})`;
+  if(h>=.40 && h>=m*.92 && l<.32)return `rgba(42,165,255,${alpha})`;
+  if(m>=.44 && l<.38)return `rgba(62,230,92,${alpha})`;
+  if((m+h)>=.68 && l<.34)return `rgba(46,211,173,${alpha})`;
+  if(l>=.33)return `rgba(255,104,48,${alpha})`;
+  if(h>m)return `rgba(54,184,244,${alpha})`;
+  return `rgba(78,220,105,${alpha})`;
+}
+function v4218NormEnvelope(values){
+  const arr=Array.from(values||[]).filter(Number.isFinite),floor=v4217Percentile(arr,.16,0),top=v4217Percentile(arr,.992,.001),span=Math.max(.000001,top-floor);
+  return {floor,top,span}
+}
+function v4218AmpShape(raw,norm,bassAbs=0){
+  const e=clamp((raw-norm.floor)/norm.span,0,1),dynamic=Math.pow(e,1.42),bass=clamp(Number(bassAbs)||0,0,1);
+  // Quiet/melodic material stays thin; bass-heavy passages are allowed to open up.
+  return clamp(dynamic*(.54+.46*Math.pow(bass,.78)),0,1)
+}
+function v4218BuildFullTrack3Band(item,buffer){
+  if(!buffer)return null;const dur=buffer.duration||0;if(!(dur>0))return null;
+  const cols=V4218_COLS,span=buffer.length||1,sr=buffer.sampleRate||44100;
+  const low=new Float32Array(cols),mid=new Float32Array(cols),high=new Float32Array(cols),env=new Float32Array(cols);
+  for(let x=0;x<cols;x++){
+    const center=Math.min(span-1,Math.max(0,Math.floor((x+.5)/cols*span))),f=v4217WindowFeature(buffer,center,1536);
+    low[x]=f.low;mid[x]=f.mid;high[x]=f.high;
+    const clippedPeak=Math.min(f.peak,f.rms*5.2);
+    env[x]=f.rms*.82+clippedPeak*.18;
+  }
+  const eNorm=v4218NormEnvelope(env),lowRef=v4217Percentile(low,.975,.0001),data=new Array(cols*4);
+  for(let x=0;x<cols;x++){
+    const shares=v4218WeightedShares(low[x],mid[x],high[x]),bassAbs=clamp(low[x]/Math.max(.0001,lowRef),0,1),a=v4218AmpShape(env[x],eNorm,bassAbs),o=x*4;
+    data[o]=Math.round(a*255);data[o+1]=Math.round(shares.low*255);data[o+2]=Math.round(shares.mid*255);data[o+3]=Math.round(shares.high*255);
+  }
+  // Light 3-point envelope smoothing: keeps a musical silhouette without flattening drops/breaks.
+  for(let x=1;x<cols-1;x++){const o=x*4,sm=(data[(x-1)*4]+data[o]*2+data[(x+1)*4])/4;data[o]=Math.round(Math.max(data[o]*.82,sm))}
+  return {v:V4218_PREVIEW_VERSION,scope:'full-track',start:0,end:dur,duration:dur,bpm:Number(item?.bpm)||0,beatOffset:Number(item?.beatOffset)||0,cols,data,mode:'dynamic-redbass-3band'};
+}
+function v4218PreviewAt(p,x,width){const cols=p?.cols||V4218_COLS,i=clamp(Math.floor(x/Math.max(1,width)*cols),0,Math.max(0,cols-1)),o=i*4,d=p?.data||[];return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255}}
+function v4218PreviewAtTime(item,time){const p=item?.v425Wave32;if(!p||p.v!==V4218_PREVIEW_VERSION||!Array.isArray(p.data))return null;const dur=Math.max(.001,Number(p.duration)||Number(item?.duration)||1),i=clamp(Math.floor(clamp(time,0,dur)/dur*(p.cols||V4218_COLS)),0,(p.cols||V4218_COLS)-1),o=i*4,d=p.data;return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255}}
+function v4218DrawColumn(c,x,midY,amp,st,width=1){
+  c.fillStyle=v4218WaveColor(st,.98);const hh=Math.max(.45,amp);c.fillRect(x,midY-hh,width,Math.max(1,hh*2));
+  // A tiny brighter center preserves kick/transient definition without inflating amplitude.
+  c.fillStyle='rgba(255,255,255,.12)';c.fillRect(x,midY-.35,width,.7)
+}
+function v4218DrawMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32,rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(20,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010304';c.fillRect(0,0,w,h);
+  if(!p||p.v!==V4218_PREVIEW_VERSION||!Array.isArray(p.data)){c.fillStyle='rgba(130,186,210,.80)';c.font=`800 ${Math.max(6,Math.min(9,h*.33))}px system-ui`;c.textAlign='center';c.fillText(item.analyzing||item.v425PreviewQueued?(currentLang==='de'?'ANALYSE …':'ANALYSIS …'):(currentLang==='de'?'WELLE':'WAVE'),w/2,h*.55);c.textAlign='left';if(!item.analyzing&&!item.v425PreviewQueued)v425SchedulePreview(item);return}
+  const withLabels=document.body.classList.contains('v4216-library-focus')&&h>=40,phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?(withLabels?14:5):0,waveH=h-phraseH,midY=waveH*.5,maxA=waveH*.46;
+  c.strokeStyle='rgba(255,255,255,.055)';c.lineWidth=1;for(const f of [.25,.5,.75]){const xx=Math.round(w*f)+.5;c.beginPath();c.moveTo(xx,0);c.lineTo(xx,waveH);c.stroke()}
+  for(let x=0;x<w;x++){const st=v4218PreviewAt(p,x,w),a=Math.max(.35,Math.pow(st.amp,1.08)*maxA);v4218DrawColumn(c,x,midY,a,st)}
+  if(phraseH)v4217PaintPhraseStrip(c,w,h,item,withLabels)
+}
+v425DrawMiniWave=v4218DrawMiniWave;
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing)return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;if(item.v425Wave32?.v===V4218_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data))return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.duration=buffer.duration||item.duration;if(Number(item.bpm)>0&&!(Array.isArray(item.phrases)&&item.phrases.length))item.phrases=v4217AnalyzePhrases(buffer,item.bpm);item.v425Wave32=v4218BuildFullTrack3Band(item,buffer);if(persist)try{await saveDjItem(item)}catch{};return item.v425Wave32})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false;requestAnimationFrame(()=>{try{v428RedrawMiniWaves?.();v4218DrawDeckOverview('A',true);v4218DrawDeckOverview('B',true)}catch{}})}
+};
+v425SchedulePreview=function(item){if(!item||item.v425Wave32?.v===V4218_PREVIEW_VERSION||item.analyzing||item.v425PreviewQueued)return;item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()};
+v4215NeedsLibraryAnalysis=function(item){if(!item)return false;const hasBpm=Number(item.bpm)>0,hasKey=!!item.key&&item.key!=='—',hasDur=Number(item.duration)>0,hasWave=item.v425Wave32?.v===V4218_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data),hasPhrase=Array.isArray(item.phrases)&&item.phrases.length>0;return !hasBpm||!hasKey||!hasDur||!hasWave||!hasPhrase};
+
+function v4218DrawPerformanceWave(buffer,canvas,startSec,endSec,letter='A'){
+  if(!buffer||!canvas)return;const rect=canvas.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(42,Math.round(rect.height||86)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),pw=Math.round(w*dpr),ph=Math.round(h*dpr);if(canvas.width!==pw)canvas.width=pw;if(canvas.height!==ph)canvas.height=ph;
+  const c=canvas.getContext('2d',{alpha:false});c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const dur=buffer.duration||0,end=clamp(endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001)),d=djDecks?.[letter],bpm=d?djDeckBpm(letter):0;v425PaintWaveBackground(c,w,h);v425PaintGrid(c,w,h,start,end,bpm,d?.beatOffset||0,false);
+  const B=v4216WindowBands(buffer,start,end,w),aNorm=v4218NormEnvelope(B.amp),midY=h*.5,maxA=h*.45,lowRef=v4217Percentile(B.low,.97,.0001);
+  for(let x=0;x<w;x++){
+    const bassAbs=clamp(B.low[x]/Math.max(.0001,lowRef),0,1),a=Math.max(.4,v4218AmpShape(B.amp[x],aNorm,bassAbs)*maxA),shares=v4218WeightedShares(B.low[x],B.mid[x],B.high[x]);v4218DrawColumn(c,x,midY,a,shares)
+  }
+  const phrase=v4216CurrentPhrase(d?.item,d?.audio?.currentTime||0);if(phrase){const col=v4216PhraseColor(phrase.label);c.fillStyle=col;c.globalAlpha=.92;c.fillRect(0,h-3,w,3);c.globalAlpha=1}
+  if(d?.item&&d.item.v425Wave32?.v!==V4218_PREVIEW_VERSION&&!d.item.analyzing)v425SchedulePreview(d.item)
+}
+
+function v4218DrawDeckOverview(letter,force=false){
+  const d=djDecks?.[letter],cv=$(`#flx${letter}FullWave`);if(!cv)return;const item=d?.item,p=item?.v425Wave32,rect=cv.getBoundingClientRect(),w=Math.max(150,Math.round(rect.width||900)),h=Math.max(10,Math.round(rect.height||20)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  const pw=Math.round(w*dpr),ph=Math.round(h*dpr),key=`${item?.id||'-'}:${p?.v||0}:${w}:${h}`;if(!force&&cv.dataset.drawKey===key){v4218RefreshOverviewPlayhead(letter);return}cv.dataset.drawKey=key;cv.width=pw;cv.height=ph;const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010304';c.fillRect(0,0,w,h);
+  if(item&&p?.v===V4218_PREVIEW_VERSION&&Array.isArray(p.data)){
+    const phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?3:0,waveH=h-phraseH,midY=waveH*.5,maxA=waveH*.46;
+    for(let x=0;x<w;x++){const st=v4218PreviewAt(p,x,w),a=Math.max(.25,Math.pow(st.amp,1.05)*maxA);v4218DrawColumn(c,x,midY,a,st)}
+    if(phraseH)v4217PaintPhraseStrip(c,w,h,item,false)
+  }else if(item&&!item.analyzing)v425SchedulePreview(item);
+  v4218RefreshOverviewPlayhead(letter)
+}
+function v4218RefreshOverviewPlayhead(letter){const d=djDecks?.[letter],ph=$(`#flx${letter}FullPlayhead`);if(!ph)return;const dur=d?.buffer?.duration||Number(d?.item?.duration)||0,t=d?.audio?.currentTime||0;ph.style.left=(dur>0?clamp(t/dur*100,0,100):0)+'%'}
+function v4218BindOverview(){document.querySelectorAll('[data-full-overview]').forEach(el=>{if(el.dataset.v4218Bound)return;el.dataset.v4218Bound='1';const seek=e=>{e.preventDefault();e.stopPropagation();const L=el.dataset.fullOverview,d=djDecks?.[L];if(!d?.buffer)return;const r=el.getBoundingClientRect(),x=clamp((e.clientX-r.left)/Math.max(1,r.width),0,1);d.audio.currentTime=x*d.buffer.duration;refreshDeckUi(L);v34DrawStack(L,true);v4218RefreshOverviewPlayhead(L)};el.addEventListener('pointerdown',seek,{passive:false});el.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()})})}
+
+v34DrawStack=function(letter,force=false){const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv){v4218DrawDeckOverview(letter,force);return}const r=v34StackRange(letter),key=`${r.start.toFixed(3)}:${r.end.toFixed(3)}:${nevoV34.waveBeats}:${d.item?.v425Wave32?.v||0}`;if(force||d.v34StackKey!==key){d.v34StackKey=key;v4218DrawPerformanceWave(d.buffer,cv,r.start,r.end,letter);v34BeatOverlay(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter)}v4218DrawDeckOverview(letter,force);const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`};
+
+const v4218OldRefreshFlx=refreshFlx4Ui;refreshFlx4Ui=function(){const r=v4218OldRefreshFlx();v4218RefreshOverviewPlayhead('A');v4218RefreshOverviewPlayhead('B');return r};
+function v4218RefreshAll(){v4218BindOverview();for(const item of djLibrary)if(item.v425Wave32?.v!==V4218_PREVIEW_VERSION)v425SchedulePreview(item);try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.();v34DrawStack('A',true);v34DrawStack('B',true)}catch{}}
+const v4218BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4218BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Gesamter Song · Bass rot · Mitten grün · Höhen blau':'Full track · red bass · green mids · blue highs');try{v428RedrawMiniWaves?.()}catch{}});return r};
+setTimeout(v4218RefreshAll,180);setTimeout(v4218RefreshAll,1200);
+console.info('NÉVO v4.2.18: dynamic amplitude waveform, red bass / green mids / cyan highs, and full-track overview under each live deck waveform active');

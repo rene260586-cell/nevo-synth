@@ -2209,3 +2209,31 @@ body.v4216-library-focus .v4215-analysis-progress{flex:0 0 auto!important}
   body.v4216-library-focus .v429-browser-row .v425-track-main{grid-template-columns:minmax(82px,.55fr) minmax(150px,1.45fr)!important;gap:6px!important}
   body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{height:42px!important}
 }
+
+/* ===== v4.2.17: clearer spectral waveforms / phrases ===== */
+.v425-miniwave-shell{background:#010507!important;border-color:rgba(91,177,212,.24)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025)!important}
+body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{height:56px!important}
+body.v4216-library-focus .flx4-browser-track.v429-browser-row{min-height:74px!important}
+@media(max-width:900px){body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{height:46px!important}}
+
+/* ===== v4.2.18: rekordbox-like dynamic wave + per-deck full-track overview ===== */
+.flx4-stack-wavewrap{height:112px!important}
+.flx4-stack-wavewrap>canvas[id$="StackWave"]{position:absolute!important;left:0!important;right:0!important;top:0!important;width:100%!important;height:calc(100% - 25px)!important}
+.flx4-stack-beats{bottom:25px!important}
+.flx4-stack-playhead{bottom:25px!important}
+.flx4-phase-meter{bottom:29px!important}
+.flx4-grid-readout{bottom:29px!important}
+.flx4-track-overview{position:absolute;z-index:6;left:28px;right:7px;bottom:3px;height:20px;border-top:1px solid rgba(255,255,255,.13);border-radius:3px;background:#010405;overflow:hidden;cursor:pointer;box-shadow:inset 0 1px 5px rgba(0,0,0,.8)}
+.flx4-track-overview canvas{display:block;width:100%;height:100%;pointer-events:none}
+.flx4-track-overview>i{position:absolute;z-index:4;top:0;bottom:0;left:0;width:1.5px;background:#fff;box-shadow:0 0 5px #fff;pointer-events:none;transform:translateX(-.5px)}
+.deck-a-overview>i{box-shadow:0 0 5px #fff,0 0 7px rgba(84,216,255,.75)}
+.deck-b-overview>i{box-shadow:0 0 5px #fff,0 0 7px rgba(255,181,94,.75)}
+body.flx-compact-mode .flx4-stack-wavewrap{height:62px!important}
+body.flx-compact-mode .flx4-stack-wavewrap>canvas[id$="StackWave"]{height:calc(100% - 16px)!important}
+body.flx-compact-mode .flx4-stack-beats,body.flx-compact-mode .flx4-stack-playhead{bottom:16px!important}
+body.flx-compact-mode .flx4-phase-meter{bottom:18px!important}
+body.flx-compact-mode .flx4-grid-readout{bottom:18px!important}
+body.flx-compact-mode .flx4-track-overview{left:22px;right:5px;bottom:2px;height:12px}
+.v425-miniwave-shell{background:#010304!important}
+body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{background:#010304!important}
+@media(max-width:760px){.flx4-stack-wavewrap{height:86px!important}.flx4-track-overview{height:17px}.flx4-stack-wavewrap>canvas[id$="StackWave"]{height:calc(100% - 22px)!important}.flx4-stack-beats,.flx4-stack-playhead{bottom:22px!important}.flx4-phase-meter,.flx4-grid-readout{bottom:25px!important}}
