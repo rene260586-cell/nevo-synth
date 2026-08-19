@@ -3490,3 +3490,83 @@ setTimeout(()=>{v4211ApplySortHeader();v4211RefreshWavePreviews();try{v38RenderB
 setTimeout(()=>{v4211ApplySortHeader();v4211RefreshWavePreviews()},1400);
 window.addEventListener('resize',()=>requestAnimationFrame(()=>{try{v428RedrawMiniWaves()}catch{}}),{passive:true});
 console.info('NÉVO v4.2.11: sortable BPM/KEY columns + high-contrast analysis-derived 3-band 32-beat minis active');
+
+// ===== v4.2.12: ADJUSTABLE PLAYLIST COLUMNS + STRONGER 3-BAND MINI CONTRAST =====
+const V4212_COLS_STORAGE='nevo-v4212-browser-columns';
+const v4212ColDefaults={bpm:54,key:48,rating:88,duration:58};
+let v4212Cols={...v4212ColDefaults};
+try{const saved=JSON.parse(localStorage.getItem(V4212_COLS_STORAGE)||'{}');for(const k of Object.keys(v4212Cols))if(Number.isFinite(Number(saved?.[k])))v4212Cols[k]=Number(saved[k])}catch{}
+function v4212SaveCols(){try{localStorage.setItem(V4212_COLS_STORAGE,JSON.stringify(v4212Cols))}catch{}}
+function v4212ClampCols(){
+  v4212Cols.bpm=clamp(Number(v4212Cols.bpm)||54,40,130);
+  v4212Cols.key=clamp(Number(v4212Cols.key)||48,38,120);
+  v4212Cols.rating=clamp(Number(v4212Cols.rating)||88,68,180);
+  v4212Cols.duration=clamp(Number(v4212Cols.duration)||58,48,135);
+}
+function v4212ApplyCols(){
+  v4212ClampCols();const panel=$('#flxBrowserPanel');if(!panel)return;
+  panel.style.setProperty('--v4212-bpm',`${v4212Cols.bpm}px`);
+  panel.style.setProperty('--v4212-key',`${v4212Cols.key}px`);
+  panel.style.setProperty('--v4212-rating',`${v4212Cols.rating}px`);
+  panel.style.setProperty('--v4212-duration',`${v4212Cols.duration}px`);
+  requestAnimationFrame(v4212PositionResizers);
+}
+function v4212PositionResizers(){
+  const head=document.querySelector('.flx4-browser-columns.v428-browser-columns');if(!head)return;
+  const cells=[...head.querySelectorAll(':scope > span')];if(cells.length<5)return;
+  const hr=head.getBoundingClientRect();
+  head.querySelectorAll('.v4212-col-resizer').forEach((h,i)=>{
+    const leftCell=cells[i];if(!leftCell)return;const r=leftCell.getBoundingClientRect();h.style.left=`${Math.round(r.right-hr.left+3)}px`;
+  });
+}
+function v4212InstallResizers(){
+  const head=document.querySelector('.flx4-browser-columns.v428-browser-columns');const panel=$('#flxBrowserPanel');if(!head||!panel)return;
+  if(!head.querySelector('.v4212-col-resizer')){
+    const specs=[['title-bpm','Titel / BPM'],['bpm-key','BPM / KEY'],['key-rating','KEY / Sterne'],['rating-duration','Sterne / Länge']];
+    specs.forEach(([id,label],i)=>{const h=document.createElement('i');h.className='v4212-col-resizer';h.dataset.boundary=id;h.dataset.index=i;h.title=`${label} · ziehen zum Anpassen · Doppelklick = Standard`;h.setAttribute('aria-label',h.title);head.appendChild(h);
+      h.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation();v4212Cols={...v4212ColDefaults};v4212SaveCols();v4212ApplyCols()});
+      h.addEventListener('pointerdown',e=>{
+        if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();h.setPointerCapture?.(e.pointerId);h.classList.add('dragging');panel.classList.add('v4212-resizing');
+        const startX=e.clientX,start={...v4212Cols},idx=Number(h.dataset.index)||0;
+        const move=ev=>{const dx=ev.clientX-startX;
+          if(idx===0){v4212Cols.bpm=start.bpm-dx}
+          else if(idx===1){v4212Cols.bpm=start.bpm+dx;v4212Cols.key=start.key-dx}
+          else if(idx===2){v4212Cols.key=start.key+dx;v4212Cols.rating=start.rating-dx}
+          else {v4212Cols.rating=start.rating+dx;v4212Cols.duration=start.duration-dx}
+          v4212ApplyCols();
+        };
+        const up=()=>{h.classList.remove('dragging');panel.classList.remove('v4212-resizing');v4212SaveCols();window.removeEventListener('pointermove',move,true);window.removeEventListener('pointerup',up,true);window.removeEventListener('pointercancel',up,true)};
+        window.addEventListener('pointermove',move,true);window.addEventListener('pointerup',up,true);window.addEventListener('pointercancel',up,true);
+      });
+    });
+  }
+  v4212ApplyCols();v4212PositionResizers();
+}
+
+// Redraw the existing analysis-derived 3-band preview with stronger band separation.
+const v4212PrevDrawMini=v425DrawMiniWave;
+v425DrawMiniWave=function(canvas,item){
+  const p=item?.v425Wave32;if(!canvas?.isConnected||!item||!p||p.v!==V4211_PREVIEW_VERSION||!Array.isArray(p.data))return v4212PrevDrawMini(canvas,item);
+  const rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(18,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  c.fillStyle='#010305';c.fillRect(0,0,w,h);v425PaintGrid(c,w,h,p.start,p.end,p.bpm,p.beatOffset,false);
+  const midY=h*.5,maxA=h*.47;
+  for(let x=0;x<w;x++){
+    const st=v4211PreviewAt(p,x,w),amp=Math.max(.8,Math.pow(st.amp,.82)*maxA);
+    let lo=Math.pow(st.low,1.55),mi=Math.pow(st.mid,1.55),hi=Math.pow(st.high,1.55),sum=Math.max(.0001,lo+mi+hi);lo/=sum;mi/=sum;hi/=sum;
+    const dominant=Math.max(lo,mi,hi);if(lo===dominant)lo=Math.min(1,lo*1.35);else if(mi===dominant)mi=Math.min(1,mi*1.35);else hi=Math.min(1,hi*1.35);sum=lo+mi+hi;lo/=sum;mi/=sum;hi/=sum;
+    const core=Math.max(1,amp*(.16+.46*lo)),midBand=Math.max(.45,amp*(.10+.38*mi)),topBand=Math.max(.35,amp*(.08+.34*hi));
+    const draw=(y1,y2,color)=>{if(y2<=y1)return;c.fillStyle=color;c.fillRect(x,y1,1,Math.max(1,y2-y1))};
+    draw(midY-core,midY+core,'rgba(255,92,24,.99)');
+    draw(Math.max(0,midY-core-midBand),midY-core,'rgba(78,244,92,.99)');draw(midY+core,Math.min(h,midY+core+midBand),'rgba(78,244,92,.99)');
+    draw(Math.max(0,midY-core-midBand-topBand),Math.max(0,midY-core-midBand),'rgba(42,176,255,.99)');draw(Math.min(h,midY+core+midBand),Math.min(h,midY+core+midBand+topBand),'rgba(42,176,255,.99)');
+    const edge=v4211BandColor(lo,mi,hi,1);c.fillStyle=edge;c.fillRect(x,Math.max(0,midY-amp),1,1);c.fillRect(x,Math.min(h-1,midY+amp),1,1);
+  }
+  c.fillStyle='rgba(255,255,255,.10)';c.fillRect(0,Math.round(midY),w,1);
+};
+
+const v4212BaseRenderBrowser=v38RenderBrowser;
+v38RenderBrowser=function(){const r=v4212BaseRenderBrowser();requestAnimationFrame(()=>{v4211ApplySortHeader();v4212InstallResizers();v428RedrawMiniWaves()});return r};
+setTimeout(()=>{v4212InstallResizers();try{v428RedrawMiniWaves()}catch{}},180);
+window.addEventListener('resize',()=>requestAnimationFrame(()=>{v4212PositionResizers();try{v428RedrawMiniWaves()}catch{}}),{passive:true});
+console.info('NÉVO v4.2.12: restored balanced playlist proportions, draggable column dividers and stronger 3-band mini-wave contrast active');
