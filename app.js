@@ -4689,3 +4689,132 @@ console.info('NÉVO v4.2.23: legacy top transport/hero hidden; long-press help d
 console.info('NÉVO v4.2.24: reliable compact FLX4 PFL dock active');
 
 console.info('NÉVO v4.2.25: compact library reduced by roughly two visible songs');
+
+// ===== v4.2.26: MODULAR, MOVABLE + RESIZABLE FLX4 WORKSPACE =====
+(function(){
+  const controller=document.querySelector('.flx4-controller.v34-controller');
+  const editBtn=document.querySelector('#flxLayoutEdit');
+  const resetBtn=document.querySelector('#flxLayoutReset');
+  if(!controller||!editBtn||!resetBtn)return;
+  const oldMixer=controller.querySelector('.flx4-mixer-section.v34-mixer');
+  const deckA=controller.querySelector('.flx4-deck.flx4-a');
+  const mapA=controller.querySelector('.flx4-side-mapper.deck-a');
+  const mapB=controller.querySelector('.flx4-side-mapper.deck-b');
+  const deckB=controller.querySelector('.flx4-deck.flx4-b');
+  const browserTop=oldMixer?.querySelector('.flx4-browser-top');
+  const browserPanel=oldMixer?.querySelector('#flxBrowserPanel');
+  const centerCore=oldMixer?.querySelector('.flx4-center-core');
+  if(!oldMixer||!deckA||!mapA||!mapB||!deckB||!browserTop||!browserPanel||!centerCore)return;
+
+  const KEY='nevo.flx4.modularLayout.v1';
+  let edit=false,z=10,raf=0;
+  const min={deckA:[245,420],mapA:[52,285],library:[330,235],fx:[330,145],mapB:[52,285],deckB:[245,420]};
+  const labels={deckA:'DECK A',mapA:'MIX A',library:'BIBLIOTHEK',fx:'BEAT FX / PFL',mapB:'MIX B',deckB:'DECK B'};
+  const panels={};
+
+  function makeShell(id,classes=''){
+    const el=document.createElement('section');
+    el.className=`flx4-mixer-section v4226-panel ${classes}`.trim();
+    el.dataset.v4226Panel=id;
+    return el;
+  }
+  const library=makeShell('library','v34-mixer v4226-library-panel');
+  library.append(browserTop,browserPanel);
+  const fx=makeShell('fx','v4226-fx-panel');
+  fx.append(centerCore);
+  oldMixer.classList.add('v4226-old-mixer');
+  controller.insertBefore(library,mapB);
+  controller.insertBefore(fx,mapB);
+
+  for(const [id,el] of Object.entries({deckA,mapA,library,fx,mapB,deckB})){
+    panels[id]=el;
+    el.classList.add('v4226-panel');
+    el.dataset.v4226Panel=id;
+    const h=document.createElement('div');h.className='v4226-panel-handle';h.textContent=labels[id];h.dataset.panel=id;
+    el.appendChild(h);
+    for(const dir of ['n','e','s','w','ne','nw','se','sw']){const r=document.createElement('i');r.className='v4226-resize-edge';r.dataset.dir=dir;r.dataset.panel=id;el.appendChild(r)}
+  }
+  controller.classList.add('v4226-layout-canvas');
+
+  function defaults(){
+    return {
+      deckA:{x:.000,y:.000,w:.252,h:.985},
+      mapA:{x:.255,y:.180,w:.052,h:.755},
+      library:{x:.311,y:.000,w:.374,h:.615},
+      fx:{x:.311,y:.628,w:.374,h:.350},
+      mapB:{x:.689,y:.180,w:.052,h:.755},
+      deckB:{x:.745,y:.000,w:.255,h:.985}
+    };
+  }
+  function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');return s&&s.deckA&&s.library&&s.fx?s:defaults()}catch{return defaults()}}
+  let state=load();
+  function clampN(v,a,b){return Math.max(a,Math.min(b,v))}
+  function apply(){
+    if(innerWidth<=900)return;
+    const W=Math.max(1,controller.clientWidth),H=Math.max(1,controller.clientHeight);
+    for(const [id,el] of Object.entries(panels)){
+      const s=state[id]||defaults()[id],mw=min[id][0],mh=min[id][1];
+      let w=Math.max(mw,s.w*W),h=Math.max(mh,s.h*H),x=s.x*W,y=s.y*H;
+      w=Math.min(w,W);h=Math.min(h,H);x=clampN(x,0,Math.max(0,W-w));y=clampN(y,0,Math.max(0,H-h));
+      el.style.setProperty('--v4226-x',`${x}px`);el.style.setProperty('--v4226-y',`${y}px`);el.style.setProperty('--v4226-w',`${w}px`);el.style.setProperty('--v4226-h',`${h}px`);
+    }
+    refreshVisuals();
+  }
+  function save(){
+    if(innerWidth<=900)return;
+    const W=Math.max(1,controller.clientWidth),H=Math.max(1,controller.clientHeight);
+    const out={};
+    for(const [id,el] of Object.entries(panels)){const r=el.getBoundingClientRect(),c=controller.getBoundingClientRect();out[id]={x:(r.left-c.left)/W,y:(r.top-c.top)/H,w:r.width/W,h:r.height/H}}
+    state=out;try{localStorage.setItem(KEY,JSON.stringify(out))}catch{}
+  }
+  function refreshVisuals(){
+    if(raf)return;raf=requestAnimationFrame(()=>{raf=0;try{v428RedrawMiniWaves?.();v34DrawStack?.('A',true);v34DrawStack?.('B',true);v4212PositionResizers?.()}catch{}})
+  }
+  function flxVisible(){const panel=document.querySelector('.dj-panel'),surf=document.querySelector('#flx4Surface');return !!(panel?.classList.contains('flx4-active')||(surf&&surf.hidden===false)||(typeof flxState!=='undefined'&&flxState.mode==='flx4'))}
+  function setEdit(on){
+    edit=!!on&&flxVisible();document.body.classList.toggle('v4226-layout-edit',edit);editBtn.classList.toggle('active',edit);editBtn.textContent=edit?'LAYOUT AN':'LAYOUT';resetBtn.hidden=!edit;
+  }
+  function syncLayoutButtons(){const show=flxVisible()&&innerWidth>900;editBtn.hidden=!show;if(!show)setEdit(false);else resetBtn.hidden=!edit}
+  editBtn.addEventListener('click',()=>setEdit(!edit));
+  resetBtn.addEventListener('click',()=>{try{localStorage.removeItem(KEY)}catch{};state=defaults();apply();refreshVisuals()});
+
+  let op=null;
+  function start(ev,type,id,dir=''){
+    if(!edit||innerWidth<=900||document.body.classList.contains('v4216-library-focus'))return;
+    const el=panels[id];if(!el)return;ev.preventDefault();ev.stopPropagation();
+    const cr=controller.getBoundingClientRect(),r=el.getBoundingClientRect();el.style.zIndex=String(++z);
+    op={type,id,dir,sx:ev.clientX,sy:ev.clientY,x:r.left-cr.left,y:r.top-cr.top,w:r.width,h:r.height,pid:ev.pointerId};
+    try{ev.currentTarget.setPointerCapture(ev.pointerId)}catch{}
+  }
+  controller.addEventListener('pointerdown',ev=>{
+    const handle=ev.target.closest('.v4226-panel-handle');if(handle)return start(ev,'drag',handle.dataset.panel);
+    const edge=ev.target.closest('.v4226-resize-edge');if(edge)return start(ev,'resize',edge.dataset.panel,edge.dataset.dir||'se');
+  },true);
+  window.addEventListener('pointermove',ev=>{
+    if(!op)return;ev.preventDefault();
+    const el=panels[op.id],W=controller.clientWidth,H=controller.clientHeight,[mw,mh]=min[op.id],dx=ev.clientX-op.sx,dy=ev.clientY-op.sy;
+    let {x,y,w,h}=op;
+    if(op.type==='drag'){x+=dx;y+=dy;x=clampN(x,0,Math.max(0,W-w));y=clampN(y,0,Math.max(0,H-h))}
+    else{
+      if(op.dir.includes('e'))w=clampN(op.w+dx,mw,W-op.x);
+      if(op.dir.includes('s'))h=clampN(op.h+dy,mh,H-op.y);
+      if(op.dir.includes('w')){const nx=clampN(op.x+dx,0,op.x+op.w-mw);w=op.w+(op.x-nx);x=nx}
+      if(op.dir.includes('n')){const ny=clampN(op.y+dy,0,op.y+op.h-mh);h=op.h+(op.y-ny);y=ny}
+      w=Math.min(w,W-x);h=Math.min(h,H-y);
+    }
+    el.style.setProperty('--v4226-x',`${x}px`);el.style.setProperty('--v4226-y',`${y}px`);el.style.setProperty('--v4226-w',`${w}px`);el.style.setProperty('--v4226-h',`${h}px`);refreshVisuals();
+  },{passive:false});
+  function finish(){if(!op)return;op=null;save();refreshVisuals()}
+  window.addEventListener('pointerup',finish);window.addEventListener('pointercancel',finish);
+  window.addEventListener('resize',()=>{clearTimeout(window.__v4226rt);window.__v4226rt=setTimeout(()=>{apply();syncLayoutButtons()},90)});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&edit&&!document.body.classList.contains('v4216-library-focus'))setEdit(false)});
+  const modePanel=document.querySelector('.dj-panel'),modeSurf=document.querySelector('#flx4Surface');
+  const modeObs=new MutationObserver(()=>requestAnimationFrame(syncLayoutButtons));
+  if(modePanel)modeObs.observe(modePanel,{attributes:true,attributeFilter:['class']});
+  if(modeSurf)modeObs.observe(modeSurf,{attributes:true,attributeFilter:['hidden','class','style']});
+
+  // Keep the library/FX contents fluid while their cards are resized.
+  if('ResizeObserver'in window){const ro=new ResizeObserver(()=>refreshVisuals());Object.values(panels).forEach(p=>ro.observe(p))}
+  syncLayoutButtons();requestAnimationFrame(apply);setTimeout(()=>{apply();syncLayoutButtons()},180);setTimeout(()=>{apply();syncLayoutButtons()},700);
+  console.info('NÉVO v4.2.26: movable/resizable six-panel FLX4 workspace active');
+})();

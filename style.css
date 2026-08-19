@@ -2413,3 +2413,175 @@ body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browse
     max-height:184px!important;
   }
 }
+
+/* ===== v4.2.26: MODULAR FLX4 WORKSPACE =====
+   The six important FLX4 blocks are independent cards on desktop:
+   Deck A | CH1 | Library | Beat FX + PFL | CH2 | Deck B.
+   LAYOUT mode exposes drag + edge/corner resize handles; normal DJ use stays clean. */
+#flxLayoutEdit,#flxLayoutReset{white-space:nowrap}
+#flxLayoutEdit.active{border-color:#54d8ff!important;color:#dff8ff!important;box-shadow:0 0 0 1px rgba(84,216,255,.18) inset,0 0 14px rgba(84,216,255,.10)!important}
+#flxLayoutReset{border-color:rgba(255,181,94,.28)!important;color:#ffd39a!important}
+
+@media (min-width:901px){
+  .flx4-controller.v4226-layout-canvas,
+  body.flx-compact-mode .flx4-controller.v4226-layout-canvas{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    height:clamp(560px,34vw,690px)!important;
+    min-height:560px!important;
+    overflow:hidden!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:16px!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.v4226-panel{
+    position:absolute!important;
+    left:var(--v4226-x,0px)!important;
+    top:var(--v4226-y,0px)!important;
+    width:var(--v4226-w,300px)!important;
+    height:var(--v4226-h,500px)!important;
+    display:flex!important;
+    flex-direction:column!important;
+    min-width:0!important;
+    max-width:none!important;
+    max-height:none!important;
+    box-sizing:border-box!important;
+    margin:0!important;
+    overflow:hidden!important;
+    z-index:1;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-deck.v4226-panel{
+    padding:7px!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel{
+    margin:0!important;
+    padding:7px 5px!important;
+    width:auto!important;
+    height:auto;
+    align-self:auto!important;
+  }
+  .v4226-library-panel,
+  .v4226-fx-panel{
+    border:1px solid rgba(86,135,171,.17)!important;
+    border-radius:13px!important;
+    background:linear-gradient(180deg,rgba(5,12,18,.97),rgba(2,7,11,.97))!important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.018),0 10px 28px rgba(0,0,0,.18)!important;
+  }
+  .v4226-library-panel{padding:5px!important}
+  .v4226-library-panel .flx4-browser-top{flex:0 0 auto!important;margin:0!important}
+  .v4226-library-panel .flx4-browser-panel,
+  body.flx-compact-mode:not(.v4216-library-focus) .v4226-library-panel .flx4-browser-panel{
+    flex:1 1 auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    min-height:0!important;
+    max-height:none!important;
+    height:auto!important;
+    margin:4px 0 0!important;
+    overflow:hidden!important;
+  }
+  .v4226-library-panel .flx4-browser-list,
+  body.flx-compact-mode:not(.v4216-library-focus) .v4226-library-panel .flx4-browser-list{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    height:auto!important;
+    overflow-y:auto!important;
+  }
+  .v4226-fx-panel{padding:5px!important}
+  .v4226-fx-panel>.flx4-center-core{
+    flex:1 1 auto!important;
+    width:100%!important;
+    min-height:0!important;
+    overflow:auto!important;
+    align-content:start!important;
+    padding:0!important;
+  }
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock{
+    flex:0 0 auto!important;
+    width:min(100%,440px)!important;
+    max-width:100%!important;
+  }
+  .v4226-old-mixer{display:none!important}
+
+  /* Only visible while layout editing, so normal mixing cannot accidentally move a panel. */
+  .v4226-panel-handle,
+  .v4226-resize-edge{display:none}
+  body.v4226-layout-edit .flx4-controller.v4226-layout-canvas>.v4226-panel{
+    outline:1px dashed rgba(84,216,255,.34)!important;
+    outline-offset:-1px!important;
+    box-shadow:0 0 0 1px rgba(84,216,255,.05),0 10px 28px rgba(0,0,0,.25)!important;
+  }
+  body.v4226-layout-edit .v4226-panel-handle{
+    display:flex!important;
+    position:absolute!important;
+    z-index:60!important;
+    left:5px!important;
+    top:5px!important;
+    height:19px!important;
+    min-width:54px!important;
+    padding:0 7px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border:1px solid rgba(84,216,255,.30)!important;
+    border-radius:7px!important;
+    background:rgba(5,18,27,.94)!important;
+    color:#cdefff!important;
+    font:900 7px/1 system-ui,sans-serif!important;
+    letter-spacing:.08em!important;
+    cursor:grab!important;
+    touch-action:none!important;
+    user-select:none!important;
+    -webkit-user-select:none!important;
+  }
+  body.v4226-layout-edit .v4226-panel-handle:active{cursor:grabbing!important;background:rgba(20,61,79,.96)!important}
+  body.v4226-layout-edit .flx4-controller.v4226-layout-canvas>.v4226-panel{padding-top:29px!important}
+  body.v4226-layout-edit .v4226-resize-edge{display:block!important;position:absolute!important;z-index:61!important;touch-action:none!important}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="n"]{left:12px;right:12px;top:-2px;height:7px;cursor:n-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="s"]{left:12px;right:12px;bottom:-2px;height:7px;cursor:s-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="e"]{top:12px;bottom:12px;right:-2px;width:7px;cursor:e-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="w"]{top:12px;bottom:12px;left:-2px;width:7px;cursor:w-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="ne"]{right:-3px;top:-3px;width:14px;height:14px;cursor:ne-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="nw"]{left:-3px;top:-3px;width:14px;height:14px;cursor:nw-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="se"]{right:-3px;bottom:-3px;width:16px;height:16px;cursor:se-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="sw"]{left:-3px;bottom:-3px;width:16px;height:16px;cursor:sw-resize}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="se"]::after,
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="sw"]::after{
+    content:"";position:absolute;bottom:3px;width:8px;height:8px;border-bottom:2px solid rgba(84,216,255,.72)
+  }
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="se"]::after{right:3px;border-right:2px solid rgba(84,216,255,.72)}
+  body.v4226-layout-edit .v4226-resize-edge[data-dir="sw"]::after{left:3px;border-left:2px solid rgba(84,216,255,.72)}
+
+  body.v4216-library-focus .flx4-controller.v4226-layout-canvas>.v4226-library-panel.v34-mixer{
+    position:fixed!important;
+    inset:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))!important;
+    left:auto!important;top:auto!important;width:auto!important;height:auto!important;
+    padding:12px!important;z-index:25000!important;
+  }
+  body.v4216-library-focus .v4226-library-panel .v4226-panel-handle,
+  body.v4216-library-focus .v4226-library-panel .v4226-resize-edge{display:none!important}
+}
+
+/* Small screens keep a safe stacked layout; dragging is desktop-only. */
+@media (max-width:900px){
+  #flxLayoutEdit,#flxLayoutReset{display:none!important}
+  .flx4-controller.v4226-layout-canvas,
+  body.flx-compact-mode .flx4-controller.v4226-layout-canvas{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:7px!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.v4226-panel{
+    position:relative!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;min-height:0!important;
+    grid-column:1!important;margin:0!important;
+  }
+  .v4226-panel-handle,.v4226-resize-edge{display:none!important}
+  .v4226-library-panel{order:1}.flx4-a.v4226-panel{order:2}.flx4-side-mapper.deck-a.v4226-panel{order:3}.v4226-fx-panel{order:4}.flx4-side-mapper.deck-b.v4226-panel{order:5}.flx4-b.v4226-panel{order:6}
+  .v4226-library-panel .flx4-browser-panel{max-height:330px!important;min-height:220px!important}
+  .v4226-library-panel .flx4-browser-list{max-height:275px!important}
+}
