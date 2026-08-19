@@ -1552,3 +1552,35 @@ body.flx-compact-mode .v425-track-main{grid-template-columns:minmax(62px,.55fr) 
 .flx4-stack-wavewrap{background:linear-gradient(180deg,#020609 0%,#061019 50%,#020609 100%);box-shadow:inset 0 0 20px rgba(0,0,0,.62)}
 .flx4-stack-wave{image-rendering:auto!important;filter:saturate(1.12) contrast(1.04)}
 .flx4-stack-beats span{font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.95)}
+
+
+/* ===== v4.2.8: Rekordbox-style deck controls + library metadata ===== */
+/* Jog-area controls: SLIP / Q / MT are stacked beside the jog, RANGE is directly below. */
+.flx4-deck-body{grid-template-columns:clamp(30px,3.4vw,48px) minmax(0,1fr) clamp(31px,3.6vw,48px)!important;gap:4px!important}
+.flx4-b .flx4-deck-body{grid-template-columns:clamp(31px,3.6vw,48px) minmax(0,1fr) clamp(30px,3.4vw,48px)!important}
+.v428-jog-quick{display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:5px;min-width:0}
+.v428-jog-quick .flx4-deck-option{width:100%;min-width:0!important;min-height:29px!important;padding:3px 2px!important;font-size:8px!important;border-radius:7px!important}
+.v428-jog-quick .flx4-deck-option.active{background:rgba(44,170,255,.2)!important}
+.flx4-b .v428-jog-quick .flx4-deck-option.active{background:rgba(255,181,94,.18)!important}
+.v428-range-under-jog{display:flex;justify-content:center;align-items:center;margin:1px 0 3px}
+.v428-range-under-jog .tempo-range{width:46px!important;min-width:46px!important;min-height:28px!important;padding:2px 3px!important;border-radius:7px!important;font-size:7px!important}
+.v428-range-under-jog .tempo-range small{font-size:5px!important;margin-bottom:1px!important}.v428-range-under-jog .tempo-range b{font-size:7px!important}
+body.flx-compact-mode .v428-jog-quick{gap:3px}.v428-jog-quick+.flx4-jog{min-width:0}
+@media(max-width:760px){.flx4-deck-body,.flx4-b .flx4-deck-body{grid-template-columns:34px minmax(0,1fr) 34px!important}.v428-jog-quick .flx4-deck-option{min-height:26px!important;font-size:7px!important}.v428-range-under-jog .tempo-range{width:42px!important;min-width:42px!important}}
+
+/* FLX browser: title+32-beat mini | BPM | Camelot key | stars | length. */
+.flx4-browser-columns.v428-browser-columns,.flx4-browser-track.v428-browser-row{grid-template-columns:minmax(0,1fr) 42px 38px 52px 48px!important;gap:4px!important}
+.v428-browser-columns span:nth-child(n+2){text-align:right}.v428-rating{font-size:8px;line-height:1;color:#ffca73;letter-spacing:-1px;text-align:right;white-space:nowrap;cursor:pointer;user-select:none}
+.v428-key{font-weight:950!important;color:#b99cff!important}.v428-duration{font-variant-numeric:tabular-nums}.v428-browser-row .v425-track-main{grid-template-columns:minmax(58px,.7fr) minmax(72px,1.3fr)!important}
+@media(max-width:1040px){.flx4-browser-columns.v428-browser-columns,.flx4-browser-track.v428-browser-row{grid-template-columns:minmax(0,1fr) 38px 34px 44px 43px!important}.v428-rating{font-size:7px}.v428-browser-row .v425-track-main{grid-template-columns:minmax(52px,.72fr) minmax(60px,1.28fr)!important;gap:3px!important}}
+@media(max-width:760px){.v428-rating{font-size:6.5px}.flx4-browser-columns.v428-browser-columns,.flx4-browser-track.v428-browser-row{grid-template-columns:minmax(0,1fr) 36px 31px 39px 40px!important}}
+
+/* Main Player library also shows the analyzed 32-beat preview immediately. */
+.v428-main-titlewave{display:grid;grid-template-columns:minmax(110px,.72fr) minmax(115px,1.28fr);gap:8px;align-items:center;min-width:0}.v428-main-text{min-width:0}.v428-main-wave-shell{display:block;height:26px;min-width:0;border-radius:5px;overflow:hidden;border:1px solid rgba(92,145,176,.18);background:#02070b}.v428-main-miniwave{display:block;width:100%;height:100%;pointer-events:none}.v428-main-lib-row .dj-lib-key{color:#b99cff;font-weight:1000}.v428-main-lib-row .dj-lib-rating{cursor:pointer;user-select:none}
+@media(max-width:760px){.v428-main-titlewave{grid-template-columns:minmax(90px,.8fr) minmax(95px,1.2fr)}.v428-main-wave-shell{height:21px}}
+
+/* Beat FX popup is restored; v4.1.0 had intentionally hidden it. */
+.flx4-fx-menu.v410-hidden-fxmenu:not([hidden]),.flx4-fx-menu:not([hidden]){display:grid!important}
+.flx4-mixer-section .flx4-fx-menu{left:4px!important;right:4px!important;top:auto!important;bottom:calc(100% + 6px)!important;max-height:min(330px,55vh);overflow:auto;grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:7px!important;z-index:120!important}
+.flx4-mixer-section .flx4-fx-menu button{min-height:39px!important;padding:6px 7px!important}.flx4-mixer-section .flx4-fx-menu button b{font-size:7px!important}.flx4-mixer-section .flx4-fx-menu button small{font-size:5px!important}.flx4-mixer-section .flx4-fx-menu button.preview{border-color:#54d8ff!important;background:rgba(84,216,255,.14)!important;box-shadow:0 0 0 1px rgba(84,216,255,.12) inset!important}.flx4-mixer-section .v415-fx-select.active{border-color:#54d8ff!important;box-shadow:0 0 10px rgba(84,216,255,.12)!important}
+@media(max-width:760px){.flx4-mixer-section .flx4-fx-menu{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-height:45vh}}

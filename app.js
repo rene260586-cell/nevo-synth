@@ -819,8 +819,8 @@ async function clearDjDb(){const db=await openDjDb();if(!db)return;try{await new
 async function loadPersistedDjLibrary(){
   const db=await openDjDb();if(!db)return;
   let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),r=tx.objectStore(DJ_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return}
-  for(const row of rows){if(djLibrary.some(x=>x.id===row.id))continue;const blob=row.blob,url=URL.createObjectURL(blob);djLibrary.push({id:row.id,file:blob,blob,name:row.name,title:row.title||cleanDjTitle(row.name),url,buffer:null,duration:row.duration||0,bpm:row.bpm||0,beatOffset:row.beatOffset||0,confidence:row.confidence||0,key:row.key||'—',phrases:Array.isArray(row.phrases)?row.phrases:[],hotCues:Array.isArray(row.hotCues)?row.hotCues:[null,null,null,null,null,null,null,null],cue:row.cue||0,addedAt:row.addedAt||Date.now()})}
-  renderDjLibrary();
+  for(const row of rows){if(djLibrary.some(x=>x.id===row.id))continue;const blob=row.blob,url=URL.createObjectURL(blob);djLibrary.push({id:row.id,file:blob,blob,name:row.name,title:row.title||cleanDjTitle(row.name),artist:row.artist||'',crate:row.crate||'',rating:Number(row.rating)||0,comment:row.comment||'',analysisProfile:row.analysisProfile||'',url,buffer:null,duration:row.duration||0,bpm:row.bpm||0,beatOffset:row.beatOffset||0,confidence:row.confidence||0,key:row.key||'—',phrases:Array.isArray(row.phrases)?row.phrases:[],hotCues:Array.isArray(row.hotCues)?row.hotCues:[null,null,null,null,null,null,null,null],cue:row.cue||0,v425Wave32:row.wave32||null,addedAt:row.addedAt||Date.now()})}
+  renderDjLibrary();setTimeout(()=>{try{v38RenderBrowser()}catch{}},0);setTimeout(()=>{try{v428RedrawMiniWaves?.()}catch{}},80);
 }
 function cleanDjTitle(name=''){return String(name).replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim()||'Unbenannter Song'}
 function makeDjDeck(letter){
@@ -1098,7 +1098,7 @@ function flxMidiMessageKey(data){
 }
 function saveFlxMappings(){try{localStorage.setItem(FLX_MIDI_STORAGE,JSON.stringify(flxState.mappings))}catch{};refreshFlxMappingSummary()}
 function refreshFlxMappingSummary(){const entries=Object.entries(flxState.mappings||{}),n=entries.length,targets=new Set(entries.map(([,v])=>v)).size;const hint=$('#flxLearnHint');if(hint&&!flxState.learn)hint.textContent=`${n} MIDI-Signale · ${targets} Funktionen gespeichert`}
-function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.7',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
+function flxMappingPayload(){return {app:'NÉVO Studio',version:'4.2.8',profile:'DDJ-FLX4',createdAt:new Date().toISOString(),mappings:flxState.mappings}}
 function exportFlxMappings(){
   downloadBlob(new Blob([JSON.stringify(flxMappingPayload(),null,2)],{type:'application/json'}),'NEVO-DDJ-FLX4-Mapping.json');
   flxStatus(currentLang==='de'?'MIDI-Mapping als Backup gesichert':'MIDI mapping backup exported','connected');
@@ -1499,7 +1499,7 @@ saveDjItem=async function(item){
 async function v32MergePersistedMeta(){
   const db=await openDjDb();if(!db)return;let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),r=tx.objectStore(DJ_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return}
   for(const row of rows){const item=djLibrary.find(x=>x.id===row.id);if(!item)continue;item.artist=row.artist||item.artist||'';item.crate=row.crate||item.crate||'';item.rating=Number(row.rating)||item.rating||0;item.comment=row.comment||item.comment||'';item.analysisProfile=row.analysisProfile||item.analysisProfile||'';item.v425Wave32=row.wave32||item.v425Wave32||null}
-  renderDjLibrary();v32RefreshCrateOptions()
+  renderDjLibrary();v32RefreshCrateOptions();try{v38RenderBrowser()}catch{};setTimeout(()=>{try{v428RedrawMiniWaves?.()}catch{}},30)
 }
 
 function v32RefreshCrateOptions(){
@@ -3214,3 +3214,121 @@ console.info('NÉVO v4.2.7: pro detailed 2/4/6-beat performance wave + 32-beat m
 
 // ===== v4.2.7: stable continuous MIDI relearn / duplicate mapping protection =====
 console.info('NÉVO v4.2.7: continuous MIDI learn now replaces stale mappings and rejects button-like signals');
+
+
+// ===== v4.2.8: INSTANT MINI WAVES + REKORDBOX-LIKE LIBRARY / FX WORKFLOW =====
+// 32 beats remain ONLY the analyzed library mini. This patch makes the saved mini
+// appear immediately after startup, adds Camelot key + rating to the FLX browser,
+// restores FX SELECT open/browse/confirm, and supports the FLX4 3-position FX switch.
+
+function v428Camelot(key){
+  const raw=String(key||'').trim();if(!raw||raw==='—')return '—';
+  if(/^\d{1,2}[AB]$/i.test(raw))return raw.toUpperCase();
+  const flat={DB:'C#',EB:'D#',GB:'F#',AB:'G#',BB:'A#'};
+  let minor=/m$/i.test(raw),note=raw.replace(/m$/i,'').toUpperCase();note=flat[note]||note;
+  const maj={'B':'1B','F#':'2B','C#':'3B','G#':'4B','D#':'5B','A#':'6B','F':'7B','C':'8B','G':'9B','D':'10B','A':'11B','E':'12B'};
+  const min={'G#':'1A','D#':'2A','A#':'3A','F':'4A','C':'5A','G':'6A','D':'7A','A':'8A','E':'9A','B':'10A','F#':'11A','C#':'12A'};
+  return (minor?min:maj)[note]||raw;
+}
+function v428Stars(n){n=clamp(Math.round(Number(n)||0),0,5);return '★'.repeat(n)+'☆'.repeat(5-n)}
+async function v428CycleRating(item){if(!item)return;item.rating=(clamp(Math.round(Number(item.rating)||0),0,5)+1)%6;try{await saveDjItem(item)}catch{};renderDjLibrary();v38RenderBrowser()}
+
+function v428RedrawMiniWaves(){
+  document.querySelectorAll('#flxBrowserList .v425-miniwave').forEach(cv=>{const item=djLibrary.find(x=>x.id===cv.closest('[data-id]')?.dataset.id);if(item)v425DrawMiniWave(cv,item)});
+  document.querySelectorAll('#djLibraryList .v428-main-miniwave').forEach(cv=>{const item=djLibrary.find(x=>x.id===cv.closest('[data-id]')?.dataset.id);if(item)v425DrawMiniWave(cv,item)});
+}
+
+// Full top library: waveform preview + BPM + Camelot + length + rating from the first paint.
+renderDjLibrary=function(){
+  const box=$('#djLibraryList');if(!box)return;v32RefreshCrateOptions();const q=($('#djLibrarySearch')?.value||'').trim().toLowerCase();let items=djLibrary.filter(item=>!q||`${item.title||''} ${item.name||''} ${item.artist||''} ${item.crate||''} ${item.comment||''}`.toLowerCase().includes(q));
+  const f=nevoV32.crate||'all';if(f==='favorites')items=items.filter(x=>(Number(x.rating)||0)>=4);else if(f.startsWith('crate:'))items=items.filter(x=>(x.crate||'')===f.slice(6));
+  const sort=nevoV32.sort||'added';items.sort((a,b)=>sort==='title'?(a.title||a.name).localeCompare(b.title||b.name):sort==='bpm'?(Number(a.bpm)||999)-(Number(b.bpm)||999):sort==='key'?String(v428Camelot(a.key)).localeCompare(String(v428Camelot(b.key))):sort==='rating'?(Number(b.rating)||0)-(Number(a.rating)||0):(b.addedAt||0)-(a.addedAt||0));
+  if(!items.length){box.innerHTML=`<div class="dj-empty">${djLibrary.length?(currentLang==='de'?'Keine Treffer in diesem Filter.':'No tracks in this filter.'):t('djEmpty')}</div>`;return}
+  box.innerHTML='';items.forEach(item=>{const el=document.createElement('div');el.className='dj-lib-item v428-main-lib-row';el.dataset.id=item.id;const bpm=item.analyzing?(currentLang==='de'?'ANALYSE…':'ANALYZING…'):(item.bpm?Number(item.bpm).toFixed(1):'—'),dur=item.duration?fmtDeckTime(item.duration):'—',artist=item.artist||item.name,crate=item.crate?`<span class="v32-crate">${v32Esc(item.crate)}</span>`:'';
+    el.innerHTML=`<div class="dj-lib-title"><div class="v428-main-titlewave"><span class="v428-main-text"><strong>${v32Esc(item.title||cleanDjTitle(item.name))}</strong><small class="v32-artist">${v32Esc(artist)}</small></span><span class="v428-main-wave-shell"><canvas class="v428-main-miniwave" width="256" height="34"></canvas></span></div>${crate}</div><div class="dj-lib-bpm ${item.analyzing?'analyzing':''}">${bpm}</div><div class="dj-lib-key" title="${v32Esc(item.key||'—')}">${v32Esc(v428Camelot(item.key))}</div><div class="dj-lib-duration">${dur}</div><div class="dj-lib-rating" title="Klicken = Wertung ändern">${v428Stars(item.rating)}</div><div class="dj-lib-actions"><button class="btn small fav-mini ${(Number(item.rating)||0)>=4?'active':''}" title="Favorit">★</button><button class="btn small meta-mini" title="Track Info">⚙</button><button class="btn small analyze-mini" title="Smart Analyse">⚡</button><button class="btn small">A</button><button class="btn small">B</button></div>`;
+    const [fav,meta,an,a,b]=el.querySelectorAll('button');fav.onclick=async()=>{item.rating=(Number(item.rating)||0)>=4?0:5;await saveDjItem(item);renderDjLibrary();v38RenderBrowser()};meta.onclick=()=>v32OpenMeta(item);an.onclick=()=>v32AnalyzeTrack(item,true);a.onclick=()=>loadItemToDeck(item,'A');b.onclick=()=>loadItemToDeck(item,'B');el.querySelector('.dj-lib-title strong').ondblclick=()=>v32OpenMeta(item);el.querySelector('.dj-lib-rating').onclick=()=>v428CycleRating(item);longPress(el,()=>v32OpenMeta(item));box.appendChild(el);
+    const cv=el.querySelector('.v428-main-miniwave');requestAnimationFrame(()=>v425DrawMiniWave(cv,item));if(!item.v425Wave32&&item.bpm&&!item.analyzing)v425SchedulePreview(item)
+  })
+};
+
+// Compact FLX4 browser with the same metadata as a DJ library.
+v38RenderBrowser=function(){
+  const panel=$('#flxBrowserPanel'),box=$('#flxBrowserList');if(!panel||!box)return;
+  panel.classList.toggle('expanded',!!nevoV38.browserExpanded);panel.classList.toggle('crate-focus',nevoV38.browserFocus==='crates');
+  const focus=$('#flxBrowserFocus'),crate=$('#flxBrowserCrate'),count=$('#flxBrowserCount');if(focus)focus.textContent=nevoV38.browserFocus==='crates'?'PLAYLISTS':'TRACKS';if(crate)crate.textContent=v38CrateLabel(nevoV38.browserCrate);box.innerHTML='';
+  if(nevoV38.browserFocus==='crates'){
+    const crates=v38Crates();let idx=Math.max(0,crates.findIndex(x=>x.id===nevoV38.browserCrate));if(count)count.textContent=`${idx+1} / ${crates.length}`;
+    for(const c of crates){const row=document.createElement('button');row.type='button';row.className='flx4-browser-crate'+(c.id===nevoV38.browserCrate?' selected':'');row.innerHTML=`<b>${v38Esc(c.label)}</b><span>${c.id==='all'?djLibrary.length:c.id==='favorites'?djLibrary.filter(x=>(Number(x.rating)||0)>=4).length:djLibrary.filter(x=>(x.crate||'')===c.id.slice(6)).length}</span>`;row.onclick=()=>{nevoV38.browserCrate=c.id;nevoV38.browserCursor=0;v38Save();v38RenderBrowser()};row.ondblclick=()=>{nevoV38.browserFocus='tracks';v38Save();v38RenderBrowser()};box.appendChild(row)}return
+  }
+  const items=v38BrowserItems();v38ClampCursor();if(count)count.textContent=items.length?`${nevoV38.browserCursor+1} / ${items.length}`:'0 / 0';if(!items.length){box.innerHTML=`<div class="flx4-browser-empty">${currentLang==='de'?'Keine Songs in dieser Auswahl.':'No tracks in this selection.'}</div>`;v31UpdateBrowseTitle();return}
+  items.forEach((item,i)=>{const row=document.createElement('button');row.type='button';row.className='flx4-browser-track v425-wave-row v428-browser-row'+(i===nevoV38.browserCursor?' selected':'');row.dataset.id=item.id;
+    row.innerHTML=`<span class="v425-track-main"><span class="v425-track-text"><b>${v38Esc(item.title||cleanDjTitle(item.name))}</b><small>${v38Esc(item.artist||item.name||'')}</small></span><span class="v425-miniwave-shell" title="32 Beat · analysierte Track-Wellenform"><canvas class="v425-miniwave" width="256" height="32"></canvas></span></span><em class="v428-bpm">${item.bpm?Number(item.bpm).toFixed(1):'—'}</em><em class="v428-key" title="${v38Esc(item.key||'—')}">${v38Esc(v428Camelot(item.key))}</em><span class="v428-rating" role="button" tabindex="0" title="Wertung">${v428Stars(item.rating)}</span><em class="v428-duration">${item.duration?fmtDeckTime(item.duration):'—'}</em>`;
+    row.onclick=()=>{nevoV38.browserCursor=i;v38Save();v38RenderBrowser()};const rate=row.querySelector('.v428-rating');rate.onclick=e=>{e.preventDefault();e.stopPropagation();v428CycleRating(item)};rate.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();v428CycleRating(item)}};box.appendChild(row);const cv=row.querySelector('.v425-miniwave');requestAnimationFrame(()=>v425DrawMiniWave(cv,item));if(!item.v425Wave32&&item.bpm&&!item.analyzing)v425SchedulePreview(item)
+  });
+  requestAnimationFrame(()=>{const sel=box.querySelector('.selected');if(!sel)return;const top=sel.offsetTop,bottom=top+sel.offsetHeight,viewTop=box.scrollTop,viewBottom=viewTop+box.clientHeight;if(top<viewTop)box.scrollTop=top;else if(bottom>viewBottom)box.scrollTop=Math.max(0,bottom-box.clientHeight);v428RedrawMiniWaves()});v31UpdateBrowseTitle()
+};
+
+// Hydrate saved wave32/rating/key metadata immediately, before the user touches any button.
+async function v428HydratePersistedLibrary(){
+  const db=await openDjDb();if(!db)return;let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),r=tx.objectStore(DJ_DB_STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return}
+  for(const row of rows){const item=djLibrary.find(x=>x.id===row.id);if(!item)continue;item.artist=row.artist||item.artist||'';item.crate=row.crate||item.crate||'';item.rating=Number(row.rating)||0;item.comment=row.comment||item.comment||'';item.analysisProfile=row.analysisProfile||item.analysisProfile||'';item.v425Wave32=row.wave32||item.v425Wave32||null}
+  renderDjLibrary();v38RenderBrowser();requestAnimationFrame(v428RedrawMiniWaves);setTimeout(v428RedrawMiniWaves,120);setTimeout(v428RedrawMiniWaves,450);
+  for(const item of djLibrary)if(item.bpm&&!item.v425Wave32&&!item.analyzing)v425SchedulePreview(item)
+}
+setTimeout(v428HydratePersistedLibrary,20);
+window.addEventListener('load',()=>{setTimeout(v428HydratePersistedLibrary,40);setTimeout(v428RedrawMiniWaves,220)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(v428RedrawMiniWaves,30)});
+try{new ResizeObserver(()=>requestAnimationFrame(v428RedrawMiniWaves)).observe($('#flxBrowserPanel'))}catch{}
+
+// Move SLIP/Q/MT around the jog like the Rekordbox layout and put RANGE directly under it.
+function v428ArrangeDeckButtons(letter){
+  const deck=document.querySelector(`.flx4-${letter==='A'?'a':'b'}`);if(!deck||deck.dataset.v428Arrange)return;deck.dataset.v428Arrange='1';
+  const body=deck.querySelector('.flx4-deck-body'),jog=deck.querySelector('.flx4-jog'),opts=deck.querySelector('.flx4-deck-options');if(!body||!jog||!opts)return;
+  const slip=$(`#flx${letter}Slip`),q=$(`#flx${letter}QuantizeMini`),mt=$(`#flx${letter}MasterTempo`),range=$(`#flx${letter}TempoRangeBtn`);
+  const quick=document.createElement('div');quick.className='v428-jog-quick';[slip,q,mt].forEach(x=>x&&quick.appendChild(x));
+  if(letter==='A')body.appendChild(quick);else body.insertBefore(quick,jog);
+  const rangeWrap=document.createElement('div');rangeWrap.className='v428-range-under-jog';if(range)rangeWrap.appendChild(range);body.insertAdjacentElement('afterend',rangeWrap);opts.remove();
+}
+v428ArrangeDeckButtons('A');v428ArrangeDeckButtons('B');
+
+// Beat FX menu: FX SELECT opens, BEAT arrows browse, FX SELECT confirms.
+const V428_FX_CHOICES=[
+  {label:'DELAY',engine:'DELAY'},{label:'ECHO',engine:'ECHO'},{label:'SPIRAL',engine:'PHASER'},
+  {label:'REVERB / HALL',engine:'REVERB'},{label:'REV DELAY',engine:'DELAY'},{label:'LOW CUT ECHO',engine:'ECHO'},
+  {label:'FILTER',engine:'FILTER'},{label:'FLANGER',engine:'FLANGER'},{label:'PHASER',engine:'PHASER'},
+  {label:'SLIP ROLL',engine:'ROLL'},{label:'ROLL',engine:'ROLL'},{label:'TRANS',engine:'ROLL'}
+];
+const V428_FX_DISPLAY_STORAGE='nevo-v428-fx-display';
+let nevoV428Fx={open:false,index:0,display:localStorage.getItem(V428_FX_DISPLAY_STORAGE)||''};
+function v428FxChoiceIndex(){let i=V428_FX_CHOICES.findIndex(x=>x.label===nevoV428Fx.display);if(i<0)i=V428_FX_CHOICES.findIndex(x=>x.engine===nevoV34.fx.name);return i<0?1:i}
+function v428BuildFxMenu(){const menu=$('#flxFxMenu');if(!menu)return;menu.classList.remove('v410-hidden-fxmenu');menu.innerHTML=V428_FX_CHOICES.map((x,i)=>`<button type="button" data-v428-fx="${i}"><b>${x.label}</b><small>${x.engine===x.label?'BEAT FX':'NÉVO FX · '+x.engine}</small></button>`).join('');menu.querySelectorAll('[data-v428-fx]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();nevoV428Fx.index=Number(b.dataset.v428Fx)||0;v428ConfirmFx()}))}
+function v428RefreshFxMenu(){const menu=$('#flxFxMenu');if(!menu)return;menu.hidden=!nevoV428Fx.open;menu.setAttribute('aria-hidden',nevoV428Fx.open?'false':'true');menu.querySelectorAll('[data-v428-fx]').forEach((b,i)=>{b.classList.toggle('preview',nevoV428Fx.open&&i===nevoV428Fx.index);b.classList.toggle('active',!nevoV428Fx.open&&V428_FX_CHOICES[i]?.label===nevoV428Fx.display)})}
+function v428OpenFx(){nevoV428Fx.index=v428FxChoiceIndex();nevoV428Fx.open=true;v428RefreshFxMenu();v428RefreshFxUi();setTimeout(()=>$('#flxFxMenu')?.querySelector('.preview')?.scrollIntoView({block:'nearest'}),0)}
+function v428ConfirmFx(){const choice=V428_FX_CHOICES[nevoV428Fx.index]||V428_FX_CHOICES[1];nevoV428Fx.display=choice.label;try{localStorage.setItem(V428_FX_DISPLAY_STORAGE,choice.label)}catch{};nevoV34.fx.name=choice.engine;nevoV428Fx.open=false;v34Save();try{v35ApplyFx()}catch{};v428RefreshFxUi();setStatus(true,'FX SELECT',choice.label)}
+function v428BrowseFx(dir){nevoV428Fx.index=(nevoV428Fx.index+(dir<0?-1:1)+V428_FX_CHOICES.length)%V428_FX_CHOICES.length;v428RefreshFxMenu();v428RefreshFxUi();setTimeout(()=>$('#flxFxMenu')?.querySelector('.preview')?.scrollIntoView({block:'nearest'}),0)}
+function v428FxSelectPress(){if(nevoV428Fx.open)v428ConfirmFx();else v428OpenFx()}
+function v428FxBeatPress(dir){if(nevoV428Fx.open)return v428BrowseFx(dir);return v410FxBeatPress(dir)}
+function v428SetFxChannel(ch){if(!['A','B','AB'].includes(ch))return;nevoV34.fx.channel=ch;v34Save();try{v35ApplyFx()}catch{};v428RefreshFxUi();setStatus(true,'BEAT FX CH SELECT',ch==='A'?'1':ch==='B'?'2':'1 & 2')}
+function v428SetFxChannelNorm(norm){norm=clamp(Number(norm)||0,0,1);v428SetFxChannel(norm<.25?'A':norm<.75?'B':'AB')}
+function v428RefreshFxUi(){
+  v410EnsureChannelButtons();const choice=V428_FX_CHOICES[nevoV428Fx.index]||V428_FX_CHOICES[v428FxChoiceIndex()]||V428_FX_CHOICES[1],display=nevoV428Fx.open?choice.label:(nevoV428Fx.display||v410FxDisplay(nevoV34.fx.name));
+  if($('#flxFxName'))$('#flxFxName').textContent=display;if($('#flxFxCurrentName'))$('#flxFxCurrentName').textContent=display;
+  document.querySelectorAll('#flxFxChannel [data-fx-channel]').forEach(b=>b.classList.toggle('active',b.dataset.fxChannel===nevoV34.fx.channel));
+  if($('#flxFxCenterLabel'))$('#flxFxCenterLabel').textContent=nevoV428Fx.open?'FX AUSWAHL':'BEAT-LÄNGE';if($('#flxFxBeat'))$('#flxFxBeat').textContent=nevoV428Fx.open?display:v410FormatBeat(nevoV34.fx.beat);
+  const sb=$('#flxFxSelectBtn');if(sb){sb.classList.toggle('active',nevoV428Fx.open);const d=$('#flxFxSelectDir');if(d)d.textContent=nevoV428Fx.open?'BESTÄTIGEN':'ÖFFNEN'}
+  $('#flxFxOn')?.classList.toggle('active',!!nevoV34.fx.on);const lev=document.querySelector('[data-flx-action="fx.level"]');if(lev&&document.activeElement!==lev)lev.value=nevoV34.fx.level;v415RefreshFxLevelKnob?.();v428RefreshFxMenu()
+}
+v428BuildFxMenu();nevoV428Fx.index=v428FxChoiceIndex();v34RefreshFx=function(){v428RefreshFxUi()};v34FxCycle=v428FxSelectPress;v34FxBeat=v428FxBeatPress;
+const v428OldTriggerAction=flxTriggerAction;
+flxTriggerAction=function(action){if(action==='fx.channel1')return v428SetFxChannel('A');if(action==='fx.channel2')return v428SetFxChannel('B');if(action==='fx.channelBoth')return v428SetFxChannel('AB');if(action==='fx.select')return v428FxSelectPress();if(action==='fx.beatDown')return v428FxBeatPress(-1);if(action==='fx.beatUp')return v428FxBeatPress(1);return v428OldTriggerAction(action)};
+// If an already-learned FLX4 3-position selector is mapped to any old channel action,
+// use its CC value directly: left=1, middle=2, right=1&2. It now works both directions.
+const v428OldMidiHandler=handleFlxMidiMessage;
+handleFlxMidiMessage=function(e){const raw=e.data||[],p=flxMidiMessageKey(raw);if(p?.key&&!flxState.learn){const action=flxState.mappings[p.key];if(flxIsContinuousMidiKey(p.key)&&['fx.channel1','fx.channel2','fx.channelBoth','fx.channel'].includes(action)){updateFlxMidiMonitor(raw,p.key,p.norm);flxState.lastMidi.set(p.key,p.norm);v428SetFxChannelNorm(p.norm);return}}return v428OldMidiHandler(e)};
+const v428OldLabel=flxActionLabel;flxActionLabel=function(action){if(['fx.channel1','fx.channel2','fx.channelBoth','fx.channel'].includes(action))return 'Beat FX CH SELECT 1 ↔ 2 ↔ 1&2';return v428OldLabel(action)};
+document.addEventListener('click',e=>{if(nevoV428Fx.open&&!e.target.closest('.flx4-beatfx')){nevoV428Fx.open=false;v428RefreshFxUi()}});
+v428RefreshFxUi();
+
+// A final startup paint after all overrides are installed.
+setTimeout(()=>{renderDjLibrary();v38RenderBrowser();v428RedrawMiniWaves();v428RefreshFxUi()},160);
+console.info('NÉVO v4.2.8: instant mini waves, Camelot/rating library, jog-button layout and full Beat FX browse workflow active');
