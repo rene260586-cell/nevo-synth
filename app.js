@@ -4318,3 +4318,155 @@ function v4219RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V
 const v4219BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4219BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Echte 3-Band-Analyse · Bass rot · Mitten grün · Höhen blau':'True 3-band analysis · red lows · green mids · blue highs');try{v428RedrawMiniWaves?.()}catch{}});return r};
 setTimeout(v4219RefreshAll,220);setTimeout(v4219RefreshAll,1500);
 console.info('NÉVO v4.2.19: continuous filterbank, track-wide dynamic envelope, separate stacked red/green/blue bands and analysis-complete wave generation active');
+
+// ===== v4.2.20: DOMINANT-COLOR 3-BAND WAVE + PHRASE NOVELTY ANALYSIS =====
+// The previous stacked 3-band view still showed all three colours in almost every
+// column. This version separates two ideas: amplitude is the real track-wide
+// loudness envelope; colour is the dominant spectral character at that moment.
+// That produces thin green/cyan quiet passages and large red bass/action passages
+// instead of a constant rainbow. Phrase boundaries are now driven by beat-aligned
+// changes in energy + spectral balance, then snapped to musical 4-bar blocks.
+const V4220_PREVIEW_VERSION=4220;
+const V4220_PHRASE_VERSION=4220;
+const V4220_COLS=2304;
+
+function v4220Quantile(a,p,fallback=.000001){return v4219Pct(a,p,fallback)}
+function v4220DynRefs(rms,peak){
+  return {
+    q08:v4220Quantile(rms,.08,.000001),q22:v4220Quantile(rms,.22,.000001),
+    q45:v4220Quantile(rms,.45,.000002),q68:v4220Quantile(rms,.68,.000002),
+    q86:v4220Quantile(rms,.86,.000003),q97:v4220Quantile(rms,.97,.000004),
+    peak97:v4220Quantile(peak,.97,.00001)
+  }
+}
+function v4220Between(v,a,b,lo,hi){
+  if(!(b>a))return hi;return lo+clamp((v-a)/(b-a),0,1)*(hi-lo)
+}
+function v4220Envelope(rms,peak,dyn,lowShare=0){
+  const r=Math.max(0,Number(rms)||0),q=dyn||{},q08=q.q08||1e-6,q22=q.q22||q08*1.2,q45=q.q45||q22*1.2,q68=q.q68||q45*1.2,q86=q.q86||q68*1.2,q97=q.q97||q86*1.2;
+  let a;
+  if(r<=q08)a=v4220Between(r,0,q08,.018,.065);
+  else if(r<=q22)a=v4220Between(r,q08,q22,.065,.14);
+  else if(r<=q45)a=v4220Between(r,q22,q45,.14,.29);
+  else if(r<=q68)a=v4220Between(r,q45,q68,.29,.48);
+  else if(r<=q86)a=v4220Between(r,q68,q86,.48,.72);
+  else if(r<=q97)a=v4220Between(r,q86,q97,.72,.96);
+  else a=v4220Between(r,q97,q97*1.28,.96,1);
+  // Kicks/transients may be only a few dB louder in a mastered techno track. Give
+  // them a small visual lift without making the whole track full-height.
+  const crest=(Number(peak)||0)/Math.max(1e-6,r),crestBoost=clamp((crest-2.15)/5.0,0,.11)*(0.45+0.55*clamp(lowShare,0,1));
+  return clamp(Math.pow(a,1.08)+crestBoost,0,1)
+}
+function v4220Shares(low,mid,high,refs){
+  const s=v4219BandShares(low,mid,high,refs);
+  // Winner-takes-more contrast. This is intentionally NOT a stacked rainbow:
+  // a bass-led moment should read red, a melody-led moment green, hats/air blue.
+  let l=Math.pow(Math.max(0,s.low),3.6),m=Math.pow(Math.max(0,s.mid),3.6),h=Math.pow(Math.max(0,s.high),3.6),sum=Math.max(1e-9,l+m+h);
+  return {low:l/sum,mid:m/sum,high:h/sum}
+}
+function v4220Color(st,amp=1){
+  const l=st?.low||0,m=st?.mid||0,h=st?.high||0;
+  let r,g,b;
+  if(l>=m&&l>=h){
+    const mix=clamp(m/(l+1e-9),0,1)*.22,air=clamp(h/(l+1e-9),0,1)*.06;
+    r=255;g=48+82*mix;b=54+46*air; // red -> a little orange only when truly mixed
+  }else if(m>=l&&m>=h){
+    const bass=clamp(l/(m+1e-9),0,1)*.24,air=clamp(h/(m+1e-9),0,1)*.20;
+    r=70+130*bass;g=226;b=96+120*air; // green, slightly yellow/cyan at boundaries
+  }else{
+    const music=clamp(m/(h+1e-9),0,1)*.22,bass=clamp(l/(h+1e-9),0,1)*.08;
+    r=48+70*bass;g=176+70*music;b=255; // cyan/blue
+  }
+  const br=.66+.34*clamp(amp,0,1);r=Math.round(r*br);g=Math.round(g*br);b=Math.round(b*br);
+  return `rgb(${clamp(r,0,255)},${clamp(g,0,255)},${clamp(b,0,255)})`
+}
+function v4220DrawColumn(c,x,midY,half,st,width=1){
+  const H=Math.max(.15,half),col=v4220Color(st,Math.min(1,H/Math.max(1,midY)));
+  c.fillStyle=col;c.fillRect(x,midY-H,width,Math.max(1,H*2));
+}
+function v4220BuildFullTrack(item,buffer){
+  const B=v4219ContinuousBands(buffer,0,buffer?.duration||0,V4220_COLS,7600000,true);if(!B)return null;
+  const dyn=v4220DynRefs(B.rms,B.peak),data=new Array(V4220_COLS*4);
+  for(let x=0;x<V4220_COLS;x++){
+    const s=v4220Shares(B.low[x],B.mid[x],B.high[x],B.refs),a=v4220Envelope(B.rms[x],B.peak[x],dyn,s.low),o=x*4;
+    data[o]=Math.round(a*255);data[o+1]=Math.round(s.low*255);data[o+2]=Math.round(s.mid*255);data[o+3]=Math.round(s.high*255)
+  }
+  // A tiny envelope-only smoother removes single-pixel dirt but keeps drops/breaks sharp.
+  const cp=data.slice();for(let x=1;x<V4220_COLS-1;x++){const o=x*4;data[o]=Math.round(cp[(x-1)*4]*.12+cp[o]*.76+cp[(x+1)*4]*.12)}
+  return {v:V4220_PREVIEW_VERSION,scope:'full-track',start:0,end:buffer.duration,duration:buffer.duration,bpm:Number(item?.bpm)||0,beatOffset:Number(item?.beatOffset)||0,cols:V4220_COLS,data,refs:B.refs,dyn,mode:'dominant-color-3band-dynamics'}
+}
+function v4220At(p,x,width){const cols=p?.cols||V4220_COLS,i=clamp(Math.floor(x/Math.max(1,width)*cols),0,cols-1),o=i*4,d=p?.data||[];return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255}}
+function v4220FeatureBlock(p,ia,ib){
+  let e=0,l=0,m=0,h=0,n=0;for(let j=ia;j<ib;j++){const o=j*4,a=(p.data[o]||0)/255;e+=a;l+=((p.data[o+1]||0)/255)*(.25+.75*a);m+=((p.data[o+2]||0)/255)*(.25+.75*a);h+=((p.data[o+3]||0)/255)*(.25+.75*a);n++}n=Math.max(1,n);const ss=Math.max(1e-9,l+m+h);return {energy:e/n,low:l/ss,mid:m/ss,high:h/ss}
+}
+function v4220Median(a){const x=[...a].sort((u,v)=>u-v);if(!x.length)return 0;return x[Math.floor(x.length*.5)]}
+function v4220AnalyzePhrases(item,p){
+  const bpm=Number(item?.bpm)||0,dur=Number(p?.duration)||Number(item?.duration)||0;if(!(bpm>0&&dur>0&&Array.isArray(p?.data)))return [];
+  const barSec=240/bpm,blockSec=Math.max(4,barSec*4),N=Math.max(1,Math.ceil(dur/blockSec)),F=[];
+  for(let i=0;i<N;i++){const a=i*blockSec,b=Math.min(dur,(i+1)*blockSec),ia=clamp(Math.floor(a/dur*p.cols),0,p.cols-1),ib=clamp(Math.max(ia+1,Math.ceil(b/dur*p.cols)),1,p.cols);F.push({start:a,end:b,...v4220FeatureBlock(p,ia,ib)})}
+  // Smooth just enough to describe musical sections instead of individual kicks.
+  const S=F.map((f,i)=>{const A=F[Math.max(0,i-1)],B=f,C=F[Math.min(F.length-1,i+1)];return {...f,energy:A.energy*.2+B.energy*.6+C.energy*.2,low:A.low*.15+B.low*.7+C.low*.15,mid:A.mid*.15+B.mid*.7+C.mid*.15,high:A.high*.15+B.high*.7+C.high*.15}});
+  const nov=[];for(let i=1;i<S.length;i++){const a=S[i-1],b=S[i],ed=Math.abs(b.energy-a.energy),sd=Math.abs(b.low-a.low)+Math.abs(b.mid-a.mid)+Math.abs(b.high-a.high);nov.push({i,v:ed*1.45+sd*.72})}
+  const vals=nov.map(x=>x.v),med=v4220Median(vals),mad=v4220Median(vals.map(v=>Math.abs(v-med))),thr=Math.max(.12,med+mad*1.15,v4220Quantile(vals,.68,.12));
+  const bounds=[0];let last=0;
+  for(const q of nov){if(q.v>=thr&&q.i-last>=2){bounds.push(q.i);last=q.i}}
+  // No phrase should run visually forever. Split long regions on a musical 16-bar grid.
+  for(let i=0;i<N;i+=4)if(i>0&&!bounds.some(b=>Math.abs(b-i)<2))bounds.push(i);
+  bounds.push(N);bounds.sort((a,b)=>a-b);const uniq=[];for(const b of bounds)if(!uniq.length||b-uniq.at(-1)>=2||b===N)uniq.push(b);if(uniq.at(-1)!==N)uniq.push(N);
+  const seg=[];for(let k=0;k<uniq.length-1;k++){const a=uniq[k],b=uniq[k+1];if(b<=a)continue;let e=0,l=0,m=0,h=0;for(let i=a;i<b;i++){e+=S[i].energy;l+=S[i].low;m+=S[i].mid;h+=S[i].high}const n=b-a;seg.push({start:F[a].start,end:F[Math.min(N-1,b-1)].end,energy:e/n,low:l/n,mid:m/n,high:h/n,first:S[a].energy,last:S[b-1].energy})}
+  const E=seg.map(x=>x.energy),q25=v4220Quantile(E,.25,0),q50=v4220Quantile(E,.50,0),q72=v4220Quantile(E,.72,0),q88=v4220Quantile(E,.88,0),range=Math.max(.05,q88-q25),out=[];
+  for(let i=0;i<seg.length;i++){const s=seg[i],pos=s.start/dur,trend=(s.last-s.first)/range;let label='VERSE';
+    if(i===0||pos<.045)label='INTRO';
+    else if(i===seg.length-1||s.end/dur>.955)label='OUTRO';
+    else if(trend>.28&&s.energy>=q50)label='UP';
+    else if(trend<-.28&&s.energy<=q72)label='DOWN';
+    else if(s.energy>=q72&&s.low>=Math.max(.36,s.mid*.90))label='BRIDGE';
+    else if(s.mid>=Math.max(s.low*1.06,s.high*.88)&&s.energy>=q25&&s.energy<=q88)label='CHORUS';
+    else if(s.energy<q25&&s.mid>=s.low*.82)label='VERSE';
+    else if(s.energy>=q88)label=s.low>=s.mid?'BRIDGE':'CHORUS';
+    out.push({v:V4220_PHRASE_VERSION,start:s.start,end:s.end,label,energy:s.energy,low:s.low,mid:s.mid,high:s.high})
+  }
+  // Merge same labels; keep phrase boundaries musical and readable.
+  const merged=[];for(const x of out){const last=merged.at(-1);if(last&&last.label===x.label){last.end=x.end;last.energy=Math.max(last.energy,x.energy);last.low=(last.low+x.low)*.5;last.mid=(last.mid+x.mid)*.5;last.high=(last.high+x.high)*.5}else merged.push({...x})}return merged
+}
+function v4220DrawMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32,rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(20,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010304';c.fillRect(0,0,w,h);
+  if(!p||p.v!==V4220_PREVIEW_VERSION||!Array.isArray(p.data)){c.fillStyle='rgba(130,186,210,.80)';c.font=`800 ${Math.max(6,Math.min(9,h*.33))}px system-ui`;c.textAlign='center';c.fillText(item.analyzing||item.v425PreviewQueued?(currentLang==='de'?'ANALYSE …':'ANALYSIS …'):(currentLang==='de'?'WELLE':'WAVE'),w/2,h*.55);c.textAlign='left';if(!item.analyzing&&!item.v425PreviewQueued)v425SchedulePreview(item);return}
+  const withLabels=document.body.classList.contains('v4216-library-focus')&&h>=40,phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?(withLabels?14:5):0,waveH=h-phraseH,midY=waveH*.5,maxA=waveH*.47;
+  c.strokeStyle='rgba(255,255,255,.045)';for(const f of [.25,.5,.75]){const xx=Math.round(w*f)+.5;c.beginPath();c.moveTo(xx,0);c.lineTo(xx,waveH);c.stroke()}
+  for(let x=0;x<w;x++){const st=v4220At(p,x,w),a=Math.max(.35,st.amp*maxA);v4220DrawColumn(c,x,midY,a,st)}
+  if(phraseH)v4217PaintPhraseStrip(c,w,h,item,withLabels)
+}
+v425DrawMiniWave=v4220DrawMiniWave;
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing)return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;if(item.v425Wave32?.v===V4220_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data)&&item.phrases?.[0]?.v===V4220_PHRASE_VERSION)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.duration=buffer.duration||item.duration;const p=v4220BuildFullTrack(item,buffer);item.v425Wave32=p;item.phrases=v4220AnalyzePhrases(item,p);if(persist)try{await saveDjItem(item)}catch{};return p})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false;item.v425PreviewQueued=false;requestAnimationFrame(()=>{try{v428RedrawMiniWaves?.();v4220DrawDeckOverview('A',true);v4220DrawDeckOverview('B',true)}catch{}})}
+};
+v425SchedulePreview=function(item){if(!item||item.v425Wave32?.v===V4220_PREVIEW_VERSION&&item.phrases?.[0]?.v===V4220_PHRASE_VERSION||item.analyzing||item.v425PreviewQueued)return;item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()};
+v4215NeedsLibraryAnalysis=function(item){if(!item)return false;const hasBpm=Number(item.bpm)>0,hasKey=!!item.key&&item.key!=='—',hasDur=Number(item.duration)>0,hasWave=item.v425Wave32?.v===V4220_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data),hasPhrase=item.phrases?.[0]?.v===V4220_PHRASE_VERSION;return !hasBpm||!hasKey||!hasDur||!hasWave||!hasPhrase};
+
+function v4220DrawPerformanceWave(buffer,canvas,startSec,endSec,letter='A'){
+  if(!buffer||!canvas)return;const rect=canvas.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(42,Math.round(rect.height||86)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),pw=Math.round(w*dpr),ph=Math.round(h*dpr);if(canvas.width!==pw)canvas.width=pw;if(canvas.height!==ph)canvas.height=ph;
+  const c=canvas.getContext('2d',{alpha:false});c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const dur=buffer.duration||0,end=clamp(endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001)),d=djDecks?.[letter],bpm=d?djDeckBpm(letter):0;v425PaintWaveBackground(c,w,h);v425PaintGrid(c,w,h,start,end,bpm,d?.beatOffset||0,false);
+  const preview=d?.item?.v425Wave32,fullRefs=preview?.v===V4220_PREVIEW_VERSION?preview.refs:null,dyn=preview?.v===V4220_PREVIEW_VERSION?preview.dyn:null,B=v4219ContinuousBands(buffer,start,end,w,90000,!fullRefs),refs=fullRefs||B?.refs;if(!B)return;
+  const localDyn=dyn||v4220DynRefs(B.rms,B.peak),midY=h*.5,maxA=h*.455;for(let x=0;x<w;x++){const st=v4220Shares(B.low[x],B.mid[x],B.high[x],refs),a=Math.max(.45,v4220Envelope(B.rms[x],B.peak[x],localDyn,st.low)*maxA);v4220DrawColumn(c,x,midY,a,st)}
+  c.fillStyle='rgba(255,255,255,.08)';c.fillRect(0,Math.round(midY),w,1);const phrase=v4216CurrentPhrase(d?.item,d?.audio?.currentTime||0);if(phrase){const col=v4216PhraseColor(phrase.label);c.fillStyle=col;c.globalAlpha=.86;c.fillRect(0,h-3,w,3);c.globalAlpha=1}if(d?.item&&d.item.v425Wave32?.v!==V4220_PREVIEW_VERSION&&!d.item.analyzing)v425SchedulePreview(d.item)
+}
+function v4220DrawDeckOverview(letter,force=false){
+  const d=djDecks?.[letter],cv=$(`#flx${letter}FullWave`);if(!cv)return;const item=d?.item,p=item?.v425Wave32,rect=cv.getBoundingClientRect(),w=Math.max(150,Math.round(rect.width||900)),h=Math.max(10,Math.round(rect.height||20)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),pw=Math.round(w*dpr),ph=Math.round(h*dpr),key=`${item?.id||'-'}:${p?.v||0}:${w}:${h}`;
+  if(!force&&cv.dataset.drawKey===key){v4218RefreshOverviewPlayhead(letter);return}cv.dataset.drawKey=key;cv.width=pw;cv.height=ph;const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010304';c.fillRect(0,0,w,h);
+  if(item&&p?.v===V4220_PREVIEW_VERSION&&Array.isArray(p.data)){const phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?3:0,waveH=h-phraseH,midY=waveH*.5,maxA=waveH*.47;for(let x=0;x<w;x++){const st=v4220At(p,x,w),a=Math.max(.2,st.amp*maxA);v4220DrawColumn(c,x,midY,a,st)}if(phraseH)v4217PaintPhraseStrip(c,w,h,item,false)}else if(item&&!item.analyzing)v425SchedulePreview(item);v4218RefreshOverviewPlayhead(letter)
+}
+v34DrawStack=function(letter,force=false){const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv){v4220DrawDeckOverview(letter,force);return}const r=v34StackRange(letter),key=`${r.start.toFixed(3)}:${r.end.toFixed(3)}:${nevoV34.waveBeats}:${d.item?.v425Wave32?.v||0}`;if(force||d.v34StackKey!==key){d.v34StackKey=key;v4220DrawPerformanceWave(d.buffer,cv,r.start,r.end,letter);v34BeatOverlay(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter)}v4220DrawDeckOverview(letter,force);const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`};
+
+// Skip the v4.2.19 intermediate waveform pass during a manual/library analysis.
+v32AnalyzeTrack=async function(item,showStatus=true){const result=await v4219BaseAnalyzeTrack(item,showStatus);if(result&&item){try{item.v425Wave32=null;item.phrases=[];await v425PreparePreview(item,true);for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){djDecks[L].phrases=item.phrases;v3RenderPhrases?.(L);v34DrawStack(L,true)}}catch(e){console.warn('v4.2.20 waveform/phrase analysis failed',e)}try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.()}catch{}}return result};
+v3AnalyzeTrack=v32AnalyzeTrack;analyzeDjItem=v32AnalyzeTrack;
+
+function v4220RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4220_PREVIEW_VERSION||item.phrases?.[0]?.v!==V4220_PHRASE_VERSION)v425SchedulePreview(item);try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.();v34DrawStack('A',true);v34DrawStack('B',true)}catch{}}
+const v4220BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4220BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Dynamische Songwelle · Rot Bass · Grün Melodie · Blau Höhen · beatgenaue Phrasen':'Dynamic waveform · red bass · green melody · blue highs · beat-aligned phrases');try{v428RedrawMiniWaves?.()}catch{}});return r};
+setTimeout(v4220RefreshAll,260);setTimeout(v4220RefreshAll,1700);
+console.info('NÉVO v4.2.20: dominant-colour 3-band waveform, expanded track-wide loudness dynamics and novelty-based beat-aligned phrase analysis active');
