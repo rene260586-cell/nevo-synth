@@ -4720,7 +4720,7 @@ console.info('NÉVO v4.2.25: compact library reduced by roughly two visible song
 
   const KEY='nevo.flx4.modularLayout.v2';
   let edit=false,z=10,raf=0;
-  const min={deckA:[235,315],padA:[220,118],mapA:[38,255],library:[315,225],fx:[315,140],mapB:[38,255],deckB:[235,315],padB:[220,118]};
+  const min={deckA:[235,315],padA:[220,118],mapA:[38,255],library:[315,225],fx:[280,92],mapB:[38,255],deckB:[235,315],padB:[220,118]};
   const labels={deckA:'DECK A',padA:'PADS A',mapA:'MIX A',library:'BIBLIOTHEK',fx:'BEAT FX / PFL',mapB:'MIX B',deckB:'DECK B',padB:'PADS B'};
   const panels={};
 
@@ -4911,3 +4911,5 @@ console.info('NÉVO v4.2.27: separate pad cards, compact mixer strips, hidden sc
   if(surf)new MutationObserver(()=>requestAnimationFrame(repairPadCards)).observe(surf,{subtree:true,childList:true});
 })();
 console.info('NÉVO v4.2.28: narrow MIX strips + enforced separate performance-pad panels');
+
+console.info('NÉVO v4.2.30: compact adaptive Beat FX/PFL panel without internal scrollbars');

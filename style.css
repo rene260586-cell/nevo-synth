@@ -2782,3 +2782,114 @@ body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browse
   .flx4-controller.v4226-layout-canvas>.flx4-deck.v4226-panel>.flx4-pad-state,
   .flx4-controller.v4226-layout-canvas>.flx4-deck.v4226-panel>.flx4-pads{display:none!important}
 }
+
+
+/* ===== v4.2.30: COMPACT ADAPTIVE BEAT FX / PFL PANEL =====
+   The movable FX card may now be made much shorter without creating an
+   internal scrollbar. Primary DJ controls stay visible; secondary mapping
+   controls collapse only when the card becomes very shallow. */
+@media (min-width:901px){
+  .flx4-controller.v4226-layout-canvas>.v4226-fx-panel.v4226-panel{
+    min-height:92px!important;
+    padding:3px!important;
+    overflow:hidden!important;
+    container-type:size!important;
+    container-name:nevofx!important;
+  }
+  .v4226-fx-panel>.flx4-center-core{
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:2px!important;
+    padding:0!important;
+    scrollbar-width:none!important;
+    -ms-overflow-style:none!important;
+  }
+  .v4226-fx-panel>.flx4-center-core::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+
+  .v4226-fx-panel .v415-beatfx-rail{
+    flex:0 0 auto!important;
+    width:100%!important;
+    margin:0!important;
+    padding:3px 4px!important;
+    border-radius:7px!important;
+  }
+  .v4226-fx-panel .v415-beatfx-heading{margin:0 0 1px!important;min-height:0!important}
+  .v4226-fx-panel .v415-beatfx-heading b{font-size:5.4px!important;line-height:1!important}
+  .v4226-fx-panel .v415-fx-vertical{
+    grid-template-columns:minmax(62px,1fr) minmax(54px,.78fr) minmax(96px,1.3fr) 28px minmax(50px,.72fr)!important;
+    gap:2px!important;
+    min-height:0!important;
+  }
+  .v4226-fx-panel .v415-fx-channel-stack{padding:1px!important;gap:1px!important;border-radius:5px!important}
+  .v4226-fx-panel .v415-fx-channel-stack button{
+    min-height:22px!important;height:22px!important;padding:0 1px!important;font-size:5.6px!important;border-radius:4px!important;
+  }
+  .v4226-fx-panel .v415-fx-select{
+    min-height:24px!important;height:24px!important;padding:1px 2px!important;font-size:5.6px!important;border-radius:5px!important;
+  }
+  .v4226-fx-panel .v415-fx-beat-controls{grid-template-columns:22px minmax(42px,1fr) 22px!important;gap:1px!important}
+  .v4226-fx-panel .v415-fx-beat-controls>button{
+    min-height:24px!important;height:24px!important;font-size:9px!important;border-radius:5px!important;
+  }
+  .v4226-fx-panel .v415-fx-beat-controls .flx4-fx-center-readout{
+    min-height:24px!important;height:24px!important;padding:1px!important;border-radius:5px!important;
+  }
+  .v4226-fx-panel .v415-fx-beat-controls .flx4-fx-center-readout small{font-size:3.5px!important;line-height:1!important}
+  .v4226-fx-panel .v415-fx-beat-controls .flx4-fx-center-readout b{font-size:5.7px!important;line-height:1!important}
+  .v4226-fx-panel .v415-fx-knob{
+    width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;max-width:25px!important;max-height:25px!important;
+  }
+  .v4226-fx-panel .v415-fx-knob:after{top:3px!important;height:7px!important;transform-origin:50% 9.5px!important}
+  .v4226-fx-panel .v415-fx-on{
+    min-height:24px!important;height:24px!important;padding:1px 2px!important;font-size:5.8px!important;border-radius:5px!important;
+  }
+
+  .v4226-fx-panel .flx4-cross{
+    flex:0 0 12px!important;height:12px!important;min-height:12px!important;margin:0!important;gap:3px!important;font-size:4.5px!important;
+  }
+  .v4226-fx-panel .flx4-cross input{height:10px!important;margin:0!important}
+  .v4226-fx-panel .v414-utility-mapping{flex:0 0 auto!important;margin:0!important}
+  .v4226-fx-panel .v414-utility-mapping summary{
+    min-height:13px!important;height:13px!important;padding:0 4px!important;font-size:4.6px!important;line-height:13px!important;
+  }
+  .v4226-fx-panel .flx-reset{
+    min-height:17px!important;height:17px!important;margin:0!important;padding:0 4px!important;font-size:5px!important;border-radius:5px!important;
+  }
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock{
+    flex:0 0 27px!important;
+    width:100%!important;max-width:none!important;height:27px!important;min-height:27px!important;
+    margin:0!important;padding:2px 4px!important;gap:3px!important;border-radius:6px!important;
+  }
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock .headphone-title strong::after{font-size:6.8px!important}
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock label{font-size:6px!important;gap:3px!important}
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock input[type="range"]{height:10px!important;min-width:66px!important}
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock b{font-size:6.2px!important;min-width:20px!important}
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock select{height:23px!important;min-width:72px!important;width:88px!important;padding:1px 4px!important;font-size:6px!important;border-radius:5px!important}
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock .btn{height:23px!important;min-height:23px!important;padding:0 5px!important;font-size:6px!important;border-radius:5px!important}
+}
+
+/* Once the user makes the card especially short, keep only the controls needed
+   while mixing. This prevents a scroll wheel from ever appearing. */
+@container nevofx (max-height:135px){
+  .v4226-fx-panel .v415-beatfx-heading,
+  .v4226-fx-panel .v414-utility-mapping,
+  .v4226-fx-panel .flx-reset{display:none!important}
+  .v4226-fx-panel>.flx4-center-core{gap:1px!important}
+  .v4226-fx-panel .v415-beatfx-rail{padding:2px 3px!important}
+  .v4226-fx-panel .headphone-monitor.v4224-pfl-dock{height:24px!important;min-height:24px!important;flex-basis:24px!important}
+}
+@container nevofx (max-height:112px){
+  .v4226-fx-panel .flx4-cross{display:none!important}
+  .v4226-fx-panel .v415-fx-channel-stack button{height:20px!important;min-height:20px!important}
+  .v4226-fx-panel .v415-fx-select,
+  .v4226-fx-panel .v415-fx-beat-controls>button,
+  .v4226-fx-panel .v415-fx-beat-controls .flx4-fx-center-readout,
+  .v4226-fx-panel .v415-fx-on{height:22px!important;min-height:22px!important}
+  .v4226-fx-panel .v415-fx-knob{width:23px!important;height:23px!important;min-width:23px!important;min-height:23px!important}
+}
