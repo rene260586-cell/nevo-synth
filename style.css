@@ -2163,3 +2163,49 @@ body.flx-compact-mode .v4215-library-analyze{font-size:11px!important;min-width:
   .v4215-analysis-meta{font-size:7px}.v4215-analysis-meta b{font-size:10px}
   .v4215-library-analyze::after{display:none!important}
 }
+
+/* ===== v4.2.16: 3-Band / Phrase / Full Library Focus ===== */
+/* More waveform canvas height in normal compact rows, but keep the balanced title proportions. */
+.v429-browser-row .v425-miniwave-shell{height:34px!important;background:#010406!important;border-color:rgba(86,174,207,.28)!important}
+.flx4-browser-track.selected .v425-miniwave-shell{border-color:rgba(84,216,255,.72)!important;box-shadow:inset 0 0 10px rgba(0,0,0,.72),0 0 12px rgba(84,216,255,.16)!important}
+
+/* Spacebar focus mode: only the browser/library becomes the DJ workspace. */
+body.v4216-library-focus .app-shell{overflow:hidden!important}
+body.v4216-library-focus .flx4-mixer-section.v34-mixer{
+  position:fixed!important;z-index:25000!important;
+  inset:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))!important;
+  width:auto!important;height:auto!important;max-width:none!important;min-width:0!important;max-height:none!important;
+  display:flex!important;flex-direction:column!important;gap:8px!important;overflow:hidden!important;
+  margin:0!important;padding:12px!important;border:1px solid rgba(84,216,255,.25)!important;border-radius:16px!important;
+  background:linear-gradient(180deg,#07111a 0%,#03080d 100%)!important;box-shadow:0 24px 80px rgba(0,0,0,.78),inset 0 0 0 1px rgba(255,255,255,.025)!important;
+}
+body.v4216-library-focus .flx4-mixer-section.v34-mixer::before{
+  content:"BIBLIOTHEK · LEERTASTE = ZURÜCK";display:block;flex:0 0 auto;color:#dff5ff;font:950 13px/1 system-ui,sans-serif;letter-spacing:.12em;padding:3px 2px 1px;
+}
+body.v4216-library-focus .flx4-mixer-section>.flx4-center-core{display:none!important}
+body.v4216-library-focus .flx4-browser-top.flx4-browser-top-compact{flex:0 0 auto!important;margin:0!important;min-height:38px!important}
+body.v4216-library-focus .flx4-browser-panel{
+  flex:1 1 auto!important;display:flex!important;flex-direction:column!important;min-height:0!important;max-height:none!important;height:auto!important;margin:0!important;padding:8px!important;border-radius:12px!important;
+}
+body.v4216-library-focus .flx4-browser-panel-head{flex:0 0 auto!important;font-size:11px!important;padding:5px 4px!important}
+body.v4216-library-focus .flx4-browser-columns.v428-browser-columns{flex:0 0 auto!important;min-height:32px!important;font-size:11px!important;align-items:center!important}
+body.v4216-library-focus .flx4-browser-list{flex:1 1 auto!important;min-height:0!important;max-height:none!important;height:auto!important;overflow-y:auto!important;padding-right:4px!important}
+body.v4216-library-focus .flx4-browser-track.v429-browser-row{min-height:68px!important;padding:6px 8px!important;gap:8px!important}
+body.v4216-library-focus .v429-browser-row .v425-track-main{grid-template-columns:minmax(150px,.58fr) minmax(360px,1.42fr)!important;gap:12px!important}
+body.v4216-library-focus .flx4-browser-track.v429-browser-row .v425-track-text b{font-size:13px!important;line-height:1.1!important}
+body.v4216-library-focus .flx4-browser-track.v429-browser-row .v425-track-text small{font-size:9px!important}
+body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{height:50px!important;border-radius:5px!important}
+body.v4216-library-focus .flx4-browser-track.v429-browser-row .v428-bpm,
+body.v4216-library-focus .flx4-browser-track.v429-browser-row .v428-key{font-size:12px!important}
+body.v4216-library-focus .flx4-browser-track.v429-browser-row .v428-duration{font-size:11px!important}
+body.v4216-library-focus .v429-browser-rating .v429-star{width:22px!important;min-width:22px!important;height:32px!important;font-size:21px!important}
+body.v4216-library-focus .v4215-analysis-progress{flex:0 0 auto!important}
+
+@media(max-width:760px){
+  .v429-browser-row .v425-miniwave-shell{height:30px!important}
+  body.v4216-library-focus .flx4-mixer-section.v34-mixer{inset:6px!important;padding:7px!important;border-radius:11px!important}
+  body.v4216-library-focus .flx4-mixer-section.v34-mixer::before{font-size:10px}
+  body.v4216-library-focus .flx4-browser-track.v429-browser-row{min-height:58px!important;padding:5px!important}
+  body.v4216-library-focus .v429-browser-row .v425-track-main{grid-template-columns:minmax(82px,.55fr) minmax(150px,1.45fr)!important;gap:6px!important}
+  body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{height:42px!important}
+}

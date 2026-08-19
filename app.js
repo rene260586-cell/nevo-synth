@@ -3794,3 +3794,125 @@ renderDjLibrary=function(){const r=v4215BaseRenderLibrary();requestAnimationFram
 setTimeout(()=>{v4215InstallAnalysisControls();v4215UpdateAnalysisUi(false)},80);
 setTimeout(v4215InstallAnalysisControls,700);
 console.info('NÉVO v4.2.15: yellow library-analysis bolt, sequential visible analysis progress and per-track loading feedback active');
+
+// ===== v4.2.16: REKORDBOX-INSPIRED 3-BAND WAVEFORMS + PHRASES + SPACE LIBRARY =====
+// rekordbox exposes 3Band waveforms (frequency-band volume shown by color) and
+// Phrase Analysis categories including Intro / Up / Down / Chorus / Bridge / Verse / Outro.
+// NÉVO implements its own local best-effort analysis; no rekordbox proprietary data is copied.
+const V4216_PREVIEW_VERSION=4216;
+const V4216_PHRASE_VERSION=4216;
+
+function v4216BandColor(low,mid,high,alpha=1){
+  let l=Math.pow(clamp(Number(low)||0,0,1),1.35),m=Math.pow(clamp(Number(mid)||0,0,1),1.35),h=Math.pow(clamp(Number(high)||0,0,1),1.35);
+  const mx=Math.max(.001,l,m,h);l/=mx;m/=mx;h/=mx;
+  // Strong DJ-readable language: bass/body = red/orange, musical mids = green,
+  // high detail/transients = cyan/blue. Dominant bands stay visibly distinct.
+  let r=255*l+54*m+22*h,g=62*l+238*m+126*h,b=24*l+62*m+255*h;
+  const top=Math.max(r,g,b,1),scale=255/top;r*=scale;g*=scale;b*=scale;
+  return `rgba(${r|0},${g|0},${b|0},${alpha})`;
+}
+function v4216PhraseColor(label){
+  return ({INTRO:'#ff7473',UP:'#ffd64c',DOWN:'#a98cff',CHORUS:'#55e56c',BRIDGE:'#ff653f',VERSE:'#54a6ff',OUTRO:'#b5bec8'})[String(label||'').toUpperCase()]||'#7f93a4';
+}
+v3PhraseColor=function(label){return v4216PhraseColor(label)};
+
+function v4216PhraseFeatures(buffer,startSec,endSec){
+  const ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null,sr=buffer.sampleRate||44100;
+  const a=Math.max(0,Math.floor(startSec*sr)),b=Math.min(ch0.length,Math.ceil(endSec*sr)),span=Math.max(1,b-a),stride=Math.max(1,Math.floor(span/15000)),effSr=sr/stride;
+  const aLow=1-Math.exp(-2*Math.PI*190/effSr),aMid=1-Math.exp(-2*Math.PI*2600/effSr);let lpLow=0,lpMid=0,lo2=0,mi2=0,hi2=0,total2=0,peak=0,n=0;
+  for(let i=a;i<b;i+=stride){const s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0);lpLow+=aLow*(s-lpLow);lpMid+=aMid*(s-lpMid);const lo=lpLow,mi=lpMid-lpLow,hi=s-lpMid;lo2+=lo*lo;mi2+=mi*mi;hi2+=hi*hi;total2+=s*s;peak=Math.max(peak,Math.abs(s));n++}
+  n=Math.max(1,n);const low=Math.sqrt(lo2/n),mid=Math.sqrt(mi2/n),high=Math.sqrt(hi2/n),energy=Math.sqrt(total2/n),sum=Math.max(1e-8,low+mid+high);
+  return {low,mid,high,energy,peak,lowShare:low/sum,midShare:mid/sum,highShare:high/sum};
+}
+function v4216AnalyzePhrases(buffer,bpm){
+  const dur=buffer?.duration||0,b=Number(bpm)||0;if(!(dur>0)||!(b>0))return [];
+  const bar=60/b*4,chunk=Math.max(bar*8,8),count=Math.max(1,Math.ceil(dur/chunk)),F=[];
+  for(let i=0;i<count;i++){const start=i*chunk,end=Math.min(dur,(i+1)*chunk);F.push({...v4216PhraseFeatures(buffer,start,end),start,end})}
+  const energies=F.map(x=>x.energy).sort((a,b)=>a-b),p25=energies[Math.floor((energies.length-1)*.25)]||0,p50=energies[Math.floor((energies.length-1)*.50)]||0,p82=energies[Math.floor((energies.length-1)*.82)]||p50,p95=energies[Math.floor((energies.length-1)*.95)]||p82||1;
+  const parts=[];
+  for(let i=0;i<F.length;i++){
+    const f=F[i],prev=F[Math.max(0,i-1)],next=F[Math.min(F.length-1,i+1)],en=f.energy/Math.max(.0001,p95),rise=(f.energy-prev.energy)/Math.max(.0001,p95),fall=(next.energy-f.energy)/Math.max(.0001,p95);let label='VERSE';
+    if(i===0 || (i<=1&&f.energy<=p50*.82))label='INTRO';
+    else if(i===F.length-1 || (i>=F.length-2&&f.energy<=p50*.78))label='OUTRO';
+    else if(rise>.16&&en>.55)label='UP';
+    else if(fall<-.18&&en>.52)label='DOWN';
+    else if((f.energy>=p82&&f.lowShare>=.34)||(en>.86&&f.lowShare>.29))label='BRIDGE';
+    else if(f.energy>p25&&f.energy<p82*1.06&&(f.midShare+f.highShare)>=.52)label='CHORUS';
+    else label='VERSE';
+    parts.push({v:V4216_PHRASE_VERSION,start:f.start,end:f.end,label,energy:f.energy,low:f.lowShare,mid:f.midShare,high:f.highShare});
+  }
+  // Merge adjacent equal phrases so the strip reads like a musical arrangement.
+  const merged=[];for(const p of parts){const last=merged.at(-1);if(last&&last.label===p.label){last.end=p.end;last.energy=Math.max(last.energy,p.energy)}else merged.push({...p})}
+  return merged;
+}
+v3AnalyzePhrases=v4216AnalyzePhrases;
+
+function v4216BuildFullTrack3Band(item,buffer){
+  if(!buffer)return null;const dur=buffer.duration||0;if(!(dur>0))return null;
+  const cols=720,data=new Array(cols*4).fill(0),counts=new Uint32Array(cols),lowSq=new Float64Array(cols),midSq=new Float64Array(cols),highSq=new Float64Array(cols),peak=new Float32Array(cols);
+  const ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null,sr=buffer.sampleRate||44100,span=ch0.length,stride=Math.max(1,Math.floor(span/280000)),effSr=sr/stride;
+  const aLow=1-Math.exp(-2*Math.PI*190/effSr),aMid=1-Math.exp(-2*Math.PI*2600/effSr);let lpLow=0,lpMid=0;
+  for(let i=0;i<span;i+=stride){const s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0);lpLow+=aLow*(s-lpLow);lpMid+=aMid*(s-lpMid);const lo=lpLow,mi=lpMid-lpLow,hi=s-lpMid,x=Math.min(cols-1,Math.floor(i/Math.max(1,span)*cols));lowSq[x]+=lo*lo;midSq[x]+=mi*mi;highSq[x]+=hi*hi;counts[x]++;peak[x]=Math.max(peak[x],Math.abs(s))}
+  const lowE=new Float32Array(cols),midE=new Float32Array(cols),highE=new Float32Array(cols),ampE=new Float32Array(cols);
+  for(let x=0;x<cols;x++){const n=Math.max(1,counts[x]);lowE[x]=Math.sqrt(lowSq[x]/n);midE[x]=Math.sqrt(midSq[x]/n);highE[x]=Math.sqrt(highSq[x]/n);ampE[x]=Math.max(peak[x]*.72,Math.sqrt(lowSq[x]/n+midSq[x]/n+highSq[x]/n)*2.25)}
+  const ref=a=>{const s=Array.from(a).sort((x,y)=>x-y);return Math.max(.0005,s[Math.floor((s.length-1)*.96)]||.001)},lr=ref(lowE),mr=ref(midE),hr=ref(highE),ar=ref(ampE);
+  for(let x=0;x<cols;x++){const o=x*4;data[o]=Math.round(clamp(Math.pow(ampE[x]/ar,.72),0,1)*255);data[o+1]=Math.round(clamp(Math.pow(lowE[x]/lr,.72),0,1)*255);data[o+2]=Math.round(clamp(Math.pow(midE[x]/mr,.72),0,1)*255);data[o+3]=Math.round(clamp(Math.pow(highE[x]/hr,.72),0,1)*255)}
+  return {v:V4216_PREVIEW_VERSION,scope:'full-track',start:0,end:dur,duration:dur,bpm:Number(item?.bpm)||0,beatOffset:Number(item?.beatOffset)||0,cols,data,mode:'3band-phrase'};
+}
+function v4216PreviewAt(p,x,width){const cols=p?.cols||720,i=clamp(Math.floor(x/Math.max(1,width)*cols),0,Math.max(0,cols-1)),o=i*4,d=p?.data||[];return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255}}
+function v4216CurrentPhrase(item,time){const ph=Array.isArray(item?.phrases)?item.phrases:[];return ph.find(p=>time>=Number(p.start||0)&&time<Number(p.end||0))||ph.at(-1)||null}
+function v4216PaintPhraseStrip(c,w,h,item,withLabels=false){
+  const ph=Array.isArray(item?.phrases)?item.phrases:[],dur=Number(item?.duration)||Number(item?.v425Wave32?.duration)||0;if(!ph.length||!(dur>0))return 0;
+  const strip=withLabels?11:4,y=h-strip;c.fillStyle='rgba(0,0,0,.58)';c.fillRect(0,y,w,strip);
+  for(const p of ph){const x1=clamp(Number(p.start||0)/dur*w,0,w),x2=clamp(Number(p.end||dur)/dur*w,x1,w),ww=Math.max(1,x2-x1),col=v4216PhraseColor(p.label);c.globalAlpha=.92;c.fillStyle=col;c.fillRect(x1,y,ww,strip);c.globalAlpha=1;if(withLabels&&ww>31){c.save();c.beginPath();c.rect(x1,y,ww,strip);c.clip();c.fillStyle='#061018';c.font='900 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(String(p.label||''),x1+ww/2,y+strip/2+.4);c.restore()}}
+  return strip;
+}
+function v4216DrawMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32,rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(18,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010406';c.fillRect(0,0,w,h);
+  if(!p||p.v!==V4216_PREVIEW_VERSION||!Array.isArray(p.data)){c.fillStyle='rgba(130,190,215,.82)';c.font=`800 ${Math.max(6,Math.min(9,h*.34))}px system-ui`;c.textAlign='center';c.fillText(item.analyzing||item.v425PreviewQueued?(currentLang==='de'?'ANALYSE …':'ANALYSIS …'):(currentLang==='de'?'WELLE':'WAVE'),w/2,h*.60);c.textAlign='left';if(!item.analyzing&&!item.v425PreviewQueued)v425SchedulePreview(item);return}
+  const withLabels=document.body.classList.contains('v4216-library-focus')&&h>=38,phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?(withLabels?11:4):0,waveH=h-phraseH,mid=waveH*.5,maxAmp=waveH*.47;
+  c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=1;for(const f of [.25,.5,.75]){const xx=Math.round(w*f)+.5;c.beginPath();c.moveTo(xx,0);c.lineTo(xx,waveH);c.stroke()}
+  c.lineWidth=1;
+  for(let x=0;x<w;x++){const st=v4216PreviewAt(p,x,w),amp=Math.max(.7,Math.pow(st.amp,.76)*maxAmp);c.strokeStyle=v4216BandColor(st.low,st.mid,st.high,.99);c.beginPath();c.moveTo(x+.5,mid-amp);c.lineTo(x+.5,mid+amp);c.stroke()}
+  c.fillStyle='rgba(255,255,255,.12)';c.fillRect(0,Math.round(mid),w,1);if(phraseH)v4216PaintPhraseStrip(c,w,h,item,withLabels);
+}
+v425DrawMiniWave=v4216DrawMiniWave;
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing)return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;if(item.v425Wave32?.v===V4216_PREVIEW_VERSION&&item.phrases?.[0]?.v===V4216_PHRASE_VERSION)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);if(Number(item.bpm)>0&&item.phrases?.[0]?.v!==V4216_PHRASE_VERSION)item.phrases=v4216AnalyzePhrases(buffer,item.bpm);item.duration=buffer.duration||item.duration;item.v425Wave32=v4216BuildFullTrack3Band(item,buffer);if(persist)try{await saveDjItem(item)}catch{};return item.v425Wave32})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false}
+};
+v425SchedulePreview=function(item){if(!item||item.v425Wave32?.v===V4216_PREVIEW_VERSION&&item.phrases?.[0]?.v===V4216_PHRASE_VERSION||item.analyzing||item.v425PreviewQueued)return;item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()};
+
+// The yellow library bolt now treats both waveform and phrase analysis as required.
+v4215NeedsLibraryAnalysis=function(item){if(!item)return false;const hasBpm=Number(item.bpm)>0,hasKey=!!item.key&&item.key!=='—',hasDur=Number(item.duration)>0,hasWave=item.v425Wave32?.v===V4216_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data),hasPhrase=item.phrases?.[0]?.v===V4216_PHRASE_VERSION;return !hasBpm||!hasKey||!hasDur||!hasWave||!hasPhrase};
+
+function v4216WindowBands(buffer,startSec,endSec,width){
+  const w=Math.max(1,width|0),low2=new Float64Array(w),mid2=new Float64Array(w),high2=new Float64Array(w),counts=new Uint32Array(w),peaks=new Float32Array(w),ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null,sr=buffer.sampleRate||44100,dur=buffer.duration||0;
+  const start=clamp(startSec,0,dur),end=clamp(endSec,Math.min(dur,start+.001),dur),warm=Math.max(0,start-.045),i0=Math.floor(warm*sr),i1=Math.min(ch0.length,Math.ceil(end*sr)),span=Math.max(1,i1-i0),stride=Math.max(1,Math.floor(span/52000)),effSr=sr/stride,aLow=1-Math.exp(-2*Math.PI*190/effSr),aMid=1-Math.exp(-2*Math.PI*2600/effSr);let lpLow=0,lpMid=0;
+  for(let i=i0;i<i1;i+=stride){const t=i/sr,s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0);lpLow+=aLow*(s-lpLow);lpMid+=aMid*(s-lpMid);if(t<start)continue;const x=clamp(Math.floor((t-start)/(end-start)*w),0,w-1),lo=lpLow,mi=lpMid-lpLow,hi=s-lpMid;low2[x]+=lo*lo;mid2[x]+=mi*mi;high2[x]+=hi*hi;counts[x]++;peaks[x]=Math.max(peaks[x],Math.abs(s))}
+  const low=new Float32Array(w),mid=new Float32Array(w),high=new Float32Array(w),amp=new Float32Array(w);for(let x=0;x<w;x++){const n=Math.max(1,counts[x]);low[x]=Math.sqrt(low2[x]/n);mid[x]=Math.sqrt(mid2[x]/n);high[x]=Math.sqrt(high2[x]/n);amp[x]=Math.max(peaks[x]*.86,Math.sqrt(low2[x]/n+mid2[x]/n+high2[x]/n)*2.6)}
+  const ref=a=>{const s=Array.from(a).sort((a,b)=>a-b);return Math.max(.0005,s[Math.floor((s.length-1)*.93)]||.001)},lr=ref(low),mr=ref(mid),hr=ref(high);return {low,mid,high,amp,lr,mr,hr};
+}
+function v4216DrawPerformanceWave(buffer,canvas,startSec,endSec,letter='A'){
+  if(!buffer||!canvas)return;const rect=canvas.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(64,Math.round(rect.height||118)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),pw=Math.round(w*dpr),ph=Math.round(h*dpr);if(canvas.width!==pw)canvas.width=pw;if(canvas.height!==ph)canvas.height=ph;
+  const c=canvas.getContext('2d',{alpha:false});c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const dur=buffer.duration||0,end=clamp(endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001));v425PaintWaveBackground(c,w,h);const d=djDecks?.[letter],bpm=d?djDeckBpm(letter):0;v425PaintGrid(c,w,h,start,end,bpm,d?.beatOffset||0,false);
+  const B=v4216WindowBands(buffer,start,end,w),midY=h*.5,maxAmp=h*.455;c.lineWidth=1;
+  for(let x=0;x<w;x++){const amp=Math.max(.8,Math.pow(clamp(B.amp[x],0,1),.78)*maxAmp),lo=clamp(B.low[x]/B.lr,0,1),mi=clamp(B.mid[x]/B.mr,0,1),hi=clamp(B.high[x]/B.hr,0,1);c.strokeStyle=v4216BandColor(lo,mi,hi,.99);c.beginPath();c.moveTo(x+.5,midY-amp);c.lineTo(x+.5,midY+amp);c.stroke()}
+  c.fillStyle='rgba(255,255,255,.11)';c.fillRect(0,Math.round(midY),w,1);
+  const phrase=v4216CurrentPhrase(d?.item,d?.audio?.currentTime||0);if(phrase){const col=v4216PhraseColor(phrase.label);c.fillStyle=col;c.globalAlpha=.82;c.fillRect(0,h-4,w,4);c.globalAlpha=1;c.font='900 8px system-ui';c.textAlign='right';c.fillStyle=col;c.fillText(String(phrase.label||''),w-7,11);c.textAlign='left'}
+}
+v34DrawStack=function(letter,force=false){const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv)return;const r=v34StackRange(letter),key=`${r.start.toFixed(3)}:${r.end.toFixed(3)}:${nevoV34.waveBeats}:${d.phrases?.length||0}`;if(!force&&d.v34StackKey===key)return;d.v34StackKey=key;v4216DrawPerformanceWave(d.buffer,cv,r.start,r.end,letter);v34BeatOverlay(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter);const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`};
+
+// Full library mode. Space toggles it when the user isn't typing in a field.
+const v4216LibraryFocus={open:false};
+function v4216EditableTarget(el){return !!el?.closest?.('input,textarea,select,button,[contenteditable="true"],.modal:not(.hidden)')}
+function v4216SetLibraryFocus(on){v4216LibraryFocus.open=!!on;document.body.classList.toggle('v4216-library-focus',v4216LibraryFocus.open);const panel=$('#flxBrowserPanel');panel?.classList.toggle('expanded',v4216LibraryFocus.open||!!nevoV38.browserExpanded);requestAnimationFrame(()=>{try{v4212PositionResizers();v428RedrawMiniWaves();v38RenderBrowser()}catch{}});setTimeout(()=>{try{v428RedrawMiniWaves()}catch{}},80)}
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!e.shiftKey&&!e.repeat&&!v4216EditableTarget(e.target)&&!$('#flx4Surface')?.hidden){e.preventDefault();v4216SetLibraryFocus(!v4216LibraryFocus.open);return}if(e.key==='Escape'&&v4216LibraryFocus.open){e.preventDefault();v4216SetLibraryFocus(false)}},true);
+
+function v4216RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4216_PREVIEW_VERSION||item.phrases?.[0]?.v!==V4216_PHRASE_VERSION)v425SchedulePreview(item);try{v38RenderBrowser();renderDjLibrary()}catch{}}
+const v4216BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4216BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Komplette 3-Band-Songwelle + Phrase':'Full 3-band waveform + phrase');try{v428RedrawMiniWaves()}catch{}});return r};
+setTimeout(v4216RefreshAll,220);setTimeout(v4216RefreshAll,1350);
+console.info('NÉVO v4.2.16: stronger true 3-band deck/library waveforms, phrase estimation/strip and SPACE full-library mode active');
