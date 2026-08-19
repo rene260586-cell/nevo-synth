@@ -3398,3 +3398,95 @@ v38RenderBrowser=function(){
 v429InstallImportButtons();
 setTimeout(()=>{v429InstallImportButtons();renderDjLibrary();v38RenderBrowser();v428RedrawMiniWaves()},120);
 console.info('NÉVO v4.2.10: larger readable library, direct 1–5 star rating and playlist song import buttons active');
+
+// ===== v4.2.11: SORTABLE DJ LIBRARY + HIGH-CONTRAST 3-BAND 32-BEAT MINIS =====
+// Research-informed direction: rekordbox supports BLUE/RGB/3Band waveform modes and
+// requires analysis data for 3Band. NÉVO keeps the user's 32-beat mini rule, but
+// encodes low/mid/high energy separately so techno tracks are easier to distinguish.
+const V4211_PREVIEW_VERSION=4211;
+const V4211_SORT_STORAGE='nevo-v4211-browser-sort';
+const v4211SortState={field:(nevoV32.sort==='bpm'||nevoV32.sort==='key')?nevoV32.sort:'',dir:1};
+try{Object.assign(v4211SortState,JSON.parse(localStorage.getItem(V4211_SORT_STORAGE)||'{}')||{})}catch{}
+function v4211SaveSort(){try{localStorage.setItem(V4211_SORT_STORAGE,JSON.stringify(v4211SortState))}catch{}}
+function v4211CamelotParts(key){const s=String(v428Camelot(key)||'').toUpperCase(),m=s.match(/^(\d{1,2})([AB])$/);return m?{n:Number(m[1]),mode:m[2]}:{n:99,mode:'Z'}}
+function v4211Compare(a,b,field){
+  if(field==='bpm')return (Number(a.bpm)||999)-(Number(b.bpm)||999);
+  if(field==='key'){const A=v4211CamelotParts(a.key),B=v4211CamelotParts(b.key);return (A.n-B.n)||A.mode.localeCompare(B.mode)}
+  return 0;
+}
+const v4211BaseBrowserItems=v38BrowserItems;
+v38BrowserItems=function(){const items=v4211BaseBrowserItems();if(!['bpm','key'].includes(v4211SortState.field))return items;return items.sort((a,b)=>v4211Compare(a,b,v4211SortState.field)*v4211SortState.dir)};
+function v4211ApplySortHeader(){
+  const head=document.querySelector('.flx4-browser-columns.v428-browser-columns');if(!head)return;
+  const cells=head.querySelectorAll(':scope > span');if(cells.length<3)return;
+  [[cells[1],'bpm','BPM'],[cells[2],'key','KEY']].forEach(([el,field,label])=>{
+    el.classList.add('v4211-sortable-head');el.dataset.sort=field;el.tabIndex=0;el.setAttribute('role','button');
+    const active=v4211SortState.field===field;el.classList.toggle('active-sort',active);el.textContent=label+(active?(v4211SortState.dir>0?' ↑':' ↓'):'');
+    const go=()=>{if(v4211SortState.field===field)v4211SortState.dir*=-1;else{v4211SortState.field=field;v4211SortState.dir=1}nevoV32.sort=field;v32SavePrefs();v4211SaveSort();v4211ApplySortHeader();v38RenderBrowser();renderDjLibrary()};
+    el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+  })
+}
+
+function v4211Build3Band32(item,buffer){
+  const bpm=Number(item?.bpm)||0;if(!buffer||!(bpm>0))return null;
+  const period=60/bpm,dur=buffer.duration||0;if(!dur)return null;
+  let start=djNormalizeOffset(Number(item.beatOffset)||0,period);if(start>=dur)start=0;let end=Math.min(dur,start+period*32);
+  if(end-start<period*8&&dur>period*8){start=Math.max(0,dur-period*32);end=dur}
+  const cols=256,data=new Array(cols*4).fill(0),counts=new Uint32Array(cols),lowSq=new Float64Array(cols),midSq=new Float64Array(cols),highSq=new Float64Array(cols),peak=new Float32Array(cols);
+  const ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null,sr=buffer.sampleRate||44100;
+  const iStart=Math.max(0,Math.floor(start*sr)),iEnd=Math.min(ch0.length,Math.ceil(end*sr));
+  const span=Math.max(1,iEnd-iStart),stride=Math.max(1,Math.floor(span/180000)),effSr=sr/stride;
+  const aLow=1-Math.exp(-2*Math.PI*180/effSr),aMid=1-Math.exp(-2*Math.PI*2600/effSr);
+  let lpLow=0,lpMid=0;
+  for(let i=iStart;i<iEnd;i+=stride){
+    const s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0);lpLow+=aLow*(s-lpLow);lpMid+=aMid*(s-lpMid);
+    const lo=lpLow,mi=lpMid-lpLow,hi=s-lpMid,x=Math.min(cols-1,Math.floor((i-iStart)/span*cols));
+    lowSq[x]+=lo*lo;midSq[x]+=mi*mi;highSq[x]+=hi*hi;counts[x]++;peak[x]=Math.max(peak[x],Math.abs(s));
+  }
+  const totals=[];for(let x=0;x<cols;x++){const n=Math.max(1,counts[x]),tot=Math.sqrt((lowSq[x]+midSq[x]+highSq[x])/n);totals.push(tot)}
+  const sorted=[...totals].sort((a,b)=>a-b),ref=Math.max(.008,sorted[Math.min(sorted.length-1,Math.floor(sorted.length*.94))]||.01);
+  for(let x=0;x<cols;x++){
+    const n=Math.max(1,counts[x]),lo=lowSq[x]/n,mi=midSq[x]/n,hi=highSq[x]/n,sum=Math.max(1e-10,lo+mi+hi),amp=clamp(Math.pow(totals[x]/ref,.72),0,1);
+    const o=x*4;data[o]=Math.round(amp*255);data[o+1]=Math.round(lo/sum*255);data[o+2]=Math.round(mi/sum*255);data[o+3]=Math.round(hi/sum*255)
+  }
+  return {v:V4211_PREVIEW_VERSION,beats:32,start,end,bpm,beatOffset:Number(item.beatOffset)||0,cols,data,mode:'3band'}
+}
+function v4211PreviewAt(p,x,width){const cols=p.cols||256,i=clamp(Math.floor(x/Math.max(1,width)*cols),0,cols-1),o=i*4,d=p.data||[];return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255}}
+function v4211BandColor(low,mid,high,alpha=.98){
+  // Bass/body = warm orange/red, mids = vivid green, highs/transients = cyan/blue.
+  const gamma=.72,l=Math.pow(low,gamma),m=Math.pow(mid,gamma),h=Math.pow(high,gamma),sum=Math.max(.001,l+m+h);
+  let r=(255*l+72*m+48*h)/sum,g=(91*l+232*m+170*h)/sum,b=(39*l+78*m+255*h)/sum;
+  const max=Math.max(r,g,b),boost=max?255/max:1;r=Math.min(255,r*boost);g=Math.min(255,g*boost);b=Math.min(255,b*boost);
+  return `rgba(${r|0},${g|0},${b|0},${alpha})`
+}
+const v4211OldDrawMini=v425DrawMiniWave;
+v425DrawMiniWave=function(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32;if(!p||p.v!==V4211_PREVIEW_VERSION||!Array.isArray(p.data))return v4211OldDrawMini(canvas,item);
+  const rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(18,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#010406');bg.addColorStop(.5,'#061018');bg.addColorStop(1,'#010406');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  v425PaintGrid(c,w,h,p.start,p.end,p.bpm,p.beatOffset,false);const midY=h*.5,maxA=h*.46;
+  for(let x=0;x<w;x++){
+    const st=v4211PreviewAt(p,x,w),amp=Math.max(.65,st.amp*maxA),loH=amp*st.low,miH=amp*st.mid,hiH=amp*st.high;
+    let yTop=midY,yBot=midY;
+    const seg=(sz,color)=>{if(sz<=.08)return;c.fillStyle=color;c.fillRect(x,yTop-sz,1,sz+.35);c.fillRect(x,yBot,1,sz+.35);yTop-=sz;yBot+=sz};
+    seg(loH,'rgba(255,92,38,.98)');seg(miH,'rgba(90,236,88,.98)');seg(hiH,'rgba(53,174,255,.98)');
+    // A bright dominant-band edge makes structure readable from normal laptop distance.
+    c.fillStyle=v4211BandColor(st.low,st.mid,st.high,.92);c.fillRect(x,Math.max(0,midY-amp),1,Math.min(1.15,amp*2));c.fillRect(x,Math.min(h-1,midY+amp-1),1,1);
+  }
+  c.fillStyle='rgba(255,255,255,.16)';c.fillRect(0,Math.round(midY),w,1)
+};
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing||!(Number(item.bpm)>0))return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;
+  if(item.v425Wave32?.v===V4211_PREVIEW_VERSION)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.v425Wave32=v4211Build3Band32(item,buffer);if(persist&&item.v425Wave32)try{await saveDjItem(item)}catch{};return item.v425Wave32})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false}
+};
+v425SchedulePreview=function(item){if(!item||item.v425Wave32?.v===V4211_PREVIEW_VERSION||item.analyzing||item.v425PreviewQueued||!(Number(item.bpm)>0))return;item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()};
+
+function v4211RefreshWavePreviews(){for(const item of djLibrary)if(item.bpm&&item.v425Wave32?.v!==V4211_PREVIEW_VERSION&&!item.analyzing)v425SchedulePreview(item)}
+setTimeout(()=>{v4211ApplySortHeader();v4211RefreshWavePreviews();try{v38RenderBrowser();renderDjLibrary()}catch{}},250);
+setTimeout(()=>{v4211ApplySortHeader();v4211RefreshWavePreviews()},1400);
+window.addEventListener('resize',()=>requestAnimationFrame(()=>{try{v428RedrawMiniWaves()}catch{}}),{passive:true});
+console.info('NÉVO v4.2.11: sortable BPM/KEY columns + high-contrast analysis-derived 3-band 32-beat minis active');
