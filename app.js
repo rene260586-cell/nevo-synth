@@ -4687,3 +4687,5 @@ console.info('NÉVO v4.2.23: legacy top transport/hero hidden; long-press help d
   window.addEventListener('resize',()=>requestAnimationFrame(dockPfl),{passive:true});
 })();
 console.info('NÉVO v4.2.24: reliable compact FLX4 PFL dock active');
+
+console.info('NÉVO v4.2.25: compact library reduced by roughly two visible songs');

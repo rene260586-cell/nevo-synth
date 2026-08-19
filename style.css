@@ -2382,3 +2382,34 @@ body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{background:#0103
   .headphone-monitor.v4224-pfl-dock .headphone-title{display:none!important}
   .headphone-monitor.v4224-pfl-dock label:first-of-type{max-width:none!important}
 }
+
+/* ===== v4.2.25: browser two rows shorter =====
+   In FLX4 compact view, show roughly two fewer songs so Beat FX + tiny PFL dock
+   sit higher in the free black centre area. Full-library focus stays unchanged. */
+body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browser-panel{
+  min-height:214px!important;
+  max-height:266px!important;
+}
+body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browser-list{
+  max-height:214px!important;
+  overflow-y:auto!important;
+  align-content:start!important;
+}
+@media(max-width:1050px) and (min-width:761px){
+  body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browser-panel{
+    min-height:202px!important;
+    max-height:250px!important;
+  }
+  body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browser-list{
+    max-height:198px!important;
+  }
+}
+@media(max-width:760px){
+  body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browser-panel{
+    min-height:190px!important;
+    max-height:234px!important;
+  }
+  body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browser-list{
+    max-height:184px!important;
+  }
+}
