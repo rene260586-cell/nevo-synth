@@ -4988,3 +4988,206 @@ console.info('NÉVO v4.2.30: compact adaptive Beat FX/PFL panel without internal
   window.nevoUsedTracks={has:isUsed,mark:markUsed};
 })();
 console.info('NÉVO v4.2.31: used tracks turn green and library tracks drag directly onto Deck A/B');
+
+// ===== v4.2.32: PER-TRACK HOT CUE MEMORY + A-H MARKERS IN LIBRARY WAVES =====
+(function(){
+  const LETTERS=['A','B','C','D','E','F','G','H'];
+  const COLORS=['#ff566d','#ff9f43','#ffd34c','#58df72','#45d9ff','#5f8dff','#b477ff','#ff78cf'];
+
+  function itemForRow(row){
+    const id=row?.dataset?.id;
+    return id==null?null:(djLibrary.find(x=>String(x.id)===String(id))||null);
+  }
+  function cueTimes(item){
+    const arr=Array.isArray(item?.hotCues)?item.hotCues:[];
+    return arr.slice(0,8).map(x=>Number.isFinite(Number(x))?Number(x):null);
+  }
+  function cueDuration(item){
+    const d=Number(item?.duration)||Number(item?.buffer?.duration)||0;
+    return d>0?d:0;
+  }
+  function decorateShell(shell,item){
+    if(!shell||!item)return;
+    shell.querySelectorAll(':scope > .v4232-hotcue-marker').forEach(x=>x.remove());
+    const dur=cueDuration(item);if(!dur)return;
+    cueTimes(item).forEach((time,i)=>{
+      if(!Number.isFinite(time)||time<0||time>dur)return;
+      const marker=document.createElement('span');
+      marker.className='v4232-hotcue-marker';
+      marker.dataset.cue=LETTERS[i]||String(i+1);
+      marker.style.left=`${clamp(time/dur*100,0,100)}%`;
+      marker.style.setProperty('--cue-color',COLORS[i]||'#ffb55e');
+      marker.title=`Hot Cue ${LETTERS[i]||i+1} · ${fmtDeckTime(time)}`;
+      marker.setAttribute('aria-label',marker.title);
+      shell.appendChild(marker);
+    });
+  }
+  function decorateRow(row){
+    const item=itemForRow(row);if(!item)return;
+    row.querySelectorAll('.v425-miniwave-shell,.v428-main-wave-shell').forEach(shell=>decorateShell(shell,item));
+    row.classList.toggle('v4232-has-hotcues',cueTimes(item).some(Number.isFinite));
+  }
+  function decorateAll(root=document){
+    root.querySelectorAll?.('#flxBrowserList .flx4-browser-track[data-id], #djLibraryList .dj-lib-item[data-id]').forEach(decorateRow);
+  }
+
+  // Refresh markers every time either library view is rebuilt.
+  const baseBrowser=v38RenderBrowser;
+  v38RenderBrowser=function(){const r=baseBrowser.apply(this,arguments);requestAnimationFrame(()=>decorateAll());return r};
+  const baseLibrary=renderDjLibrary;
+  renderDjLibrary=function(){const r=baseLibrary.apply(this,arguments);requestAnimationFrame(()=>decorateAll());return r};
+
+  // Hot cues are already saved with the track in IndexedDB. Extend the metadata
+  // refresh so both library views immediately show A-H after set/delete.
+  const basePersist=persistDeckMeta;
+  persistDeckMeta=async function(letter){
+    const r=await basePersist(letter);
+    const d=djDecks?.[letter],item=d?.item;
+    if(item){item.hotCues=[...(d.hotCues||[])];}
+    try{v38RenderBrowser()}catch{}
+    try{renderDjLibrary()}catch{}
+    requestAnimationFrame(()=>decorateAll());
+    return r;
+  };
+
+  // Make absolutely sure saved hot-cue arrays are merged when late metadata
+  // hydration runs (covers older sessions where the song object already exists).
+  async function hydrateHotCues(){
+    const db=await openDjDb();if(!db)return;
+    let rows=[];try{rows=await new Promise((resolve,reject)=>{const tx=db.transaction(DJ_DB_STORE,'readonly'),req=tx.objectStore(DJ_DB_STORE).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error)})}catch{return}
+    for(const row of rows){const item=djLibrary.find(x=>String(x.id)===String(row.id));if(!item)continue;if(Array.isArray(row.hotCues))item.hotCues=row.hotCues.slice(0,8).concat(Array(8).fill(null)).slice(0,8)}
+    try{v38RenderBrowser();renderDjLibrary()}catch{}
+    requestAnimationFrame(()=>decorateAll());
+  }
+
+  // Keep deck and library marker labels in sync after a Hot Cue pad is used.
+  const baseHotCueAction=hotCueAction;
+  hotCueAction=function(letter,index){
+    const d=djDecks?.[letter],before=d?.hotCues?.[index];
+    const r=baseHotCueAction(letter,index);
+    // New cue: base function persists asynchronously; repaint immediately from deck state.
+    if(d?.item&&!Number.isFinite(before)&&Number.isFinite(d.hotCues?.[index])){
+      d.item.hotCues=[...(d.hotCues||[])];
+      requestAnimationFrame(()=>{try{decorateAll();v37RefreshPadMode?.(letter)}catch{}});
+    }
+    return r;
+  };
+  const baseClearHotCue=clearHotCue;
+  clearHotCue=function(letter,index){
+    const r=baseClearHotCue(letter,index);const d=djDecks?.[letter];if(d?.item)d.item.hotCues=[...(d.hotCues||[])];
+    requestAnimationFrame(()=>{try{decorateAll();v37RefreshPadMode?.(letter)}catch{}});return r;
+  };
+
+  [0,120,450,1200].forEach(ms=>setTimeout(()=>{decorateAll();if(ms===120)hydrateHotCues()},ms));
+  window.addEventListener('resize',()=>requestAnimationFrame(()=>decorateAll()),{passive:true});
+  window.nevoHotCueLibraryMarkers={refresh:decorateAll,hydrate:hydrateHotCues};
+})();
+console.info('NÉVO v4.2.32: Hot Cues persist per track and appear as A-H markers at their exact positions in library waveforms');
+
+// ===== v4.2.33: INSTANT DECK LOAD + PERFORMANCE/MEMORY FIX =====
+// Deck loading must never wait for full WAV decoding or analysis. The media element
+// is armed immediately; detailed wave decoding catches up in the background.
+(function(){
+  const LOAD_VERSION=4233;
+  const loadSeq={A:0,B:0};
+  const pendingAnalysis=new WeakSet();
+
+  function titleOf(item){return item?.title||cleanDjTitle(item?.name||'')||'Track'}
+  function guessBpm(item){
+    const g=((item?.name||'').match(/(?:^|\D)(1[2-8]\d)(?:\D|$)/)||[])[1];
+    return Number(item?.bpm)||Number(g)||Number($('#bpm')?.value)||150;
+  }
+  function markUsedFast(item){
+    try{window.nevoUsedTracks?.mark?.(item)}catch{}
+    const id=String(item?.id??'');if(!id)return;
+    document.querySelectorAll('#flxBrowserList [data-id],#djLibraryList [data-id]').forEach(row=>{
+      if(String(row.dataset.id)!==id)return;
+      row.classList.add('v4231-used-track');
+      const t=row.querySelector('.v425-track-text>b,.dj-lib-title strong,.v428-main-text>strong');
+      if(t)t.title=currentLang==='de'?'Bereits in diesem Set verwendet':'Already used in this set';
+    });
+  }
+  function clearLiveStack(letter){
+    const cv=$(`#flx${letter}StackWave`);if(!cv)return;
+    try{const rect=cv.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(42,Math.round(rect.height||86)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);v425PaintWaveBackground?.(c,w,h)}catch{}
+  }
+  function drawApproxStack(letter){
+    const d=djDecks?.[letter],item=d?.item,cv=$(`#flx${letter}StackWave`),p=item?.v425Wave32;if(!d||!item||!cv||!p||p.v!==V4221_PREVIEW_VERSION||!Array.isArray(p.data))return false;
+    try{
+      const rect=cv.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(42,Math.round(rect.height||86)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);const c=cv.getContext('2d',{alpha:false});c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);v425PaintWaveBackground(c,w,h);
+      const bpm=Math.max(1,djDeckBpm(letter)||guessBpm(item)),beats=clamp(Number(nevoV34?.waveBeats)||4,2,6),dur=Math.max(.001,Number(item.duration)||Number(p.duration)||1),span=beats*60/bpm,cur=clamp(d.audio?.currentTime||0,0,dur);let start=cur-span/2,end=cur+span/2;if(start<0){end-=start;start=0}if(end>dur){start=Math.max(0,start-(end-dur));end=dur}end=Math.max(start+.001,end);
+      v425PaintGrid(c,w,h,start,end,bpm,Number(item.beatOffset)||0,false);const midY=h*.5,maxA=h*.455;
+      for(let x=0;x<w;x++){const t=start+(x+.5)/w*(end-start),st=v4221AtTime(item,t)||{amp:.05,low:.2,mid:.6,high:.2,action:.1,section:.1},a=Math.max(.12,st.amp*maxA);v4221DrawColumn(c,x,midY,a,st)}
+      c.fillStyle='rgba(255,255,255,.08)';c.fillRect(0,Math.round(midY),w,1);const r={start,end,cur,dur,period:60/bpm,beats,span:end-start};v34BeatOverlay?.(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter);
+      const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=titleOf(item);if(meta)meta.textContent=`${bpm.toFixed(1)} BPM · ${fmtDeckTime(cur)}`;return true
+    }catch(e){console.warn('Approx stack draw failed',e);return false}
+  }
+  function updateImmediateUi(letter,item){
+    const d=djDecks[letter],bpm=guessBpm(item),dur=Number(item.duration)||Number(item.v425Wave32?.duration)||0;
+    const bpmIn=$(`#deck${letter}Bpm`),pitch=$(`#deck${letter}Pitch`),title=$(`#deck${letter}Title`),duration=$(`#deck${letter}Duration`),time=$(`#deck${letter}Time`),head=$(`#deck${letter}Playhead`),loop=$(`#deck${letter}Loop`),keySel=$(`#deck${letter}KeySelect`);
+    if(bpmIn)bpmIn.value=Number(bpm).toFixed(1);if(pitch)pitch.value=0;if(title)title.textContent=titleOf(item);if(duration)duration.textContent=dur?fmtDeckTime(dur):'--:--.-';if(time)time.textContent='00:00.0';if(head)head.style.left='0%';if(loop)loop.value='0';if(keySel)keySel.value=d.key||item.key||'—';
+    try{v3SetQuantize(letter,true)}catch{}try{v3RenderPhrases(letter)}catch{}try{renderHotCues(letter)}catch{}try{refreshDeckUi(letter)}catch{}try{refreshFlx4Ui()}catch{}try{v4221DrawDeckOverview(letter,true)}catch{};
+    clearLiveStack(letter);drawApproxStack(letter);markUsedFast(item);try{v31UpdateBrowseTitle()}catch{};
+  }
+  function releaseUnusedBuffers(){
+    const keep=new Set(['A','B'].map(L=>djDecks?.[L]?.item).filter(Boolean));
+    for(const item of djLibrary){
+      if(!item||keep.has(item)||item.analyzing||item._decodePromise||item.v425PreviewPromise)continue;
+      if(item.buffer)item.buffer=null;
+    }
+  }
+  function scheduleIdleAnalysis(item){
+    if(!item||pendingAnalysis.has(item)||item.analyzing||!nevoV31?.autoAnalyze)return;
+    if(Number(item.bpm)>0&&item.key&&item.key!=='—')return;
+    pendingAnalysis.add(item);
+    const run=()=>{
+      const busy=[djDecks?.A,djDecks?.B].some(d=>d?.item&&!d.audio.paused)||document.body.classList.contains('v4231-track-drag-active');
+      if(busy){setTimeout(run,1200);return}
+      const fn=()=>Promise.resolve(v3AnalyzeTrack(item,false)).catch(()=>null).finally(()=>{pendingAnalysis.delete(item);setTimeout(releaseUnusedBuffers,300)});
+      if('requestIdleCallback'in window)requestIdleCallback(fn,{timeout:2200});else setTimeout(fn,80)
+    };
+    setTimeout(run,1500)
+  }
+  function backgroundDecode(item,letter,seq){
+    // Give the browser one paint before starting any expensive decode/cache work.
+    setTimeout(()=>{
+      if(loadSeq[letter]!==seq||djDecks?.[letter]?.item!==item)return;
+      Promise.resolve(ensureDjItemBuffer(item)).then(buffer=>{
+        const d=djDecks?.[letter];if(!d||loadSeq[letter]!==seq||d.item!==item){setTimeout(releaseUnusedBuffers,0);return}
+        d.buffer=buffer;item.duration=buffer.duration||item.duration;
+        const duration=$(`#deck${letter}Duration`);if(duration)duration.textContent=fmtDeckTime(item.duration||buffer.duration);
+        requestAnimationFrame(()=>{if(loadSeq[letter]!==seq||djDecks?.[letter]?.item!==item)return;try{v425BuildWaveCache(buffer)}catch{}try{v34DrawStack(letter,true)}catch{}try{v4221DrawDeckOverview(letter,true)}catch{}try{v40RefreshLoopOverlay?.(letter)}catch{}try{refreshFlx4Ui()}catch{}});
+        setTimeout(releaseUnusedBuffers,350)
+      }).catch(e=>console.warn('Background deck decode failed',e));
+    },70)
+  }
+
+  // Replace the accumulated legacy loader chain. It had become synchronous in practice:
+  // auto analysis -> full decode -> several whole-library rerenders -> waveform cache.
+  // This loader arms audio/UI first and lets decode/analysis catch up asynchronously.
+  loadItemToDeck=async function(item,letter){
+    if(!item||!djDecks?.[letter])return null;
+    const d=djDecks[letter],seq=++loadSeq[letter],oldItem=d.item;
+    try{d.audio.pause()}catch{}
+    if(oldItem&&oldItem!==item&&djDecks[letter==='A'?'B':'A']?.item!==oldItem&&!oldItem.analyzing&&!oldItem._decodePromise&&!oldItem.v425PreviewPromise)oldItem.buffer=null;
+    const blob=item.file||item.blob;if(!item.url&&blob)try{item.url=URL.createObjectURL(blob)}catch{}
+    d.item=item;d.buffer=item.buffer||null;d.cue=Number(item.cue)||0;d.hotCues=Array.isArray(item.hotCues)?item.hotCues.slice(0,8):[];while(d.hotCues.length<8)d.hotCues.push(null);d.beatOffset=Number(item.beatOffset)||0;d.detectedBpm=Number(item.bpm)||0;d.confidence=Number(item.confidence)||0;d.key=item.key||'—';d.phrases=Array.isArray(item.phrases)?item.phrases:[];d.quantize=true;d.manualLoopIn=null;d.manualLoopOut=null;d.manualLoopActive=false;d.loopBeats=0;d.loopStart=0;d.lastZoomDraw=-1;d.v34StackKey='';
+    if(item.url){try{d.audio.src=item.url;d.audio.currentTime=0;d.audio.playbackRate=1;d.audio.load()}catch(e){console.warn(e)}}
+    // Audio graph connection is important, but there is no reason to block visual loading on it.
+    Promise.resolve(ensureDeckConnected(d)).catch(e=>console.warn('Deck connect failed',e));
+    const cue=v31CueAudio?.(letter);if(cue){try{cue.pause();if(item.url&&cue.src!==item.url){cue.src=item.url;cue.load()}}catch{};try{nevoV31.pfl[letter]=false;v31RefreshPfl(letter)}catch{};if(nevoV31?.cueOutputId)Promise.resolve(v31ApplyCueSink(cue)).catch(()=>{})}
+    updateImmediateUi(letter,item);
+    const loadedMeta=()=>{if(loadSeq[letter]!==seq||d.item!==item)return;const dur=Number(d.audio.duration)||Number(item.duration)||0;if(dur>0){item.duration=dur;const el=$(`#deck${letter}Duration`);if(el)el.textContent=fmtDeckTime(dur);try{v4221DrawDeckOverview(letter,true)}catch{}}};
+    d.audio.addEventListener('loadedmetadata',loadedMeta,{once:true});
+    setStatus(true,currentLang==='de'?'Song geladen':'Track loaded',`${titleOf(item)} → DECK ${letter}`);
+    backgroundDecode(item,letter,seq);scheduleIdleAnalysis(item);setTimeout(releaseUnusedBuffers,900);
+    return d
+  };
+
+  // Stop keeping decoded WAVs for the whole library. Two 4-minute stereo Float32
+  // buffers can already be hundreds of MB; dozens of tracks made the browser crawl.
+  setInterval(releaseUnusedBuffers,3500);
+  window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')releaseUnusedBuffers()},{passive:true});
+  window.nevoPerformance4233={trimBuffers:releaseUnusedBuffers,drawApproxStack};
+})();
+console.info('NÉVO v4.2.33: instant deck loading, background decode, idle analysis and two-deck buffer memory policy active');

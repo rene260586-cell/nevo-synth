@@ -2923,3 +2923,21 @@ body.v4231-track-drag-active .flx4-deck{transition:border-color .1s ease,box-sha
 .flx4-deck.v4231-drop-ready .flx4-jog{
   box-shadow:0 0 0 2px rgba(105,243,154,.38),0 0 28px rgba(105,243,154,.18)!important;
 }
+
+/* ===== v4.2.32: HOT CUE A-H MARKERS IN LIBRARY WAVEFORMS ===== */
+.v425-miniwave-shell,.v428-main-wave-shell{position:relative!important;overflow:hidden}
+.v4232-hotcue-marker{
+  --cue-color:#ffb55e;
+  position:absolute;z-index:8;top:1px;bottom:1px;width:0;
+  border-left:1.5px solid var(--cue-color);
+  pointer-events:none;filter:drop-shadow(0 0 2px rgba(0,0,0,.85));
+}
+.v4232-hotcue-marker::before{
+  content:attr(data-cue);position:absolute;left:0;top:0;transform:translateX(-50%);
+  min-width:11px;height:11px;padding:0 2px;box-sizing:border-box;border-radius:2px;
+  background:var(--cue-color);color:#071018;font:900 8px/11px system-ui,sans-serif;
+  text-align:center;box-shadow:0 0 0 1px rgba(0,0,0,.62),0 1px 4px rgba(0,0,0,.7)
+}
+.v428-main-wave-shell .v4232-hotcue-marker::before{min-width:13px;height:13px;font-size:9px;line-height:13px}
+body.v4216-library-focus .v428-main-wave-shell .v4232-hotcue-marker{border-left-width:2px}
+body.v4216-library-focus .v428-main-wave-shell .v4232-hotcue-marker::before{min-width:16px;height:15px;font-size:10px;line-height:15px}
