@@ -2893,3 +2893,33 @@ body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browse
   .v4226-fx-panel .v415-fx-on{height:22px!important;min-height:22px!important}
   .v4226-fx-panel .v415-fx-knob{width:23px!important;height:23px!important;min-width:23px!important;min-height:23px!important}
 }
+
+/* ===== v4.2.31: USED TRACKS + DRAG/DROP TO DECKS ===== */
+#flxBrowserList .flx4-browser-track[data-id],
+#djLibraryList .dj-lib-item[data-id]{
+  cursor:grab;
+}
+#flxBrowserList .flx4-browser-track[data-id]:active,
+#djLibraryList .dj-lib-item[data-id]:active{cursor:grabbing}
+#flxBrowserList .flx4-browser-track.v4231-dragging,
+#djLibraryList .dj-lib-item.v4231-dragging{opacity:.52!important}
+
+/* User request: only the song name changes from white to green after use. */
+#flxBrowserList .flx4-browser-track.v4231-used-track .v425-track-text>b,
+#djLibraryList .dj-lib-item.v4231-used-track .dj-lib-title strong,
+#djLibraryList .dj-lib-item.v4231-used-track .v428-main-text>strong{
+  color:#69f39a!important;
+  text-shadow:0 0 8px rgba(105,243,154,.16)!important;
+}
+
+/* While dragging a library track, either complete deck is an easy drop target.
+   The jog wheel glows too, so dropping directly on the jog feels natural. */
+body.v4231-track-drag-active .flx4-deck{transition:border-color .1s ease,box-shadow .1s ease,background-color .1s ease}
+.flx4-deck.v4231-drop-ready{
+  border-color:rgba(105,243,154,.92)!important;
+  box-shadow:0 0 0 2px rgba(105,243,154,.28) inset,0 0 22px rgba(105,243,154,.18)!important;
+  background-color:rgba(35,95,67,.08)!important;
+}
+.flx4-deck.v4231-drop-ready .flx4-jog{
+  box-shadow:0 0 0 2px rgba(105,243,154,.38),0 0 28px rgba(105,243,154,.18)!important;
+}

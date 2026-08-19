@@ -294,3 +294,8 @@
   .v429-browser-rating{min-width:80px!important;margin-left:2px!important;padding-left:3px!important}
   .v429-browser-rating .v429-star{width:14px!important;min-width:14px!important;font-size:14px!important}
 }
+
+/* v4.2.31: used track / drag-to-deck state */
+#flxBrowserList .flx4-browser-track[data-id],#djLibraryList .dj-lib-item[data-id]{cursor:grab}
+#flxBrowserList .flx4-browser-track.v4231-used-track .v425-track-text>b,#djLibraryList .dj-lib-item.v4231-used-track .dj-lib-title strong,#djLibraryList .dj-lib-item.v4231-used-track .v428-main-text>strong{color:#69f39a!important;text-shadow:0 0 8px rgba(105,243,154,.16)!important}
+.flx4-deck.v4231-drop-ready{border-color:rgba(105,243,154,.92)!important;box-shadow:0 0 0 2px rgba(105,243,154,.28) inset,0 0 22px rgba(105,243,154,.18)!important;background-color:rgba(35,95,67,.08)!important}.flx4-deck.v4231-drop-ready .flx4-jog{box-shadow:0 0 0 2px rgba(105,243,154,.38),0 0 28px rgba(105,243,154,.18)!important}

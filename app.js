@@ -4913,3 +4913,78 @@ console.info('NÉVO v4.2.27: separate pad cards, compact mixer strips, hidden sc
 console.info('NÉVO v4.2.28: narrow MIX strips + enforced separate performance-pad panels');
 
 console.info('NÉVO v4.2.30: compact adaptive Beat FX/PFL panel without internal scrollbars');
+
+// ===== v4.2.31: USED-TRACK MARKING + DRAG/DROP LIBRARY -> DECK A/B =====
+(function(){
+  const STORE='nevo.v4231.usedTracks';
+  let used=new Set();
+  try{const raw=JSON.parse(sessionStorage.getItem(STORE)||'[]');if(Array.isArray(raw))used=new Set(raw.map(String))}catch{}
+  function saveUsed(){try{sessionStorage.setItem(STORE,JSON.stringify([...used]))}catch{}}
+  function itemId(item){return item?.id==null?'':String(item.id)}
+  function markUsed(item){const id=itemId(item);if(!id)return false;const fresh=!used.has(id);used.add(id);saveUsed();return fresh}
+  function isUsed(itemOrId){const id=typeof itemOrId==='object'?itemId(itemOrId):String(itemOrId??'');return !!id&&used.has(id)}
+  function findItem(id){return djLibrary.find(x=>String(x.id)===String(id))||null}
+
+  function decorateUsed(root=document){
+    root.querySelectorAll?.('#flxBrowserList .flx4-browser-track[data-id], #djLibraryList .dj-lib-item[data-id]').forEach(row=>{
+      const on=isUsed(row.dataset.id);row.classList.toggle('v4231-used-track',on);
+      const title=row.querySelector('.v425-track-text>b,.dj-lib-title strong,.v428-main-text>strong');
+      if(title)title.title=on?(currentLang==='de'?'Bereits in diesem Set verwendet':'Already used in this set'):'';
+    });
+  }
+
+  function wireDraggableRows(root=document){
+    root.querySelectorAll?.('#flxBrowserList .flx4-browser-track[data-id], #djLibraryList .dj-lib-item[data-id]').forEach(row=>{
+      if(row.dataset.v4231Drag==='1')return;row.dataset.v4231Drag='1';row.draggable=true;
+      row.addEventListener('dragstart',e=>{
+        const id=row.dataset.id;if(!id||!e.dataTransfer)return;
+        try{e.dataTransfer.setData('application/x-nevo-track-id',id);e.dataTransfer.setData('text/plain',`nevo-track:${id}`);e.dataTransfer.effectAllowed='copy'}catch{}
+        row.classList.add('v4231-dragging');document.body.classList.add('v4231-track-drag-active');
+      });
+      row.addEventListener('dragend',()=>{row.classList.remove('v4231-dragging');document.body.classList.remove('v4231-track-drag-active');document.querySelectorAll('.v4231-drop-ready').forEach(x=>x.classList.remove('v4231-drop-ready'))});
+    });
+  }
+  function afterRender(){decorateUsed();wireDraggableRows()}
+
+  const prevBrowser=v38RenderBrowser;
+  v38RenderBrowser=function(){const r=prevBrowser.apply(this,arguments);requestAnimationFrame(afterRender);return r};
+  const prevLibrary=renderDjLibrary;
+  renderDjLibrary=function(){const r=prevLibrary.apply(this,arguments);requestAnimationFrame(afterRender);return r};
+
+  const prevLoad=loadItemToDeck;
+  loadItemToDeck=async function(item,letter){
+    const r=await prevLoad(item,letter);markUsed(item);
+    // Repaint both library views immediately so the title turns green at once,
+    // no matter whether the track was loaded by mouse, FLX4 LOAD or drag/drop.
+    try{v38RenderBrowser()}catch{}try{renderDjLibrary()}catch{}
+    requestAnimationFrame(afterRender);return r;
+  };
+
+  function dragId(e){
+    let id='';try{id=e.dataTransfer?.getData('application/x-nevo-track-id')||''}catch{}
+    if(!id){try{const t=e.dataTransfer?.getData('text/plain')||'';if(t.startsWith('nevo-track:'))id=t.slice(11)}catch{}}
+    return id;
+  }
+  function installDropTarget(letter){
+    const deck=document.querySelector(`.flx4-deck.flx4-${letter.toLowerCase()}`);if(!deck||deck.dataset.v4231Drop==='1')return;
+    deck.dataset.v4231Drop='1';deck.dataset.v4231Deck=letter;
+    deck.addEventListener('dragenter',e=>{e.preventDefault();deck.classList.add('v4231-drop-ready')});
+    deck.addEventListener('dragover',e=>{e.preventDefault();try{e.dataTransfer.dropEffect='copy'}catch{};deck.classList.add('v4231-drop-ready')});
+    deck.addEventListener('dragleave',e=>{if(e.relatedTarget&&deck.contains(e.relatedTarget))return;deck.classList.remove('v4231-drop-ready')});
+    deck.addEventListener('drop',async e=>{
+      e.preventDefault();e.stopPropagation();deck.classList.remove('v4231-drop-ready');document.body.classList.remove('v4231-track-drag-active');
+      const id=dragId(e),item=findItem(id);if(!item)return;
+      try{await loadItemToDeck(item,letter);setStatus(true,'LOAD',`${item.title||cleanDjTitle(item.name)} → DECK ${letter}`)}catch(err){console.warn('Drag/drop deck load failed',err)}
+    });
+  }
+  function install(){installDropTarget('A');installDropTarget('B');afterRender()}
+  [0,80,250,700,1600].forEach(ms=>setTimeout(install,ms));
+  const surf=document.querySelector('#flx4Surface');if(surf)new MutationObserver(()=>requestAnimationFrame(install)).observe(surf,{subtree:true,childList:true});
+  window.addEventListener('dragend',()=>{document.body.classList.remove('v4231-track-drag-active');document.querySelectorAll('.v4231-drop-ready').forEach(x=>x.classList.remove('v4231-drop-ready'))});
+
+  // Also mark a track when playback begins (covers any unusual load path).
+  for(const letter of ['A','B']){const a=djDecks?.[letter]?.audio;if(a&&!a.dataset?.v4231UsedPlay){try{a.dataset.v4231UsedPlay='1'}catch{};a.addEventListener('play',()=>{const item=djDecks?.[letter]?.item;if(item&&markUsed(item)){try{v38RenderBrowser();renderDjLibrary()}catch{}}})}}
+
+  window.nevoUsedTracks={has:isUsed,mark:markUsed};
+})();
+console.info('NÉVO v4.2.31: used tracks turn green and library tracks drag directly onto Deck A/B');
