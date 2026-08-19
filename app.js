@@ -4470,3 +4470,152 @@ function v4220RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V
 const v4220BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4220BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Dynamische Songwelle · Rot Bass · Grün Melodie · Blau Höhen · beatgenaue Phrasen':'Dynamic waveform · red bass · green melody · blue highs · beat-aligned phrases');try{v428RedrawMiniWaves?.()}catch{}});return r};
 setTimeout(v4220RefreshAll,260);setTimeout(v4220RefreshAll,1700);
 console.info('NÉVO v4.2.20: dominant-colour 3-band waveform, expanded track-wide loudness dynamics and novelty-based beat-aligned phrase analysis active');
+
+// ===== v4.2.21: PHRASE-AWARE DYNAMICS + MUSICAL ACTION ANALYSIS =====
+// The previous pass separated loudness and colour, but a mastered track can still keep
+// roughly the same RMS while the arrangement changes dramatically. This pass adds a
+// slower, beat-aligned "action" envelope (4-bar context) to the fast waveform envelope.
+// Quiet/melodic phrases therefore stay visibly thin; bass-heavy/high-action phrases grow.
+// Phrase boundaries are snapped to the beatgrid and selected from local novelty peaks.
+const V4221_PREVIEW_VERSION=4221;
+const V4221_PHRASE_VERSION=4221;
+const V4221_COLS=2304;
+const V4221_STRIDE=6; // amp, low, mid, high, action, section
+
+function v4221Quantile(a,p,fallback=0){return v4219Pct(a,p,fallback)}
+function v4221SmoothArray(src,radius){
+  const n=src.length,out=new Float32Array(n),pre=new Float64Array(n+1);for(let i=0;i<n;i++)pre[i+1]=pre[i]+(Number(src[i])||0);
+  const r=Math.max(1,Math.round(radius||1));for(let i=0;i<n;i++){const a=Math.max(0,i-r),b=Math.min(n,i+r+1);out[i]=(pre[b]-pre[a])/Math.max(1,b-a)}return out
+}
+function v4221MapSection(v,q20,q48,q76,q94){
+  if(v<=q20)return v4220Between(v,0,Math.max(1e-6,q20),.06,.16);
+  if(v<=q48)return v4220Between(v,q20,q48,.16,.39);
+  if(v<=q76)return v4220Between(v,q48,q76,.39,.68);
+  if(v<=q94)return v4220Between(v,q76,q94,.68,.94);
+  return v4220Between(v,q94,Math.max(q94*1.18,q94+1e-5),.94,1)
+}
+function v4221BuildFullTrack(item,buffer){
+  const B=v4219ContinuousBands(buffer,0,buffer?.duration||0,V4221_COLS,8000000,true);if(!B)return null;
+  const dyn=v4220DynRefs(B.rms,B.peak),n=V4221_COLS,amp0=new Float32Array(n),action0=new Float32Array(n),lowS=new Float32Array(n),midS=new Float32Array(n),highS=new Float32Array(n),lAct=new Float32Array(n),mAct=new Float32Array(n),hAct=new Float32Array(n),crest=new Float32Array(n);
+  for(let x=0;x<n;x++){
+    const s=v4220Shares(B.low[x],B.mid[x],B.high[x],B.refs);lowS[x]=s.low;midS[x]=s.mid;highS[x]=s.high;
+    lAct[x]=clamp(v4219DbActivity(B.low[x],B.refs?.low),0,1.15);mAct[x]=clamp(v4219DbActivity(B.mid[x],B.refs?.mid),0,1.15);hAct[x]=clamp(v4219DbActivity(B.high[x],B.refs?.high),0,1.15);
+    crest[x]=clamp(((B.peak[x]||0)/Math.max(1e-6,B.rms[x]||0)-1.55)/4.6,0,1);
+    amp0[x]=v4220Envelope(B.rms[x],B.peak[x],dyn,s.low);
+  }
+  for(let x=0;x<n;x++){
+    const p=Math.max(0,x-1),flux=Math.abs(lAct[x]-lAct[p])*.42+Math.abs(mAct[x]-mAct[p])*.34+Math.abs(hAct[x]-hAct[p])*.24,
+      bassDrive=lAct[x]*(.46+.54*lowS[x]),music=mAct[x]*(.55+.45*midS[x]),air=hAct[x]*(.45+.55*highS[x]);
+    action0[x]=clamp(amp0[x]*.46+bassDrive*.29+music*.10+air*.04+clamp(flux*1.7,0,1)*.07+crest[x]*.04,0,1.15)
+  }
+  const dur=Math.max(.001,buffer.duration||1),bpm=Math.max(1,Number(item?.bpm)||120),barSec=240/bpm,contextSec=barSec*4,
+    radius=clamp(Math.round((contextSec/dur)*n*.55),10,Math.max(12,Math.round(n*.055))),sectionRaw=v4221SmoothArray(action0,radius),ampSlow=v4221SmoothArray(amp0,radius);
+  const secVals=Array.from(sectionRaw),q20=v4221Quantile(secVals,.20,.04),q48=v4221Quantile(secVals,.48,.12),q76=v4221Quantile(secVals,.76,.25),q94=v4221Quantile(secVals,.94,.45),section=new Float32Array(n),data=new Array(n*V4221_STRIDE);
+  for(let x=0;x<n;x++){
+    section[x]=v4221MapSection(sectionRaw[x],q20,q48,q76,q94);
+    // Phrase-scale expansion is the missing ingredient: low-action passages are compressed
+    // vertically while drops retain their beat/transient detail from amp0.
+    let a=amp0[x]*(.34+.76*section[x]);
+    a+=Math.max(0,action0[x]-sectionRaw[x])*.08*(.35+.65*section[x]);
+    // A quiet mastered intro may have a healthy RMS but little bass/action. Keep it slim.
+    if(section[x]<.28)a*=.68+.32*section[x]/.28;
+    // Strong bass/action gets a controlled visual lift, never a full-height blanket.
+    if(section[x]>.66&&lowS[x]>.30)a*=1+Math.min(.16,(section[x]-.66)*.42*lowS[x]);
+    a=clamp(Math.pow(a,1.10),.004,1);
+    const o=x*V4221_STRIDE;data[o]=Math.round(a*255);data[o+1]=Math.round(lowS[x]*255);data[o+2]=Math.round(midS[x]*255);data[o+3]=Math.round(highS[x]*255);data[o+4]=Math.round(clamp(action0[x],0,1)*255);data[o+5]=Math.round(section[x]*255)
+  }
+  // Preserve real drops/breaks; smooth only isolated single-pixel spikes in amplitude/action.
+  const cp=data.slice();for(let x=1;x<n-1;x++){const o=x*V4221_STRIDE;data[o]=Math.round(cp[(x-1)*V4221_STRIDE]*.08+cp[o]*.84+cp[(x+1)*V4221_STRIDE]*.08);data[o+4]=Math.round(cp[(x-1)*V4221_STRIDE+4]*.10+cp[o+4]*.80+cp[(x+1)*V4221_STRIDE+4]*.10)}
+  return {v:V4221_PREVIEW_VERSION,scope:'full-track',start:0,end:buffer.duration,duration:buffer.duration,bpm:Number(item?.bpm)||0,beatOffset:Number(item?.beatOffset)||0,cols:n,stride:V4221_STRIDE,data,refs:B.refs,dyn,sectionRefs:{q20,q48,q76,q94},mode:'phrase-aware-dominant-3band'}
+}
+function v4221At(p,x,width){const cols=p?.cols||V4221_COLS,i=clamp(Math.floor(x/Math.max(1,width)*cols),0,cols-1),s=p?.stride||V4221_STRIDE,o=i*s,d=p?.data||[];return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255,action:(d[o+4]||0)/255,section:(d[o+5]||0)/255}}
+function v4221AtTime(item,time){const p=item?.v425Wave32;if(!p||p.v!==V4221_PREVIEW_VERSION||!Array.isArray(p.data))return null;const dur=Math.max(.001,Number(p.duration)||Number(item?.duration)||1),i=clamp(Math.floor(clamp(time,0,dur)/dur*(p.cols||V4221_COLS)),0,(p.cols||V4221_COLS)-1),s=p.stride||V4221_STRIDE,o=i*s,d=p.data;return {amp:(d[o]||0)/255,low:(d[o+1]||0)/255,mid:(d[o+2]||0)/255,high:(d[o+3]||0)/255,action:(d[o+4]||0)/255,section:(d[o+5]||0)/255}}
+function v4221Color(st){
+  const action=clamp(Number(st?.section??st?.action??st?.amp)||0,0,1),l=st?.low||0,m=st?.mid||0,h=st?.high||0;
+  // Red is deliberately tied to BOTH low-frequency dominance and musical action.
+  // This prevents a quiet intro with some low content from being painted like a drop.
+  let rs=l*(.18+1.32*Math.pow(action,1.45)),gs=m*(.78+.38*(1-action)),bs=h*(.72+.42*(1-action));
+  if(action<.28)rs*=.38;if(action>.68&&l>.27)rs*=1.22;
+  const max=Math.max(1e-9,rs,gs,bs),rn=rs/max,gn=gs/max,bn=bs/max;let r,g,b;
+  if(rn>=gn&&rn>=bn){r=252;g=42+96*gn;b=48+54*bn}
+  else if(gn>=rn&&gn>=bn){r=42+100*rn;g=226;b=82+122*bn}
+  else{r=44+66*rn;g=154+84*gn;b=255}
+  const br=.62+.38*clamp(.25+(st?.amp||0)*.75,0,1);return `rgb(${Math.round(clamp(r*br,0,255))},${Math.round(clamp(g*br,0,255))},${Math.round(clamp(b*br,0,255))})`
+}
+function v4221DrawColumn(c,x,midY,half,st,width=1){const H=Math.max(.12,half);c.fillStyle=v4221Color(st);c.fillRect(x,midY-H,width,Math.max(1,H*2))}
+function v4221FeatureBlock(p,ia,ib){
+  let e=0,a=0,sec=0,l=0,m=0,h=0,n=0;for(let j=ia;j<ib;j++){const s=p.stride||V4221_STRIDE,o=j*s,amp=(p.data[o]||0)/255,act=(p.data[o+4]||0)/255,sc=(p.data[o+5]||0)/255;e+=amp;a+=act;sec+=sc;l+=((p.data[o+1]||0)/255)*(.2+.8*amp);m+=((p.data[o+2]||0)/255)*(.2+.8*amp);h+=((p.data[o+3]||0)/255)*(.2+.8*amp);n++}n=Math.max(1,n);const ss=Math.max(1e-9,l+m+h);return {energy:e/n,action:a/n,section:sec/n,low:l/ss,mid:m/ss,high:h/ss}
+}
+function v4221AnalyzePhrases(item,p){
+  const bpm=Number(item?.bpm)||0,dur=Number(p?.duration)||Number(item?.duration)||0;if(!(bpm>0&&dur>0&&Array.isArray(p?.data)))return [];
+  const barSec=240/bpm,blockSec=barSec*4,beatOffset=Number(item?.beatOffset)||0,grid=((beatOffset%blockSec)+blockSec)%blockSec,boundsT=[0];
+  let t=grid>barSec*.35?grid:grid+blockSec;for(;t<dur-.25;t+=blockSec)boundsT.push(t);if(boundsT.at(-1)!==dur)boundsT.push(dur);
+  const F=[];for(let i=0;i<boundsT.length-1;i++){const a=boundsT[i],b=boundsT[i+1],ia=clamp(Math.floor(a/dur*p.cols),0,p.cols-1),ib=clamp(Math.max(ia+1,Math.ceil(b/dur*p.cols)),1,p.cols);F.push({start:a,end:b,...v4221FeatureBlock(p,ia,ib)})}
+  if(!F.length)return [];
+  // 4-bar features, lightly smoothed. The slower 'section' value already contains musical
+  // context, so boundaries follow arrangement changes instead of individual kick hits.
+  const S=F.map((f,i)=>{const A=F[Math.max(0,i-1)],B=f,C=F[Math.min(F.length-1,i+1)];return {...f,energy:A.energy*.15+B.energy*.70+C.energy*.15,action:A.action*.14+B.action*.72+C.action*.14,section:A.section*.12+B.section*.76+C.section*.12,low:A.low*.12+B.low*.76+C.low*.12,mid:A.mid*.12+B.mid*.76+C.mid*.12,high:A.high*.12+B.high*.76+C.high*.12}});
+  const nov=[];for(let i=1;i<S.length;i++){const a=S[i-1],b=S[i],ed=Math.abs(b.section-a.section),ad=Math.abs(b.action-a.action),sd=Math.abs(b.low-a.low)*.55+Math.abs(b.mid-a.mid)*.30+Math.abs(b.high-a.high)*.15;nov.push({i,v:ed*1.65+ad*.92+sd*.58})}
+  const vals=nov.map(x=>x.v),med=v4220Median(vals),mad=v4220Median(vals.map(v=>Math.abs(v-med))),thr=Math.max(.075,med+mad*1.22,v4221Quantile(vals,.70,.075)),cuts=[0];let last=0;
+  // Keep only local novelty peaks and enforce at least 8 bars between normal phrases.
+  for(let k=0;k<nov.length;k++){const q=nov[k],pv=nov[Math.max(0,k-1)]?.v||0,nv=nov[Math.min(nov.length-1,k+1)]?.v||0;if(q.v>=thr&&q.v>=pv&&q.v>=nv&&q.i-last>=2){cuts.push(q.i);last=q.i}}
+  cuts.push(F.length);cuts.sort((a,b)=>a-b);
+  // If an automatically found region exceeds ~32 bars, split it at the strongest novelty
+  // point near its middle, instead of imposing a blind fixed 16-bar boundary everywhere.
+  let changed=true;while(changed){changed=false;for(let k=0;k<cuts.length-1;k++){const a=cuts[k],b=cuts[k+1];if(b-a>8){const lo=a+3,hi=b-3;let best=-1,bv=-1;for(const q of nov)if(q.i>=lo&&q.i<=hi&&q.v>bv){best=q.i;bv=q.v}if(best<0)best=Math.round((a+b)/2);cuts.splice(k+1,0,best);changed=true;break}}}
+  const uniq=[];for(const x of cuts)if(!uniq.length||x-uniq.at(-1)>=2||x===F.length)uniq.push(x);if(uniq.at(-1)!==F.length)uniq.push(F.length);
+  const seg=[];for(let k=0;k<uniq.length-1;k++){const a=uniq[k],b=uniq[k+1];if(b<=a)continue;let e=0,ac=0,sc=0,l=0,m=0,h=0;for(let i=a;i<b;i++){e+=S[i].energy;ac+=S[i].action;sc+=S[i].section;l+=S[i].low;m+=S[i].mid;h+=S[i].high}const n=b-a;seg.push({start:F[a].start,end:F[b-1].end,energy:e/n,action:ac/n,section:sc/n,low:l/n,mid:m/n,high:h/n,first:S[a].section,last:S[b-1].section})}
+  const A=seg.map(x=>x.section),q22=v4221Quantile(A,.22,0),q48=v4221Quantile(A,.48,.15),q72=v4221Quantile(A,.72,.35),q88=v4221Quantile(A,.88,.55),range=Math.max(.08,q88-q22),out=[];
+  for(let i=0;i<seg.length;i++){const s=seg[i],pos=s.start/dur,endPos=s.end/dur,trend=(s.last-s.first)/range,prev=seg[Math.max(0,i-1)],next=seg[Math.min(seg.length-1,i+1)];let label='VERSE';
+    if(i===0||pos<.035)label='INTRO';
+    else if(i===seg.length-1||endPos>.97)label='OUTRO';
+    else if(trend>.22&&s.section>=q48)label='UP';
+    else if(trend<-.22||(prev.section>=q72&&s.section<=q48))label='DOWN';
+    else if(s.section>=q72&&s.low>=Math.max(.30,s.mid*.86))label='BRIDGE';
+    else if(s.section>=q48&&s.mid+s.high>=s.low*1.10)label='CHORUS';
+    else if(s.section<=q22||s.action<q48*.78)label='VERSE';
+    else if(s.section>=q88)label=s.low>=s.mid*.88?'BRIDGE':'CHORUS';
+    // Avoid a one-off label flip inside two clearly similar neighbours.
+    if(i>0&&i<seg.length-1&&prev.section<q48&&next.section<q48&&s.section<q72&&label==='CHORUS')label='VERSE';
+    out.push({v:V4221_PHRASE_VERSION,start:s.start,end:s.end,label,energy:s.energy,action:s.action,section:s.section,low:s.low,mid:s.mid,high:s.high})
+  }
+  const merged=[];for(const x of out){const last=merged.at(-1);if(last&&last.label===x.label){const d1=last.end-last.start,d2=x.end-x.start,tt=Math.max(.001,d1+d2);last.end=x.end;last.energy=(last.energy*d1+x.energy*d2)/tt;last.action=(last.action*d1+x.action*d2)/tt;last.section=(last.section*d1+x.section*d2)/tt;last.low=(last.low*d1+x.low*d2)/tt;last.mid=(last.mid*d1+x.mid*d2)/tt;last.high=(last.high*d1+x.high*d2)/tt}else merged.push({...x})}return merged
+}
+// Phrase label colours follow the arrangement strip in the reference: labels are separate
+// from waveform frequency colour (red bass / green melody / blue highs).
+v4216PhraseColor=function(label){return ({INTRO:'#ff6f78',UP:'#ff9f43',DOWN:'#9b8cff',CHORUS:'#59df6d',BRIDGE:'#ffd34c',VERSE:'#58a9ff',OUTRO:'#b7c1cb'})[String(label||'').toUpperCase()]||'#7f93a4'};
+v3PhraseColor=v4216PhraseColor;
+
+function v4221DrawMiniWave(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32,rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(20,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010304';c.fillRect(0,0,w,h);
+  if(!p||p.v!==V4221_PREVIEW_VERSION||!Array.isArray(p.data)){c.fillStyle='rgba(130,186,210,.80)';c.font=`800 ${Math.max(6,Math.min(9,h*.33))}px system-ui`;c.textAlign='center';c.fillText(item.analyzing||item.v425PreviewQueued?(currentLang==='de'?'ANALYSE …':'ANALYSIS …'):(currentLang==='de'?'WELLE':'WAVE'),w/2,h*.55);c.textAlign='left';if(!item.analyzing&&!item.v425PreviewQueued)v425SchedulePreview(item);return}
+  const withLabels=document.body.classList.contains('v4216-library-focus')&&h>=40,phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?(withLabels?14:5):0,waveH=h-phraseH,midY=waveH*.5,maxA=waveH*.47;c.strokeStyle='rgba(255,255,255,.035)';for(const f of [.25,.5,.75]){const xx=Math.round(w*f)+.5;c.beginPath();c.moveTo(xx,0);c.lineTo(xx,waveH);c.stroke()}
+  for(let x=0;x<w;x++){const st=v4221At(p,x,w),a=Math.max(.10,st.amp*maxA);v4221DrawColumn(c,x,midY,a,st)}if(phraseH)v4217PaintPhraseStrip(c,w,h,item,withLabels)
+}
+v425DrawMiniWave=v4221DrawMiniWave;
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing)return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;if(item.v425Wave32?.v===V4221_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data)&&item.phrases?.[0]?.v===V4221_PHRASE_VERSION)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.duration=buffer.duration||item.duration;const p=v4221BuildFullTrack(item,buffer);item.v425Wave32=p;item.phrases=v4221AnalyzePhrases(item,p);if(persist)try{await saveDjItem(item)}catch{};return p})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false;item.v425PreviewQueued=false;requestAnimationFrame(()=>{try{v428RedrawMiniWaves?.();v4221DrawDeckOverview('A',true);v4221DrawDeckOverview('B',true)}catch{}})}
+};
+v425SchedulePreview=function(item){if(!item||item.v425Wave32?.v===V4221_PREVIEW_VERSION&&item.phrases?.[0]?.v===V4221_PHRASE_VERSION||item.analyzing||item.v425PreviewQueued)return;item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue()};
+v4215NeedsLibraryAnalysis=function(item){if(!item)return false;const hasBpm=Number(item.bpm)>0,hasKey=!!item.key&&item.key!=='—',hasDur=Number(item.duration)>0,hasWave=item.v425Wave32?.v===V4221_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data),hasPhrase=item.phrases?.[0]?.v===V4221_PHRASE_VERSION;return !hasBpm||!hasKey||!hasDur||!hasWave||!hasPhrase};
+
+function v4221DrawPerformanceWave(buffer,canvas,startSec,endSec,letter='A'){
+  if(!buffer||!canvas)return;const rect=canvas.getBoundingClientRect(),w=Math.max(240,Math.round(rect.width||900)),h=Math.max(42,Math.round(rect.height||86)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),pw=Math.round(w*dpr),ph=Math.round(h*dpr);if(canvas.width!==pw)canvas.width=pw;if(canvas.height!==ph)canvas.height=ph;const c=canvas.getContext('2d',{alpha:false});c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);const dur=buffer.duration||0,end=clamp(endSec,0,dur),start=clamp(startSec,0,Math.max(0,end-.001)),d=djDecks?.[letter],bpm=d?djDeckBpm(letter):0;v425PaintWaveBackground(c,w,h);v425PaintGrid(c,w,h,start,end,bpm,d?.beatOffset||0,false);
+  const preview=d?.item?.v425Wave32,fullRefs=preview?.v===V4221_PREVIEW_VERSION?preview.refs:null,dyn=preview?.v===V4221_PREVIEW_VERSION?preview.dyn:null,B=v4219ContinuousBands(buffer,start,end,w,100000,!fullRefs),refs=fullRefs||B?.refs;if(!B)return;const localDyn=dyn||v4220DynRefs(B.rms,B.peak),midY=h*.5,maxA=h*.455;
+  for(let x=0;x<w;x++){const local=v4220Shares(B.low[x],B.mid[x],B.high[x],refs),t=start+(x+.5)/w*(end-start),global=v4221AtTime(d?.item,t)||{section:.55,action:.55,amp:.55},base=v4220Envelope(B.rms[x],B.peak[x],localDyn,local.low),a=Math.max(.14,base*(.34+.78*global.section)*maxA),st={...local,amp:clamp(a/maxA,0,1),action:global.action,section:global.section};v4221DrawColumn(c,x,midY,a,st)}
+  c.fillStyle='rgba(255,255,255,.08)';c.fillRect(0,Math.round(midY),w,1);const phrase=v4216CurrentPhrase(d?.item,d?.audio?.currentTime||0);if(phrase){c.fillStyle=v4216PhraseColor(phrase.label);c.globalAlpha=.90;c.fillRect(0,h-3,w,3);c.globalAlpha=1}if(d?.item&&d.item.v425Wave32?.v!==V4221_PREVIEW_VERSION&&!d.item.analyzing)v425SchedulePreview(d.item)
+}
+function v4221DrawDeckOverview(letter,force=false){
+  const d=djDecks?.[letter],cv=$(`#flx${letter}FullWave`);if(!cv)return;const item=d?.item,p=item?.v425Wave32,rect=cv.getBoundingClientRect(),w=Math.max(150,Math.round(rect.width||900)),h=Math.max(10,Math.round(rect.height||20)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),pw=Math.round(w*dpr),ph=Math.round(h*dpr),key=`${item?.id||'-'}:${p?.v||0}:${w}:${h}`;if(!force&&cv.dataset.drawKey===key){v4218RefreshOverviewPlayhead(letter);return}cv.dataset.drawKey=key;cv.width=pw;cv.height=ph;const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010304';c.fillRect(0,0,w,h);
+  if(item&&p?.v===V4221_PREVIEW_VERSION&&Array.isArray(p.data)){const phraseH=(Array.isArray(item.phrases)&&item.phrases.length)?3:0,waveH=h-phraseH,midY=waveH*.5,maxA=waveH*.47;for(let x=0;x<w;x++){const st=v4221At(p,x,w),a=Math.max(.08,st.amp*maxA);v4221DrawColumn(c,x,midY,a,st)}if(phraseH)v4217PaintPhraseStrip(c,w,h,item,false)}else if(item&&!item.analyzing)v425SchedulePreview(item);v4218RefreshOverviewPlayhead(letter)
+}
+v34DrawStack=function(letter,force=false){const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv){v4221DrawDeckOverview(letter,force);return}const r=v34StackRange(letter),key=`${r.start.toFixed(3)}:${r.end.toFixed(3)}:${nevoV34.waveBeats}:${d.item?.v425Wave32?.v||0}`;if(force||d.v34StackKey!==key){d.v34StackKey=key;v4221DrawPerformanceWave(d.buffer,cv,r.start,r.end,letter);v34BeatOverlay(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter)}v4221DrawDeckOverview(letter,force);const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`};
+
+v32AnalyzeTrack=async function(item,showStatus=true){const result=await v4219BaseAnalyzeTrack(item,showStatus);if(result&&item){try{item.v425Wave32=null;item.phrases=[];await v425PreparePreview(item,true);for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){djDecks[L].phrases=item.phrases;v3RenderPhrases?.(L);v34DrawStack(L,true)}}catch(e){console.warn('v4.2.21 waveform/phrase analysis failed',e)}try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.()}catch{}}return result};v3AnalyzeTrack=v32AnalyzeTrack;analyzeDjItem=v32AnalyzeTrack;
+function v4221RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4221_PREVIEW_VERSION||item.phrases?.[0]?.v!==V4221_PHRASE_VERSION)v425SchedulePreview(item);try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.();v34DrawStack('A',true);v34DrawStack('B',true)}catch{}}
+const v4221BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4221BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Phrasenbewusste Analyse · Rot = Bass/Action · Grün = Melodie/ruhiger · Blau = Höhen':'Phrase-aware analysis · red = bass/action · green = melody/quiet · blue = highs');try{v428RedrawMiniWaves?.()}catch{}});return r};
+setTimeout(v4221RefreshAll,280);setTimeout(v4221RefreshAll,1750);
+console.info('NÉVO v4.2.21: beatgrid-aligned phrase-aware action envelope and arrangement analysis active');
