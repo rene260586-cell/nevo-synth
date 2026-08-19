@@ -4720,7 +4720,7 @@ console.info('NÉVO v4.2.25: compact library reduced by roughly two visible song
 
   const KEY='nevo.flx4.modularLayout.v2';
   let edit=false,z=10,raf=0;
-  const min={deckA:[235,315],padA:[220,118],mapA:[46,275],library:[315,225],fx:[315,140],mapB:[46,275],deckB:[235,315],padB:[220,118]};
+  const min={deckA:[235,315],padA:[220,118],mapA:[38,255],library:[315,225],fx:[315,140],mapB:[38,255],deckB:[235,315],padB:[220,118]};
   const labels={deckA:'DECK A',padA:'PADS A',mapA:'MIX A',library:'BIBLIOTHEK',fx:'BEAT FX / PFL',mapB:'MIX B',deckB:'DECK B',padB:'PADS B'};
   const panels={};
 
@@ -4877,3 +4877,37 @@ console.info('NÉVO v4.2.25: compact library reduced by roughly two visible song
   [0,120,650].forEach(ms=>setTimeout(install,ms));
 })();
 console.info('NÉVO v4.2.27: separate pad cards, compact mixer strips, hidden scrollbar, orange key, half stars and title/wave resizing active');
+
+
+// ===== v4.2.28: enforce dedicated PADS A / PADS B cards even after late UI refreshes =====
+(function(){
+  function repairPadCards(){
+    for(const letter of ['A','B']){
+      const id=letter==='A'?'padA':'padB';
+      const deck=document.querySelector(`.flx4-deck.flx4-${letter.toLowerCase()}`);
+      const panel=document.querySelector(`.v4226-panel[data-v4226-panel="${id}"]`);
+      if(!deck||!panel)continue;
+      const handle=panel.querySelector(':scope > .v4226-panel-handle');
+      const edges=[...panel.querySelectorAll(':scope > .v4226-resize-edge')];
+      const wanted=[
+        deck.querySelector(':scope > .flx4-padmode-buttons'),
+        deck.querySelector(':scope > .flx4-pad-state'),
+        deck.querySelector(':scope > .flx4-pads')
+      ].filter(Boolean);
+      for(const node of wanted){
+        if(handle)panel.insertBefore(node,handle);else panel.appendChild(node);
+      }
+      // If a late render somehow recreated duplicate pad areas in the deck, move them too.
+      for(const sel of ['.flx4-padmode-buttons','.flx4-pad-state','.flx4-pads']){
+        for(const node of [...deck.querySelectorAll(`:scope > ${sel}`)]){
+          if(handle)panel.insertBefore(node,handle);else panel.appendChild(node);
+        }
+      }
+      edges.forEach(e=>panel.appendChild(e));
+    }
+  }
+  [0,60,180,500,1200,2500].forEach(ms=>setTimeout(repairPadCards,ms));
+  const surf=document.querySelector('#flx4Surface');
+  if(surf)new MutationObserver(()=>requestAnimationFrame(repairPadCards)).observe(surf,{subtree:true,childList:true});
+})();
+console.info('NÉVO v4.2.28: narrow MIX strips + enforced separate performance-pad panels');

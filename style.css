@@ -2684,3 +2684,101 @@ body.flx-compact-mode:not(.v4216-library-focus) .flx4-mixer-section .flx4-browse
   .flx4-b.v4226-panel{order:7!important}
   .v4227-pad-panel.deck-b{order:8!important}
 }
+
+
+/* ===== v4.2.28: ultra-narrow mixer strips + guaranteed separate pad panels ===== */
+@media (min-width:901px){
+  /* MIX A/B is allowed to become almost exactly knob-width. */
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel{
+    min-width:38px!important;
+    padding:4px 3px!important;
+    gap:3px!important;
+    overflow:hidden!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary-stack{
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    gap:3px!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary-stack label{
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    display:grid!important;
+    grid-template-columns:32px!important;
+    grid-template-rows:8px 32px!important;
+    align-items:center!important;
+    justify-items:center!important;
+    gap:1px!important;
+    margin:0!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary-stack label>span{
+    grid-column:1!important;
+    grid-row:1!important;
+    width:32px!important;
+    max-width:32px!important;
+    display:block!important;
+    text-align:center!important;
+    font-size:5.2px!important;
+    line-height:8px!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+    position:static!important;
+    transform:none!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-rotary-stack label>.flx4-rotary{
+    grid-column:1!important;
+    grid-row:2!important;
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    min-height:32px!important;
+    max-width:32px!important;
+    max-height:32px!important;
+    margin:0!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .flx4-channel-cue.v414-cue{
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    min-height:21px!important;
+    height:21px!important;
+    padding:0 1px!important;
+    font-size:5.3px!important;
+    border-radius:6px!important;
+    line-height:1!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .v414-channel-fader{
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    font-size:4.7px!important;
+    gap:2px!important;
+  }
+  .flx4-controller.v4226-layout-canvas>.flx4-side-mapper.v4226-panel .v414-channel-fader input{
+    width:24px!important;
+    max-width:24px!important;
+  }
+
+  /* Dedicated performance-pad cards are real independent layout panels. */
+  .flx4-controller.v4226-layout-canvas>.v4227-pad-panel.v4226-panel{
+    display:flex!important;
+    flex-direction:column!important;
+    min-width:205px!important;
+    min-height:116px!important;
+    overflow:hidden!important;
+  }
+  .v4227-pad-panel>.flx4-padmode-buttons,
+  .v4227-pad-panel>.flx4-pads{display:grid!important;width:100%!important;max-width:none!important}
+  .v4227-pad-panel>.flx4-padmode-buttons{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .v4227-pad-panel>.flx4-pads{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(28px,1fr))!important}
+  .v4227-pad-panel>.flx4-pad-state{width:100%!important;min-width:0!important}
+  /* Deck cards must not reserve old pad space after the nodes were moved out. */
+  .flx4-controller.v4226-layout-canvas>.flx4-deck.v4226-panel>.flx4-padmode-buttons,
+  .flx4-controller.v4226-layout-canvas>.flx4-deck.v4226-panel>.flx4-pad-state,
+  .flx4-controller.v4226-layout-canvas>.flx4-deck.v4226-panel>.flx4-pads{display:none!important}
+}
