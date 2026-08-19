@@ -299,7 +299,7 @@ function showHelp(key,extraActions=[]){const helpText=currentLang==='en'?helpTex
 function hideHelp(){$('#helpModal').classList.add('hidden')}
 $('#helpClose').onclick=hideHelp;$('#helpModal').addEventListener('pointerdown',e=>{if(e.target===$('#helpModal'))hideHelp()});
 
-function longPress(el,cb,ms=600){/* v4.2.22: long-press help intentionally disabled */}
+function longPress(el,cb,ms=600){/* v4.2.23: long-press help intentionally disabled */}
 
 function makeImpulse(seconds=1.7,decay=2.6){const rate=ctx.sampleRate,len=Math.floor(rate*seconds),b=ctx.createBuffer(2,len,rate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay)}return b}
 function distortionCurve(amount){const n=44100,curve=new Float32Array(n),k=amount*180+1;for(let i=0;i<n;i++){const x=i*2/n-1;curve[i]=((3+k)*x*20*Math.PI/180)/(Math.PI+k*Math.abs(x))}return curve}
@@ -4471,7 +4471,7 @@ const v4220BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const 
 setTimeout(v4220RefreshAll,260);setTimeout(v4220RefreshAll,1700);
 console.info('NÉVO v4.2.20: dominant-colour 3-band waveform, expanded track-wide loudness dynamics and novelty-based beat-aligned phrase analysis active');
 
-// ===== v4.2.22: PHRASE-AWARE DYNAMICS + MUSICAL ACTION ANALYSIS =====
+// ===== v4.2.23: PHRASE-AWARE DYNAMICS + MUSICAL ACTION ANALYSIS =====
 // The previous pass separated loudness and colour, but a mastered track can still keep
 // roughly the same RMS while the arrangement changes dramatically. This pass adds a
 // slower, beat-aligned "action" envelope (4-bar context) to the fast waveform envelope.
@@ -4614,11 +4614,48 @@ function v4221DrawDeckOverview(letter,force=false){
 }
 v34DrawStack=function(letter,force=false){const d=djDecks[letter],cv=$(`#flx${letter}StackWave`);if(!d?.buffer||!cv){v4221DrawDeckOverview(letter,force);return}const r=v34StackRange(letter),key=`${r.start.toFixed(3)}:${r.end.toFixed(3)}:${nevoV34.waveBeats}:${d.item?.v425Wave32?.v||0}`;if(force||d.v34StackKey!==key){d.v34StackKey=key;v4221DrawPerformanceWave(d.buffer,cv,r.start,r.end,letter);v34BeatOverlay(letter,r);v40RefreshMarkers?.(letter,r);v40RefreshLoopOverlay?.(letter)}v4221DrawDeckOverview(letter,force);const title=$(`#flx${letter}StackTitle`),meta=$(`#flx${letter}StackMeta`);if(title)title.textContent=d.item?(d.item.title||cleanDjTitle(d.item.name)):(currentLang==='de'?'Kein Song':'No track');if(meta)meta.textContent=`${d.item?djDeckBpm(letter).toFixed(1):'—'} BPM · ${fmtDeckTime(r.cur)}`};
 
-v32AnalyzeTrack=async function(item,showStatus=true){const result=await v4219BaseAnalyzeTrack(item,showStatus);if(result&&item){try{item.v425Wave32=null;item.phrases=[];await v425PreparePreview(item,true);for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){djDecks[L].phrases=item.phrases;v3RenderPhrases?.(L);v34DrawStack(L,true)}}catch(e){console.warn('v4.2.22 waveform/phrase analysis failed',e)}try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.()}catch{}}return result};v3AnalyzeTrack=v32AnalyzeTrack;analyzeDjItem=v32AnalyzeTrack;
+v32AnalyzeTrack=async function(item,showStatus=true){const result=await v4219BaseAnalyzeTrack(item,showStatus);if(result&&item){try{item.v425Wave32=null;item.phrases=[];await v425PreparePreview(item,true);for(const L of ['A','B'])if(djDecks[L].item?.id===item.id){djDecks[L].phrases=item.phrases;v3RenderPhrases?.(L);v34DrawStack(L,true)}}catch(e){console.warn('v4.2.23 waveform/phrase analysis failed',e)}try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.()}catch{}}return result};v3AnalyzeTrack=v32AnalyzeTrack;analyzeDjItem=v32AnalyzeTrack;
 function v4221RefreshAll(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4221_PREVIEW_VERSION||item.phrases?.[0]?.v!==V4221_PHRASE_VERSION)v425SchedulePreview(item);try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.();v34DrawStack('A',true);v34DrawStack('B',true)}catch{}}
 const v4221BaseRenderBrowser=v38RenderBrowser;v38RenderBrowser=function(){const r=v4221BaseRenderBrowser();requestAnimationFrame(()=>{document.querySelectorAll('.v425-miniwave-shell').forEach(x=>x.title=currentLang==='de'?'Phrasenbewusste Analyse · Rot = Bass/Action · Grün = Melodie/ruhiger · Blau = Höhen':'Phrase-aware analysis · red = bass/action · green = melody/quiet · blue = highs');try{v428RedrawMiniWaves?.()}catch{}});return r};
 setTimeout(v4221RefreshAll,280);setTimeout(v4221RefreshAll,1750);
-console.info('NÉVO v4.2.22: beatgrid-aligned phrase-aware action envelope and arrangement analysis active');
+console.info('NÉVO v4.2.23: beatgrid-aligned phrase-aware action envelope and arrangement analysis active');
 
-// ===== v4.2.22: CLEAN TOP UI + NO LONG-PRESS HELP =====
-console.info('NÉVO v4.2.22: legacy top transport/hero hidden; long-press help disabled');
+// ===== v4.2.23: CLEAN TOP UI + NO LONG-PRESS HELP =====
+console.info('NÉVO v4.2.23: legacy top transport/hero hidden; long-press help disabled');
+
+
+// ===== v4.2.23: compact top controls + dock PFL inside FLX4 centre =====
+(function(){
+  const pfl=document.querySelector('.headphone-monitor');
+  if(!pfl)return;
+  document.querySelector('.topbar')?.classList.add('v4223-compact-header');
+  // Keep an exact return point so DJ PRO can still use the original full-width PFL block.
+  const home=document.createComment('nevo-pfl-home');
+  pfl.parentNode?.insertBefore(home,pfl);
+  const refreshButton=pfl.querySelector('#cueRefreshOutputs');
+  if(refreshButton){
+    refreshButton.dataset.v4223FullText=refreshButton.textContent||'AUSGÄNGE LADEN';
+    refreshButton.title='Audio-Ausgänge neu laden';
+  }
+  function dockPfl(){
+    const isFlx=typeof flxState!=='undefined'&&flxState.mode==='flx4';
+    const core=document.querySelector('.flx4-center-core');
+    if(isFlx&&core){
+      if(pfl.parentNode!==core)core.appendChild(pfl);
+      pfl.classList.add('v4223-pfl-dock');
+      if(refreshButton)refreshButton.textContent='AUSGÄNGE';
+    }else{
+      if(home.parentNode&&pfl.previousSibling!==home)home.parentNode.insertBefore(pfl,home.nextSibling);
+      pfl.classList.remove('v4223-pfl-dock');
+      if(refreshButton)refreshButton.textContent=refreshButton.dataset.v4223FullText||'AUSGÄNGE LADEN';
+    }
+  }
+  const oldSetDjViewMode=window.setDjViewMode||setDjViewMode;
+  if(typeof oldSetDjViewMode==='function'){
+    window.setDjViewMode=setDjViewMode=function(mode){const r=oldSetDjViewMode(mode);requestAnimationFrame(dockPfl);return r};
+  }
+  // Re-dock after layout/mode restoration and on responsive changes.
+  setTimeout(dockPfl,30);setTimeout(dockPfl,400);setTimeout(dockPfl,1300);
+  window.addEventListener('resize',()=>requestAnimationFrame(dockPfl),{passive:true});
+})();
+console.info('NÉVO v4.2.23: compact project header and FLX4 PFL dock active');
