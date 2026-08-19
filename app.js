@@ -306,7 +306,7 @@ function distortionCurve(amount){const n=44100,curve=new Float32Array(n),k=amoun
 function createNoiseBuffer(audioCtx,dur=.4){const len=Math.floor(audioCtx.sampleRate*dur),b=audioCtx.createBuffer(1,len,audioCtx.sampleRate),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;return b}
 async function initAudio(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();filter=ctx.createBiquadFilter();filter.type='lowpass';driveNode=ctx.createWaveShaper();driveNode.oversample='4x';dryGain=ctx.createGain();delay=ctx.createDelay(1.2);delayFeedback=ctx.createGain();delayWet=ctx.createGain();convolver=ctx.createConvolver();convolver.buffer=makeImpulse();reverbWet=ctx.createGain();mediaDest=ctx.createMediaStreamDestination();analyser=ctx.createAnalyser();analyser.fftSize=256;noiseBuffer=createNoiseBuffer(ctx,.5);filter.connect(driveNode);driveNode.connect(dryGain);dryGain.connect(master);driveNode.connect(delay);delay.connect(delayWet);delayWet.connect(master);delay.connect(delayFeedback);delayFeedback.connect(delay);driveNode.connect(convolver);convolver.connect(reverbWet);reverbWet.connect(master);master.connect(ctx.destination);master.connect(mediaDest);master.connect(analyser);updateAudioParams();startMeter()}await ctx.resume();audioReady=true;setStatus(true,t('audioActive'),t('audioActiveSub'));$('#audioBtn').textContent=t('audioOn')}
 function updateAudioParams(){if(!ctx)return;master.gain.setTargetAtTime(params.volume.value,ctx.currentTime,.01);filter.frequency.setTargetAtTime(params.cutoff.value,ctx.currentTime,.01);filter.Q.setTargetAtTime(params.resonance.value,ctx.currentTime,.01);driveNode.curve=distortionCurve(params.drive.value);delay.delayTime.setTargetAtTime(params.delayTime.value,ctx.currentTime,.01);delayFeedback.gain.setTargetAtTime(.31,ctx.currentTime,.01);delayWet.gain.setTargetAtTime(params.delay.value,ctx.currentTime,.01);reverbWet.gain.setTargetAtTime(params.reverb.value,ctx.currentTime,.01)}
-function startMeter(){if(meterRAF)return;const data=new Uint8Array(analyser.fftSize),fill=$('#masterMeterFill'),lab=$('#meterLabel');const tick=()=>{analyser.getByteTimeDomainData(data);let peak=0;for(const v of data)peak=Math.max(peak,Math.abs(v-128)/128);fill.style.width=clamp(peak*135,0,100)+'%';lab.textContent=peak?`${(20*Math.log10(peak)).toFixed(1)} dB`:'-∞ dB';meterRAF=requestAnimationFrame(tick)};tick()}
+function startMeter(){if(meterRAF)return;const data=new Uint8Array(analyser.fftSize),fill=$('#masterMeterFill'),lab=$('#meterLabel');let last=0;const tick=(ts=0)=>{const visible=!!(fill&&fill.offsetParent!==null),active=!!ctx&&ctx.state==='running'&&Object.values(typeof djDecks!=='undefined'?djDecks:{}).some(d=>d?.item&&!d.audio?.paused),budget=visible?(active?66:160):300;if(ts-last>=budget){last=ts;analyser.getByteTimeDomainData(data);let peak=0;for(const v of data)peak=Math.max(peak,Math.abs(v-128)/128);if(fill)fill.style.width=clamp(peak*135,0,100)+'%';if(lab)lab.textContent=peak?`${(20*Math.log10(peak)).toFixed(1)} dB`:'-∞ dB'}meterRAF=requestAnimationFrame(tick)};meterRAF=requestAnimationFrame(tick)}
 
 const noteMap={C:-9,'C#':-8,D:-7,'D#':-6,E:-5,F:-4,'F#':-3,G:-2,'G#':-1,A:0,'A#':1,B:2};
 function noteFreq(note){const m=note.match(/^([A-G]#?)(-?\d)$/);const semi=noteMap[m[1]]+(Number(m[2])-4)*12;return 440*Math.pow(2,semi/12)}
@@ -910,7 +910,7 @@ function syncDeck(letter){const trackBpm=djDeckBpm(letter),masterBpm=clamp(Numbe
 function deckSeekFromWave(letter,e){const d=djDecks[letter];if(!d.item||!Number.isFinite(d.audio.duration))return;const wrap=e.currentTarget,r=wrap.getBoundingClientRect(),ratio=clamp((e.clientX-r.left)/r.width,0,1);if(wrap.dataset.wave==='zoom'){const zr=deckZoomRange(letter);d.audio.currentTime=zr.start+ratio*(zr.end-zr.start)}else d.audio.currentTime=ratio*d.audio.duration;drawDeckZoom(letter,true)}
 function updateCrossfaderGains(){const x=Number($('#djCrossfader')?.value||0),theta=(x+1)*Math.PI/4,a=Math.cos(theta),b=Math.sin(theta);for(const [L,f] of [['A',a],['B',b]]){const d=djDecks[L],vol=Number($(`#deck${L}Volume`)?.value||.9);if(d.gainNode)d.gainNode.gain.setTargetAtTime(vol*f,ctx?.currentTime||0,.01)}}
 function startDjTicker(){
-  let lastUi=0;const tick=ts=>{const scrolling=!!window.__nevoScrolling;for(const L of ['A','B']){const d=djDecks[L];if(d.item){const dur=d.audio.duration||d.buffer?.duration||0,cur=d.audio.currentTime||0;if(!scrolling&&ts-lastUi>50){$(`#deck${L}Time`).textContent=fmtDeckTime(cur);$(`#deck${L}Duration`).textContent=fmtDeckTime(dur);$(`#deck${L}Playhead`).style.left=(dur?clamp(cur/dur*100,0,100):0)+'%';updateDeckZoomWindow(L)}if(d.loopBeats&&dur){const bpm=djDeckBpm(L),loopEnd=d.loopStart+d.loopBeats*60/bpm;if(cur>=loopEnd-.015)d.audio.currentTime=d.loopStart}if(!scrolling)drawDeckZoom(L,false)}}if(!scrolling&&ts-lastUi>50){lastUi=ts;refreshDeckUi('A');refreshDeckUi('B')}requestAnimationFrame(tick)};requestAnimationFrame(tick)
+  let lastUi=0,lastZoom=0;const tick=ts=>{const scrolling=!!window.__nevoScrolling,flx=(typeof flxState!=='undefined'&&flxState.mode==='flx4'),active=Object.values(djDecks).some(d=>d?.item&&!d.audio.paused),uiBudget=flx?(active?180:420):(active?55:160);for(const L of ['A','B']){const d=djDecks[L];if(!d?.item)continue;const dur=d.audio.duration||d.buffer?.duration||0,cur=d.audio.currentTime||0;if(d.loopBeats&&dur){const bpm=djDeckBpm(L),loopEnd=d.loopStart+d.loopBeats*60/bpm;if(cur>=loopEnd-.015)d.audio.currentTime=d.loopStart}if(!scrolling&&!flx&&ts-lastUi>=uiBudget){$(`#deck${L}Time`).textContent=fmtDeckTime(cur);$(`#deck${L}Duration`).textContent=fmtDeckTime(dur);$(`#deck${L}Playhead`).style.left=(dur?clamp(cur/dur*100,0,100):0)+'%';updateDeckZoomWindow(L)}if(!scrolling&&!flx&&!d.audio.paused&&ts-lastZoom>=55)drawDeckZoom(L,false)}if(!scrolling&&ts-lastUi>=uiBudget){lastUi=ts;if(!flx){refreshDeckUi('A');refreshDeckUi('B')}}if(ts-lastZoom>=55)lastZoom=ts;requestAnimationFrame(tick)};requestAnimationFrame(tick)
 }
 function refreshDjV28Labels(){
   const de=currentLang==='de';if($('#djLibrarySearch'))$('#djLibrarySearch').placeholder=de?'Titel suchen …':'Search title …';if($('#djAnalyzeAll'))$('#djAnalyzeAll').textContent=de?'⚡ ALLE ANALYSIEREN':'⚡ ANALYZE ALL';if($('#djClearLibrary'))$('#djClearLibrary').textContent=de?'BIBLIOTHEK LEEREN':'CLEAR LIBRARY';const cols=$$('.dj-library-columns span'),names=de?['TITEL','BPM','LÄNGE','AKTION']:['TITLE','BPM','LENGTH','ACTION'];cols.forEach((x,i)=>x.textContent=names[i]||x.textContent);for(const L of ['A','B']){const deck=document.querySelector(`.dj-deck[data-deck="${L}"]`);if(!deck)continue;const ov=deck.querySelector('.dj-overview-label'),zo=deck.querySelector('.dj-zoom-label');if(ov){ov.querySelector('span').textContent=de?'GESAMT-WELLENFORM':'OVERVIEW WAVEFORM';ov.querySelector('small').textContent=de?'Tippen = springen':'Tap = seek'}if(zo)zo.querySelector('span').textContent=de?'ZOOM-WELLENFORM':'ZOOM WAVEFORM';$(`#deck${L}Analyze`).textContent=de?'⚡ BPM ANALYSE':'⚡ BPM ANALYSIS';$(`#deck${L}TapBpm`).textContent='TAP BPM';$(`#deck${L}GridHere`).textContent=de?'GRID HIER':'GRID HERE';const gt=deck.querySelector('.dj-grid-tools>span');if(gt)gt.textContent='BEATGRID';renderHotCues(L)}renderDjLibrary()
@@ -1089,7 +1089,7 @@ function refreshFlx4Ui(){
   }
   if($('#flxCrossfader')&&document.activeElement!==$('#flxCrossfader'))$('#flxCrossfader').value=$('#djCrossfader')?.value||0;
 }
-function startFlxTicker(){let last=0;const tick=ts=>{if(!window.__nevoScrolling&&ts-last>40){last=ts;refreshFlx4Ui()}requestAnimationFrame(tick)};requestAnimationFrame(tick)}
+function startFlxTicker(){let last=0;const tick=ts=>{const active=Object.values(djDecks).some(d=>d?.item&&!d.audio.paused)||!!nevoV421Jog?.A?.touch||!!nevoV421Jog?.B?.touch||document.body.classList.contains('v4231-track-drag-active'),budget=active?50:150;if(!window.__nevoScrolling&&ts-last>=budget){last=ts;refreshFlx4Ui()}requestAnimationFrame(tick)};requestAnimationFrame(tick)}
 
 function flxMidiMessageKey(data){
   const status=data[0]||0,type=status&0xF0,ch=status&0x0F,d1=data[1]||0,d2=data[2]||0;
@@ -1302,7 +1302,7 @@ function v3BindControls(){
   v3SetMaster('A');renderDjLibrary();refreshDeckUi('A');refreshDeckUi('B');
 }
 
-function v3Ticker(){for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)&&d.audio.currentTime>=d.manualLoopOut-.012)d.audio.currentTime=d.manualLoopIn}requestAnimationFrame(v3Ticker)}
+let v4234LoopLast=0;function v3Ticker(ts=0){if(ts-v4234LoopLast>=24){v4234LoopLast=ts;for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&d.manualLoopActive&&Number.isFinite(d.manualLoopIn)&&Number.isFinite(d.manualLoopOut)&&d.audio.currentTime>=d.manualLoopOut-.012)d.audio.currentTime=d.manualLoopIn}}requestAnimationFrame(v3Ticker)}
 
 function refreshV3Labels(){
   const de=currentLang==='de';const cols=$$('.dj-library-columns span'),names=de?['TITEL','BPM','TONART','LÄNGE','AKTION']:['TITLE','BPM','KEY','LENGTH','ACTION'];cols.forEach((x,i)=>x.textContent=names[i]||x.textContent);for(const L of ['A','B']){if($(`#deck${L}Analyze`))$(`#deck${L}Analyze`).textContent=de?'⚡ TRACK ANALYSE':'⚡ TRACK ANALYSIS';const q=$(`#deck${L}Quantize`);if(q)q.textContent=djDecks[L].quantize?(de?'QUANTIZE AN':'QUANTIZE ON'):(de?'QUANTIZE AUS':'QUANTIZE OFF');v3RenderPhrases(L)}const g=$('#globalQuantize');if(g)g.textContent=nevoV3.globalQuantize?(de?'QUANTIZE AN':'QUANTIZE ON'):(de?'QUANTIZE AUS':'QUANTIZE OFF');renderDjLibrary()}
@@ -1443,9 +1443,9 @@ function v31Bind(){
 
 let v31LastTick=0;
 function v31Ticker(ts){
-  if(ts-v31LastTick>55){v31LastTick=ts;for(const L of ['A','B']){
-    v31SyncFollower(L);const d=djDecks[L];if(nevoV31.pfl[L]&&d?.item){const a=v31CueAudio(L);a.volume=v35CueDeckVolume(L);a.playbackRate=d.audio.playbackRate||1;if(!d.audio.paused&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.12)try{a.currentTime=d.audio.currentTime||0}catch{};if(d.audio.paused&&a.paused===false&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.35)try{a.currentTime=d.audio.currentTime||0}catch{}}}
-  }requestAnimationFrame(v31Ticker)
+  const active=!!nevoV31.pfl.A||!!nevoV31.pfl.B||!!nevoV31.syncLock.A||!!nevoV31.syncLock.B||Object.values(djDecks).some(d=>d?.item&&!d.audio.paused),budget=active?55:220;
+  if(!window.__nevoScrolling&&ts-v31LastTick>=budget){v31LastTick=ts;for(const L of ['A','B']){v31SyncFollower(L);const d=djDecks[L];if(nevoV31.pfl[L]&&d?.item){const a=v31CueAudio(L);a.volume=v35CueDeckVolume(L);a.playbackRate=d.audio.playbackRate||1;if(!d.audio.paused&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.12)try{a.currentTime=d.audio.currentTime||0}catch{};if(d.audio.paused&&a.paused===false&&Math.abs((a.currentTime||0)-(d.audio.currentTime||0))>.35)try{a.currentTime=d.audio.currentTime||0}catch{}}}}
+  requestAnimationFrame(v31Ticker)
 }
 
 // Extend language refresh.
@@ -1724,7 +1724,7 @@ function v35Bind(){
   v35UpdateHeadphoneVolumes();for(const L of ['A','B'])v35RefreshLoopUi(L);v35RefreshFxMenu();
   setTimeout(async()=>{try{await v35EnsureFxEngine();for(const L of ['A','B'])if(djDecks[L]?.source)await v35AttachDeckFx(djDecks[L]);v35ApplyFx()}catch(e){console.warn('v3.6 FX init',e)}},600);
 }
-let v35Last=0;function v35Ticker(ts){if(ts-v35Last>70){v35Last=ts;v35UpdateHeadphoneVolumes();if(v35Fx.ready&&nevoV34.fx.on)v35ApplyFx()}requestAnimationFrame(v35Ticker)}
+let v35Last=0;function v35Ticker(ts){const active=!!nevoV34.fx.on||!!nevoV31?.pfl?.A||!!nevoV31?.pfl?.B,budget=active?70:260;if(!window.__nevoScrolling&&ts-v35Last>=budget){v35Last=ts;v35UpdateHeadphoneVolumes();if(v35Fx.ready&&nevoV34.fx.on)v35ApplyFx()}requestAnimationFrame(v35Ticker)}
 v35Bind();requestAnimationFrame(v35Ticker);
 
 // ===== v3.6: FLX4 MEMORY CUES/LOOPS + CHANNEL/MASTER VU METERS =====
@@ -1758,7 +1758,7 @@ function v36UpdateMeters(){for(const L of ['A','B']){const d=djDecks[L];if(d?.so
 const v36OldRefreshFlx=refreshFlx4Ui;
 refreshFlx4Ui=function(){v36OldRefreshFlx();for(const L of ['A','B'])v36RefreshMemoryUi(L)};
 for(const L of ['A','B'])v36RefreshMemoryUi(L);
-let v36Last=0;function v36Ticker(ts){if(!window.__nevoScrolling&&ts-v36Last>55){v36Last=ts;v36UpdateMeters()}requestAnimationFrame(v36Ticker)}requestAnimationFrame(v36Ticker);
+let v36Last=0;function v36Ticker(ts){const active=Object.values(djDecks).some(d=>d?.item&&!d.audio.paused),budget=active?60:240;if(!window.__nevoScrolling&&ts-v36Last>=budget){v36Last=ts;v36UpdateMeters()}requestAnimationFrame(v36Ticker)}requestAnimationFrame(v36Ticker);
 
 // ===== v3.7: COMPLETE FLX4 PERFORMANCE PADS + SHIFT SECOND LAYER =====
 const V37_SECONDARY={hotcue:'keyboard',padfx:'padfx2',beatjump:'beatloop',sampler:'keyshift'};
@@ -2648,7 +2648,6 @@ function v421JogScratch(letter,delta){
   const d=v421JogDeck(letter);if(!d?.item||!delta)return;
   const dur=d.audio.duration||d.buffer?.duration||0;
   try{d.audio.currentTime=clamp((d.audio.currentTime||0)+delta*V421_SCRATCH_SEC_PER_TICK,0,dur||0)}catch{}
-  drawDeckZoom(letter,false);v34DrawStack?.(letter,false);
 }
 function v421JogBend(letter,delta){
   const d=v421JogDeck(letter),st=nevoV421Jog[letter];if(!d?.item||!delta)return;
@@ -2666,7 +2665,6 @@ function v421JogSearch(letter,delta){
   const d=v421JogDeck(letter);if(!d?.item||!delta)return;
   const dur=d.audio.duration||d.buffer?.duration||0;
   try{d.audio.currentTime=clamp((d.audio.currentTime||0)+delta*.085,0,dur||0)}catch{}
-  drawDeckZoom(letter,false);v34DrawStack?.(letter,false);
 }
 function v421IsFlx4Input(e){
   const name=String(e?.currentTarget?.name||e?.target?.name||'').toUpperCase();
@@ -2762,11 +2760,14 @@ refreshFlx4Ui=function(){const r=v422OldRefreshFlx4Ui();v422RefreshMixerVisuals(
 
 function v422ForceDeckPositionUi(letter){
   const d=djDecks?.[letter];if(!d?.item)return;
-  // force the moving/zoom waveforms to the exact new jog position immediately
-  try{d.lastZoomDraw=-999;drawDeckZoom(letter,true)}catch{}
-  try{d.v34StackKey='';v34DrawStack(letter,true)}catch{}
-  try{v40RefreshLoopOverlay?.(letter)}catch{}
-  try{refreshDeckUi(letter);refreshFlx4Ui()}catch{}
+  d._v4234JogUiDirty=true;if(d._v4234JogUiRaf)return;
+  d._v4234JogUiRaf=requestAnimationFrame(()=>{d._v4234JogUiRaf=0;if(!d._v4234JogUiDirty||!d.item)return;d._v4234JogUiDirty=false;
+    const flx=(typeof flxState!=='undefined'&&flxState.mode==='flx4');
+    try{if(!flx){d.lastZoomDraw=-999;drawDeckZoom(letter,true)}}catch{}
+    try{d.v34StackKey='';v34DrawStack(letter,true)}catch{}
+    try{v40RefreshLoopOverlay?.(letter)}catch{}
+    try{if(flx)refreshFlx4Ui();else refreshDeckUi(letter)}catch{}
+  })
 }
 function v422SeekByJog(letter,seconds){
   const d=djDecks?.[letter];if(!d?.item||!Number.isFinite(seconds)||!seconds)return;
@@ -3106,7 +3107,7 @@ let v425LiveWaveLast=0;function v425LiveWaveTicker(ts){
   if(!window.__nevoScrolling&&ts-v425LiveWaveLast>=40){v425LiveWaveLast=ts;for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&!d.audio.paused)try{v34DrawStack(L,false)}catch{}}}
   requestAnimationFrame(v425LiveWaveTicker)
 }
-requestAnimationFrame(v425LiveWaveTicker);
+// v4.2.34: duplicate live-wave ticker disabled; v426PerformanceTicker owns live redraw cadence.
 // Existing analyzed tracks from older builds get their 32-beat mini automatically,
 // in the background, with no user click required.
 setTimeout(()=>{for(const item of djLibrary)if(item.bpm&&!item.v425Wave32)v425SchedulePreview(item);v38RenderBrowser()},650);
@@ -3201,7 +3202,7 @@ v425DrawMiniWave=function(canvas,item){
 // More immediate visual cadence for performance/jog movement. The raw window is only
 // 2–6 beats, so this remains light enough while being visibly smoother.
 let v426WaveTick=0;function v426PerformanceTicker(ts){
-  if(!window.__nevoScrolling&&ts-v426WaveTick>=33){v426WaveTick=ts;for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&!d.audio.paused)try{v34DrawStack(L,false)}catch{}}}
+  if(!window.__nevoScrolling&&ts-v426WaveTick>=36){v426WaveTick=ts;for(const L of ['A','B']){const d=djDecks[L];if(d?.item&&!d.audio.paused&&!d._v4234JogUiRaf)try{v34DrawStack(L,false)}catch{}}}
   requestAnimationFrame(v426PerformanceTicker)
 }requestAnimationFrame(v426PerformanceTicker);
 
@@ -5141,7 +5142,7 @@ console.info('NÉVO v4.2.32: Hot Cues persist per track and appear as A-H marker
     if(Number(item.bpm)>0&&item.key&&item.key!=='—')return;
     pendingAnalysis.add(item);
     const run=()=>{
-      const busy=[djDecks?.A,djDecks?.B].some(d=>d?.item&&!d.audio.paused)||document.body.classList.contains('v4231-track-drag-active');
+      const busy=[djDecks?.A,djDecks?.B].some(d=>d?.item&&!d.audio.paused)||document.body.classList.contains('v4231-track-drag-active')||!!window.__nevoScrolling||(performance.now()-(window.__nevoLastInput||0)<700);
       if(busy){setTimeout(run,1200);return}
       const fn=()=>Promise.resolve(v3AnalyzeTrack(item,false)).catch(()=>null).finally(()=>{pendingAnalysis.delete(item);setTimeout(releaseUnusedBuffers,300)});
       if('requestIdleCallback'in window)requestIdleCallback(fn,{timeout:2200});else setTimeout(fn,80)
@@ -5149,9 +5150,11 @@ console.info('NÉVO v4.2.32: Hot Cues persist per track and appear as A-H marker
     setTimeout(run,1500)
   }
   function backgroundDecode(item,letter,seq){
-    // Give the browser one paint before starting any expensive decode/cache work.
-    setTimeout(()=>{
+    // Decode only after the UI has been quiet for a moment. Playback uses the media
+    // element immediately, so expensive WAV decoding must never steal click/scroll time.
+    const begin=()=>{
       if(loadSeq[letter]!==seq||djDecks?.[letter]?.item!==item)return;
+      if(window.__nevoScrolling||document.body.classList.contains('v4231-track-drag-active')||(performance.now()-(window.__nevoLastInput||0)<180)){setTimeout(begin,120);return}
       Promise.resolve(ensureDjItemBuffer(item)).then(buffer=>{
         const d=djDecks?.[letter];if(!d||loadSeq[letter]!==seq||d.item!==item){setTimeout(releaseUnusedBuffers,0);return}
         d.buffer=buffer;item.duration=buffer.duration||item.duration;
@@ -5159,7 +5162,7 @@ console.info('NÉVO v4.2.32: Hot Cues persist per track and appear as A-H marker
         requestAnimationFrame(()=>{if(loadSeq[letter]!==seq||djDecks?.[letter]?.item!==item)return;try{v425BuildWaveCache(buffer)}catch{}try{v34DrawStack(letter,true)}catch{}try{v4221DrawDeckOverview(letter,true)}catch{}try{v40RefreshLoopOverlay?.(letter)}catch{}try{refreshFlx4Ui()}catch{}});
         setTimeout(releaseUnusedBuffers,350)
       }).catch(e=>console.warn('Background deck decode failed',e));
-    },70)
+    };setTimeout(begin,220)
   }
 
   // Replace the accumulated legacy loader chain. It had become synchronous in practice:
@@ -5186,8 +5189,58 @@ console.info('NÉVO v4.2.32: Hot Cues persist per track and appear as A-H marker
 
   // Stop keeping decoded WAVs for the whole library. Two 4-minute stereo Float32
   // buffers can already be hundreds of MB; dozens of tracks made the browser crawl.
-  setInterval(releaseUnusedBuffers,3500);
+  setInterval(releaseUnusedBuffers,12000);
   window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')releaseUnusedBuffers()},{passive:true});
   window.nevoPerformance4233={trimBuffers:releaseUnusedBuffers,drawApproxStack};
 })();
 console.info('NÉVO v4.2.33: instant deck loading, background decode, idle analysis and two-deck buffer memory policy active');
+
+
+// ===== v4.2.34: WHOLE-UI RESPONSIVENESS / RENDER GOVERNOR =====
+(function(){
+  const VERSION='4.2.34';
+  document.body.classList.add('nevo-performance');
+  window.__nevoLastInput=performance.now();
+  const noteInput=()=>{window.__nevoLastInput=performance.now()};
+  for(const ev of ['pointerdown','keydown','wheel','touchstart'])document.addEventListener(ev,noteInput,{passive:true,capture:true});
+
+  // Coalesce the many historical mini-wave redraw requests into one browser frame.
+  if(typeof v428RedrawMiniWaves==='function'){
+    const base=v428RedrawMiniWaves;let raf=0,pendingForce=false;
+    v428RedrawMiniWaves=function(force=false){pendingForce=pendingForce||!!force;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;if(window.__nevoScrolling&&!pendingForce){pendingForce=false;return}const f=pendingForce;pendingForce=false;try{base(f)}catch{}})};
+  }
+
+  // Selecting a library row used to rebuild the complete library and repaint every
+  // canvas. Update only the selected class/cursor; the data itself has not changed.
+  const list=$('#flxBrowserList');
+  if(list&&!list.dataset.v4234FastSelect){list.dataset.v4234FastSelect='1';
+    list.addEventListener('click',e=>{
+      if(e.target.closest('[data-v429-rate],button,input,select,a'))return;
+      const row=e.target.closest('.flx4-browser-track[data-id]');if(!row)return;
+      e.preventDefault();e.stopImmediatePropagation();
+      const items=v38BrowserItems(),idx=items.findIndex(x=>String(x.id)===String(row.dataset.id));if(idx<0)return;
+      nevoV38.browserCursor=idx;v38Save();list.querySelectorAll('.flx4-browser-track.selected').forEach(x=>x.classList.remove('selected'));row.classList.add('selected');v31UpdateBrowseTitle();
+    },true);
+  }
+
+  // Metadata changes (CUE/HOT CUE/grid) are instant in memory and written to IDB
+  // shortly after the hand stops moving. Never rebuild the whole playlist for them.
+  const saveTimers=new Map();
+  function queueSave(item,delay=220){if(!item)return;const key=String(item.id);clearTimeout(saveTimers.get(key));saveTimers.set(key,setTimeout(()=>{saveTimers.delete(key);Promise.resolve(saveDjItem(item)).catch(()=>{})},delay))}
+  function updateMetaCells(item){if(!item)return;const id=CSS.escape(String(item.id));document.querySelectorAll(`[data-id="${id}"]`).forEach(row=>{
+    const bpm=row.querySelector('.v428-bpm,.dj-lib-bpm');if(bpm)bpm.textContent=item.bpm?Number(item.bpm).toFixed(1):'—';
+    const key=row.querySelector('.v428-key,.dj-lib-key');if(key){key.textContent=v428Camelot(item.key);key.title=item.key||'—'};
+    const dur=row.querySelector('.v428-duration,.dj-lib-duration');if(dur)dur.textContent=item.duration?fmtDeckTime(item.duration):'—';
+  })}
+  persistDeckMeta=function(letter){const d=djDecks?.[letter];if(!d?.item)return Promise.resolve();const item=d.item;item.bpm=djDeckBpm(letter);item.beatOffset=d.beatOffset||0;item.hotCues=[...(d.hotCues||[])];item.cue=d.cue||0;item.confidence=d.confidence||0;item.key=d.key||item.key||'—';item.phrases=Array.isArray(d.phrases)?d.phrases:(item.phrases||[]);updateMetaCells(item);queueSave(item);requestAnimationFrame(()=>{try{window.nevoHotCueLibraryMarkers?.refresh?.()}catch{}});return Promise.resolve()};
+
+  // Half-star clicks update the existing five buttons in place and persist later.
+  v429SetRating=function(item,value){if(!item)return;item.rating=clamp(Math.round((Number(value)||0)*2)/2,0,5);const id=CSS.escape(String(item.id));document.querySelectorAll(`[data-id="${id}"]`).forEach(row=>{row.querySelectorAll('[data-v429-rate]').forEach((b,i)=>{b.classList.toggle('filled',item.rating>=i+1);b.classList.toggle('half',item.rating<i+1&&item.rating>=i+.5)})});queueSave(item,260);try{v429Pulse()}catch{}};
+
+  // Drop-target scanning only after actual DOM structure changes, once per frame.
+  const surf=$('#flx4Surface');if(surf){let moRaf=0;const mo=new MutationObserver(()=>{if(moRaf)return;moRaf=requestAnimationFrame(()=>{moRaf=0;try{window.nevoHotCueLibraryMarkers?.refresh?.()}catch{}})});mo.observe(surf,{childList:true,subtree:false})}
+
+  // Release buffers when idle without waking the UI every few seconds unnecessarily.
+  if('requestIdleCallback'in window)requestIdleCallback(()=>{try{window.nevoPerformance4233?.trimBuffers?.()}catch{}},{timeout:2500});
+  console.info(`NÉVO v${VERSION}: whole-UI responsiveness governor active`);
+})();

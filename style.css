@@ -2941,3 +2941,12 @@ body.v4231-track-drag-active .flx4-deck{transition:border-color .1s ease,box-sha
 .v428-main-wave-shell .v4232-hotcue-marker::before{min-width:13px;height:13px;font-size:9px;line-height:13px}
 body.v4216-library-focus .v428-main-wave-shell .v4232-hotcue-marker{border-left-width:2px}
 body.v4216-library-focus .v428-main-wave-shell .v4232-hotcue-marker::before{min-width:16px;height:15px;font-size:10px;line-height:15px}
+
+/* v4.2.34 performance pass: keep the FLX4 view visually the same while avoiding
+   expensive fixed blur/backdrop composition during wheel/touch scrolling. */
+body.nevo-performance .ambient{display:none!important}
+body.nevo-performance .glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.nevo-performance.nevo-scrolling *{transition:none!important;animation-play-state:paused!important}
+body.nevo-performance.nevo-scrolling .flx4-browser-track,
+body.nevo-performance.nevo-scrolling .flx4-deck,
+body.nevo-performance.nevo-scrolling .flx4-browser-panel{box-shadow:none!important}
