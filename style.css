@@ -1973,3 +1973,76 @@ body.flx-compact-mode .v428-jog-quick{gap:3px}.v428-jog-quick+.flx4-jog{min-widt
   .v4212-col-resizer{display:none!important}
   .v429-browser-rating .v429-star{width:13px!important;min-width:13px!important;font-size:13px!important}
 }
+
+
+/* ===== v4.2.14: cleaner playlist proportions + invisible resize hit-zones ===== */
+/* Bring the compact browser typography back toward the balanced v4.2.10 look. */
+.flx4-browser-track.v429-browser-row .v425-track-text b{
+  font-size:10.5px!important;
+  line-height:1.12!important;
+  font-weight:850!important;
+  letter-spacing:0!important;
+}
+.flx4-browser-track.v429-browser-row .v425-track-text small{
+  font-size:7.2px!important;
+  line-height:1.12!important;
+  font-weight:600!important;
+}
+.flx4-browser-track.v429-browser-row .v428-bpm,
+.flx4-browser-track.v429-browser-row .v428-key{
+  font-size:9.5px!important;
+  line-height:1!important;
+  font-weight:850!important;
+}
+.flx4-browser-track.v429-browser-row .v428-duration{
+  font-size:9px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+}
+.v429-browser-rating .v429-star{
+  width:15px!important;
+  min-width:15px!important;
+  height:23px!important;
+  font-size:15px!important;
+}
+/* Keep title + waveform balanced instead of letting the title dominate the row. */
+.v429-browser-row .v425-track-main{
+  grid-template-columns:minmax(74px,.78fr) minmax(104px,1.22fr)!important;
+  gap:7px!important;
+}
+/* The draggable boundaries remain fully usable but no line is drawn down the playlist. */
+.v4212-col-resizer{
+  top:0!important;
+  bottom:0!important;
+  width:16px!important;
+  margin-left:-8px!important;
+  background:transparent!important;
+  opacity:1!important;
+}
+.v4212-col-resizer::before,
+.v4212-col-resizer::after{display:none!important;content:none!important}
+/* Remove the artificial vertical rules through every track row; spacing is enough. */
+.flx4-browser-columns.v428-browser-columns > span:nth-child(n+2),
+.flx4-browser-track.v429-browser-row > :nth-child(n+2){
+  border-left:0!important;
+}
+/* Only give a tiny header-cell highlight while the invisible grab zone is hovered/dragged. */
+.flx4-browser-columns.v428-browser-columns:has(.v4212-col-resizer:hover),
+.flx4-browser-columns.v428-browser-columns:has(.v4212-col-resizer.dragging){
+  background:linear-gradient(180deg,rgba(84,216,255,.025),transparent)!important;
+}
+@media(max-width:1040px){
+  .flx4-browser-track.v429-browser-row .v425-track-text b{font-size:10px!important}
+  .flx4-browser-track.v429-browser-row .v425-track-text small{font-size:7px!important}
+  .flx4-browser-track.v429-browser-row .v428-bpm,
+  .flx4-browser-track.v429-browser-row .v428-key{font-size:9px!important}
+  .flx4-browser-track.v429-browser-row .v428-duration{font-size:8.6px!important;font-weight:700!important}
+}
+@media(max-width:760px){
+  .flx4-browser-track.v429-browser-row .v425-track-text b{font-size:9.4px!important}
+  .flx4-browser-track.v429-browser-row .v425-track-text small{font-size:6.7px!important}
+  .flx4-browser-track.v429-browser-row .v428-bpm,
+  .flx4-browser-track.v429-browser-row .v428-key{font-size:8.6px!important}
+  .flx4-browser-track.v429-browser-row .v428-duration{font-size:8.3px!important}
+}

@@ -3634,3 +3634,80 @@ v38RenderBrowser=function(){const r=v4213BaseRenderBrowser();requestAnimationFra
 setTimeout(()=>{v4213RefreshFullTrackPreviews();try{v38RenderBrowser();renderDjLibrary()}catch{}},260);
 setTimeout(v4213RefreshFullTrackPreviews,1500);
 console.info('NÉVO v4.2.13: full-track high-contrast 3-band playlist mini-waveforms active; live deck wave remains 2/4/6 beats');
+
+
+// ===== v4.2.14: INSTANT MINI-WAVE FALLBACK + FASTER FULL-TRACK MIGRATION =====
+// Existing v4.2.12/older analyzed previews stay visible immediately while the
+// new full-track preview is rebuilt in the background. No more empty "TRACK" box.
+const V4214_PREVIEW_VERSION=4214;
+const v4214LegacyDrawMini=v425DrawMiniWave;
+function v4214BuildFullTrack3Band(item,buffer){
+  if(!buffer)return null;const dur=buffer.duration||0;if(!(dur>0))return null;
+  const cols=320,data=new Array(cols*4).fill(0),counts=new Uint32Array(cols),lowSq=new Float64Array(cols),midSq=new Float64Array(cols),highSq=new Float64Array(cols);
+  const ch0=buffer.getChannelData(0),ch1=buffer.numberOfChannels>1?buffer.getChannelData(1):null,sr=buffer.sampleRate||44100;
+  const span=ch0.length,stride=Math.max(1,Math.floor(span/120000)),effSr=sr/stride;
+  const aLow=1-Math.exp(-2*Math.PI*180/effSr),aMid=1-Math.exp(-2*Math.PI*2600/effSr);let lpLow=0,lpMid=0;
+  for(let i=0;i<span;i+=stride){
+    const s=ch1?((ch0[i]||0)+(ch1[i]||0))*.5:(ch0[i]||0);lpLow+=aLow*(s-lpLow);lpMid+=aMid*(s-lpMid);
+    const lo=lpLow,mi=lpMid-lpLow,hi=s-lpMid,x=Math.min(cols-1,Math.floor(i/Math.max(1,span)*cols));
+    lowSq[x]+=lo*lo;midSq[x]+=mi*mi;highSq[x]+=hi*hi;counts[x]++;
+  }
+  const energy=new Float32Array(cols);for(let x=0;x<cols;x++){const n=Math.max(1,counts[x]);energy[x]=Math.sqrt((lowSq[x]+midSq[x]+highSq[x])/n)}
+  const sorted=Array.from(energy).sort((a,b)=>a-b),ref=Math.max(.005,sorted[Math.min(sorted.length-1,Math.floor(sorted.length*.965))]||.01);
+  for(let x=0;x<cols;x++){
+    const n=Math.max(1,counts[x]),lo=lowSq[x]/n,mi=midSq[x]/n,hi=highSq[x]/n,sum=Math.max(1e-10,lo+mi+hi),amp=clamp(Math.pow(energy[x]/ref,.64),0,1),o=x*4;
+    data[o]=Math.round(amp*255);data[o+1]=Math.round(lo/sum*255);data[o+2]=Math.round(mi/sum*255);data[o+3]=Math.round(hi/sum*255);
+  }
+  return {v:V4214_PREVIEW_VERSION,scope:'full-track',start:0,end:dur,duration:dur,bpm:Number(item?.bpm)||0,beatOffset:Number(item?.beatOffset)||0,cols,data,mode:'3band'};
+}
+
+v425PreparePreview=async function(item,persist=true){
+  if(!item||item.analyzing)return null;if(item.v425PreviewPromise)return item.v425PreviewPromise;
+  if(item.v425Wave32?.v===V4214_PREVIEW_VERSION)return item.v425Wave32;
+  item.v425PreviewPromise=(async()=>{const buffer=await ensureDjItemBuffer(item);item.v425Wave32=v4214BuildFullTrack3Band(item,buffer);if(persist&&item.v425Wave32)try{await saveDjItem(item)}catch{};return item.v425Wave32})();
+  try{return await item.v425PreviewPromise}finally{item.v425PreviewPromise=null;item.v425AnalysisQueued=false}
+};
+v425SchedulePreview=function(item){
+  if(!item||item.v425Wave32?.v===V4214_PREVIEW_VERSION||item.analyzing||item.v425PreviewQueued)return;
+  item.v425PreviewQueued=true;v425PreviewQueue.push(item);v425PumpPreviewQueue();
+};
+
+function v4214DrawCurrentFullMini(canvas,item,p){
+  const rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(18,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010305';c.fillRect(0,0,w,h);
+  c.strokeStyle='rgba(255,255,255,.075)';c.lineWidth=1;for(const f of [.25,.5,.75]){const x=Math.round(w*f)+.5;c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke()}
+  const midY=h*.5,maxA=h*.47;
+  for(let x=0;x<w;x++){
+    const st=v4211PreviewAt(p,x,w),amp=Math.max(.8,Math.pow(st.amp,.72)*maxA);
+    let lo=Math.pow(st.low,1.65),mi=Math.pow(st.mid,1.65),hi=Math.pow(st.high,1.65),sum=Math.max(.0001,lo+mi+hi);lo/=sum;mi/=sum;hi/=sum;
+    const dom=Math.max(lo,mi,hi);if(lo===dom)lo*=1.55;else if(mi===dom)mi*=1.55;else hi*=1.55;sum=lo+mi+hi;lo/=sum;mi/=sum;hi/=sum;
+    const core=Math.max(1,amp*(.17+.49*lo)),midBand=Math.max(.4,amp*(.08+.42*mi)),topBand=Math.max(.3,amp*(.06+.38*hi));
+    c.fillStyle='rgba(255,79,18,.99)';c.fillRect(x,midY-core,1,core*2);
+    c.fillStyle='rgba(71,247,83,.99)';c.fillRect(x,Math.max(0,midY-core-midBand),1,midBand);c.fillRect(x,midY+core,1,midBand);
+    c.fillStyle='rgba(31,169,255,.99)';c.fillRect(x,Math.max(0,midY-core-midBand-topBand),1,topBand);c.fillRect(x,Math.min(h-1,midY+core+midBand),1,topBand);
+  }
+  c.fillStyle='rgba(255,255,255,.12)';c.fillRect(0,Math.round(midY),w,1);
+}
+
+v425DrawMiniWave=function(canvas,item){
+  if(!canvas?.isConnected||!item)return;const p=item.v425Wave32;
+  if(p?.v===V4214_PREVIEW_VERSION&&Array.isArray(p.data))return v4214DrawCurrentFullMini(canvas,item,p);
+  // Keep any older analyzed waveform on screen while the new full-track one is queued.
+  if(p&&Array.isArray(p.data)){
+    try{v4212PrevDrawMini(canvas,item)}catch{v4214LegacyDrawMini(canvas,item)}
+    if(!item.analyzing&&!item.v425PreviewQueued)v425SchedulePreview(item);
+    return;
+  }
+  const rect=canvas.getBoundingClientRect(),w=Math.max(82,Math.round(rect.width||190)),h=Math.max(18,Math.round(rect.height||30)),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);c.fillStyle='#010305';c.fillRect(0,0,w,h);
+  c.fillStyle='rgba(130,190,215,.82)';c.font=`700 ${Math.max(6,Math.min(8,h*.34))}px system-ui`;c.textAlign='center';
+  c.fillText(item.analyzing||item.v425PreviewQueued?(currentLang==='de'?'WELLE …':'WAVE …'):(currentLang==='de'?'ANALYSE':'ANALYZE'),w/2,h*.63);c.textAlign='left';
+  if(!item.analyzing&&!item.v425PreviewQueued)v425SchedulePreview(item);
+};
+
+function v4214RefreshFullTrackPreviews(){for(const item of djLibrary)if(item.v425Wave32?.v!==V4214_PREVIEW_VERSION&&!item.analyzing)v425SchedulePreview(item)}
+const v4214BaseRenderBrowser=v38RenderBrowser;
+v38RenderBrowser=function(){const r=v4214BaseRenderBrowser();requestAnimationFrame(()=>{try{v4212InstallResizers();v428RedrawMiniWaves()}catch{}});return r};
+setTimeout(()=>{v4214RefreshFullTrackPreviews();try{v38RenderBrowser()}catch{}},180);
+setTimeout(v4214RefreshFullTrackPreviews,900);
+console.info('NÉVO v4.2.14: compact playlist text, invisible column-resize zones and instant legacy-wave fallback during full-track migration active');
