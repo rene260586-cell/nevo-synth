@@ -2237,3 +2237,13 @@ body.flx-compact-mode .flx4-track-overview{left:22px;right:5px;bottom:2px;height
 .v425-miniwave-shell{background:#010304!important}
 body.v4216-library-focus .v429-browser-row .v425-miniwave-shell{background:#010304!important}
 @media(max-width:760px){.flx4-stack-wavewrap{height:86px!important}.flx4-track-overview{height:17px}.flx4-stack-wavewrap>canvas[id$="StackWave"]{height:calc(100% - 22px)!important}.flx4-stack-beats,.flx4-stack-playhead{bottom:22px!important}.flx4-phase-meter,.flx4-grid-readout{bottom:25px!important}}
+
+/* ===== v4.2.22 CLEAN TOP UI =====
+   Keep the legacy elements in the DOM so old arranger/audio code stays safe,
+   but remove them from the visible DJ workspace. */
+#audioBtn,#playBtn,#stopBtn,#recBtn,#helpBtn{display:none!important}
+.hero{display:none!important}
+#helpModal{display:none!important}
+/* Top bar now only carries project controls/language instead of old transport clutter. */
+.topbar{margin-bottom:8px;padding-top:9px;padding-bottom:9px}
+.brand-main{font-size:26px}
