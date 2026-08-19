@@ -2046,3 +2046,120 @@ body.flx-compact-mode .v428-jog-quick{gap:3px}.v428-jog-quick+.flx4-jog{min-widt
   .flx4-browser-track.v429-browser-row .v428-key{font-size:8.6px!important}
   .flx4-browser-track.v429-browser-row .v428-duration{font-size:8.3px!important}
 }
+
+
+/* ===== v4.2.15: visible library-analysis workflow ===== */
+.v4215-library-analyze{
+  position:relative!important;
+  overflow:visible!important;
+  color:#ffd45b!important;
+  border-color:rgba(255,196,62,.58)!important;
+  background:linear-gradient(180deg,rgba(255,194,55,.16),rgba(255,174,32,.055))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 0 10px rgba(255,184,46,.07)!important;
+  font-size:14px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  min-width:28px!important;
+  padding-inline:7px!important;
+}
+.v4215-library-analyze:hover,.v4215-library-analyze:focus-visible{
+  border-color:#ffd45b!important;
+  color:#fff0a8!important;
+  box-shadow:0 0 14px rgba(255,190,48,.24),inset 0 0 0 1px rgba(255,226,145,.10)!important;
+}
+.v4215-library-analyze::after{
+  content:attr(data-tip);
+  position:absolute;
+  z-index:9999;
+  left:50%;
+  top:calc(100% + 7px);
+  transform:translate(-50%,-3px);
+  min-width:max-content;
+  max-width:190px;
+  padding:6px 9px;
+  border:1px solid rgba(255,210,93,.34);
+  border-radius:7px;
+  background:#071018;
+  color:#eef8ff;
+  font:700 10px/1.15 system-ui,sans-serif;
+  letter-spacing:.01em;
+  white-space:nowrap;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .12s ease .65s,transform .12s ease .65s,visibility 0s linear .77s;
+  box-shadow:0 8px 24px rgba(0,0,0,.42);
+}
+.v4215-library-analyze:hover::after,.v4215-library-analyze:focus-visible::after{
+  opacity:1;
+  visibility:visible;
+  transform:translate(-50%,0);
+  transition-delay:.65s,.65s,0s;
+}
+.v4215-library-analyze.is-running{
+  animation:v4215BoltPulse .85s ease-in-out infinite alternate;
+  cursor:progress!important;
+}
+@keyframes v4215BoltPulse{from{filter:brightness(.92)}to{filter:brightness(1.38);box-shadow:0 0 18px rgba(255,190,48,.34)}}
+
+/* Extra compact-toolbar column for the yellow analysis bolt. */
+.flx4-browser-top.flx4-browser-top-compact.v4215-has-analysis{
+  grid-template-columns:auto 28px minmax(90px,1fr) 28px auto auto auto 30px!important;
+}
+.flx4-browser-top.flx4-browser-top-compact.v4215-has-analysis.v429-has-import{
+  grid-template-columns:auto 28px minmax(90px,1fr) 28px auto auto auto 30px auto!important;
+}
+body.flx-compact-mode .flx4-browser-top.flx4-browser-top-compact.v4215-has-analysis{
+  grid-template-columns:auto 23px minmax(70px,1fr) 23px auto auto auto 24px!important;
+}
+body.flx-compact-mode .flx4-browser-top.flx4-browser-top-compact.v4215-has-analysis.v429-has-import{
+  grid-template-columns:auto 23px minmax(70px,1fr) 23px auto auto auto 24px auto!important;
+}
+body.flx-compact-mode .v4215-library-analyze{font-size:11px!important;min-width:22px!important;padding-inline:3px!important}
+
+.v4215-analysis-progress{
+  display:grid;
+  grid-template-rows:auto 4px;
+  gap:4px;
+  padding:6px 8px 7px;
+  margin:2px 0 5px;
+  border:1px solid rgba(255,196,62,.19);
+  border-radius:7px;
+  background:linear-gradient(180deg,rgba(255,196,62,.06),rgba(3,10,15,.70));
+  overflow:hidden;
+}
+.v4215-analysis-progress[hidden]{display:none!important}
+.v4215-analysis-meta{display:flex;align-items:center;gap:7px;min-width:0;color:#dbe8ef;font-size:8px;line-height:1}
+.v4215-analysis-meta b{color:#ffd45b;font-size:11px}
+.v4215-analysis-label{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:850}
+.v4215-analysis-count{color:#94a8b7;font-weight:850;white-space:nowrap}
+.v4215-analysis-track{position:relative;height:4px;border-radius:999px;background:#111d25;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.v4215-analysis-fill{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#ffb636,#ffe778);transition:width .22s ease}
+.v4215-analysis-progress.is-running .v4215-analysis-track::after{
+  content:"";position:absolute;top:0;bottom:0;width:28%;left:-30%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.62),transparent);
+  animation:v4215Scan 1.05s linear infinite;
+}
+@keyframes v4215Scan{to{left:105%}}
+.v4215-analysis-progress.is-done{border-color:rgba(82,232,172,.30);background:linear-gradient(180deg,rgba(82,232,172,.07),rgba(3,10,15,.72))}
+.v4215-analysis-progress.is-done .v4215-analysis-fill{background:linear-gradient(90deg,#35dca3,#9affcf)}
+
+.flx4-browser-track.v4215-analyzing-row,.dj-lib-item.v4215-analyzing-row{position:relative!important;overflow:hidden!important}
+.flx4-browser-track.v4215-analyzing-row::after,.dj-lib-item.v4215-analyzing-row::after{
+  content:"";position:absolute;z-index:20;left:-38%;bottom:0;width:38%;height:3px;
+  background:linear-gradient(90deg,transparent,#ffd45b,#fff1a8,transparent);
+  box-shadow:0 0 9px rgba(255,201,69,.35);
+  animation:v4215RowLoad 1s linear infinite;
+  pointer-events:none;
+}
+@keyframes v4215RowLoad{to{left:105%}}
+.flx4-browser-track.v4215-analysis-complete,.dj-lib-item.v4215-analysis-complete{box-shadow:inset 0 -2px 0 rgba(74,229,170,.70)!important}
+
+@media(max-width:1040px){
+  .flx4-browser-top.flx4-browser-top-compact.v4215-has-analysis{grid-template-columns:auto 24px minmax(70px,1fr) 24px auto auto auto 26px!important}
+  .flx4-browser-top.flx4-browser-top-compact.v4215-has-analysis.v429-has-import{grid-template-columns:auto 24px minmax(70px,1fr) 24px auto auto auto 26px auto!important}
+}
+@media(max-width:760px){
+  .v4215-analysis-meta{font-size:7px}.v4215-analysis-meta b{font-size:10px}
+  .v4215-library-analyze::after{display:none!important}
+}

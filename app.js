@@ -3711,3 +3711,86 @@ v38RenderBrowser=function(){const r=v4214BaseRenderBrowser();requestAnimationFra
 setTimeout(()=>{v4214RefreshFullTrackPreviews();try{v38RenderBrowser()}catch{}},180);
 setTimeout(v4214RefreshFullTrackPreviews,900);
 console.info('NÉVO v4.2.14: compact playlist text, invisible column-resize zones and instant legacy-wave fallback during full-track migration active');
+
+
+// ===== v4.2.15: LIBRARY ANALYSIS BUTTON + SEQUENTIAL VISIBLE PROGRESS =====
+// One yellow bolt starts a real library analysis. Tracks are processed serially;
+// the active row shows a moving loading strip, the full-track mini appears before
+// the runner advances, and one failed file can no longer leave the whole UI stuck.
+const v4215LibraryAnalysis={running:false,total:0,index:0,done:0,errors:0,current:null,lastDone:null,finishTimer:null};
+function v4215AnalysisTip(){return currentLang==='de'?'Songanalyse Bibliothek':'Analyze library'}
+function v4215NeedsLibraryAnalysis(item){
+  if(!item)return false;
+  const hasBpm=Number(item.bpm)>0,hasKey=!!item.key&&item.key!=='—',hasDur=Number(item.duration)>0;
+  const hasWave=item.v425Wave32?.v===V4214_PREVIEW_VERSION&&Array.isArray(item.v425Wave32?.data);
+  return !hasBpm||!hasKey||!hasDur||!hasWave;
+}
+function v4215InstallProgressStrip(parent,beforeNode){
+  if(!parent||parent.querySelector(':scope > .v4215-analysis-progress'))return;
+  const p=document.createElement('div');p.className='v4215-analysis-progress';p.hidden=true;p.dataset.v4215AnalysisProgress='1';
+  p.innerHTML='<div class="v4215-analysis-meta"><b>⚡</b><span class="v4215-analysis-label"></span><span class="v4215-analysis-count"></span></div><div class="v4215-analysis-track"><i class="v4215-analysis-fill"></i></div>';
+  parent.insertBefore(p,beforeNode||null);
+}
+function v4215InstallAnalysisControls(){
+  const top=document.querySelector('.flx4-browser-top.flx4-browser-top-compact');
+  if(top){
+    top.classList.add('v4215-has-analysis');
+    let b=top.querySelector('#flxAnalyzeLibrary');
+    if(!b){b=document.createElement('button');b.id='flxAnalyzeLibrary';b.type='button';b.textContent='⚡';b.className='v4215-library-analyze';top.appendChild(b)}
+    b.textContent='⚡';b.title=v4215AnalysisTip();b.dataset.tip=v4215AnalysisTip();b.onclick=v4215AnalyzeLibrary;
+  }
+  const full=$('#djAnalyzeAll');if(full){full.textContent='⚡';full.classList.add('v4215-library-analyze');full.title=v4215AnalysisTip();full.dataset.tip=v4215AnalysisTip();full.onclick=v4215AnalyzeLibrary}
+  const compactPanel=$('#flxBrowserPanel'),compactList=$('#flxBrowserList');if(compactPanel&&compactList)v4215InstallProgressStrip(compactPanel,compactList);
+  const mainBox=document.querySelector('.dj-library-box'),mainList=$('#djLibraryList');if(mainBox&&mainList)v4215InstallProgressStrip(mainBox,mainList);
+}
+function v4215DecorateAnalysisRows(){
+  document.querySelectorAll('.v4215-analyzing-row,.v4215-analysis-complete').forEach(x=>x.classList.remove('v4215-analyzing-row','v4215-analysis-complete'));
+  const cur=v4215LibraryAnalysis.current,last=v4215LibraryAnalysis.lastDone;
+  if(cur?.id){document.querySelectorAll(`[data-id="${CSS.escape(String(cur.id))}"]`).forEach(row=>row.classList.add('v4215-analyzing-row'));const row=$('#flxBrowserList')?.querySelector(`[data-id="${CSS.escape(String(cur.id))}"]`);row?.scrollIntoView?.({block:'nearest'})}
+  if(last?.id){document.querySelectorAll(`[data-id="${CSS.escape(String(last.id))}"]`).forEach(row=>row.classList.add('v4215-analysis-complete'))}
+}
+function v4215UpdateAnalysisUi(doneState=false){
+  v4215InstallAnalysisControls();
+  const S=v4215LibraryAnalysis,total=Math.max(0,S.total),pct=doneState?100:(total?Math.round(S.done/total*100):0);
+  const currentName=S.current?(S.current.title||cleanDjTitle(S.current.name)||S.current.name):'';
+  document.querySelectorAll('[data-v4215-analysis-progress]').forEach(p=>{
+    const visible=S.running||doneState;p.hidden=!visible;p.classList.toggle('is-running',S.running);p.classList.toggle('is-done',doneState&&!S.running);
+    const label=p.querySelector('.v4215-analysis-label'),count=p.querySelector('.v4215-analysis-count'),fill=p.querySelector('.v4215-analysis-fill');
+    if(label)label.textContent=S.running?`${currentLang==='de'?'ANALYSE':'ANALYSIS'} · ${currentName}`:(S.errors?`${currentLang==='de'?'FERTIG':'DONE'} · ${S.errors} ${currentLang==='de'?'FEHLER':'ERROR'}`:(currentLang==='de'?'ANALYSE FERTIG':'ANALYSIS COMPLETE'));
+    if(count)count.textContent=total?`${Math.min(total,S.running?S.index:S.done)} / ${total}`:'0 / 0';if(fill)fill.style.width=`${pct}%`;
+  });
+  ['flxAnalyzeLibrary','djAnalyzeAll'].forEach(id=>{const b=$('#'+id);if(!b)return;b.disabled=!!S.running;b.classList.toggle('is-running',!!S.running);b.textContent='⚡';b.title=v4215AnalysisTip();b.dataset.tip=v4215AnalysisTip()});
+  const badge=$('#djSmartAnalysisStatus');if(badge&&S.running)badge.textContent=`⚡ ${S.index}/${S.total} · ${currentName}`;
+  v4215DecorateAnalysisRows();
+}
+async function v4215YieldPaint(){await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)))}
+async function v4215AnalyzeLibrary(){
+  const S=v4215LibraryAnalysis;if(S.running)return;
+  clearTimeout(S.finishTimer);v4215InstallAnalysisControls();
+  const missing=djLibrary.filter(v4215NeedsLibraryAnalysis),items=missing.length?missing:[...djLibrary];
+  if(!items.length){setStatus(true,currentLang==='de'?'Bibliothek leer':'Library empty',currentLang==='de'?'Keine Songs zum Analysieren.':'No tracks to analyze.');return}
+  // If every track is already complete, a deliberate click performs a fresh pass.
+  Object.assign(S,{running:true,total:items.length,index:0,done:0,errors:0,current:null,lastDone:null});v4215UpdateAnalysisUi(false);
+  for(let i=0;i<items.length;i++){
+    const item=items[i];S.index=i+1;S.current=item;S.lastDone=null;item.v4215LibraryJob=true;
+    try{v38RenderBrowser();renderDjLibrary()}catch{};v4215UpdateAnalysisUi(false);await v4215YieldPaint();
+    let result=null;
+    try{result=await v32AnalyzeTrack(item,false)}catch(e){console.warn('Library analysis failed',item?.name,e)}
+    if(result){S.done++;S.lastDone=item}else S.errors++;
+    item.v4215LibraryJob=false;S.current=null;
+    try{v38RenderBrowser();renderDjLibrary();v428RedrawMiniWaves?.()}catch{};v4215UpdateAnalysisUi(false);await v4215YieldPaint();
+  }
+  S.running=false;S.current=null;S.done=Math.max(S.done,S.total-S.errors);v4215UpdateAnalysisUi(true);
+  const badge=$('#djSmartAnalysisStatus');if(badge)badge.textContent=S.errors?`SMART ANALYSE · ${S.errors} FEHLER`:`SMART · ${v32Profile().label}`;
+  setStatus(true,S.errors?(currentLang==='de'?'Bibliotheksanalyse fertig':'Library analysis finished'):(currentLang==='de'?'Bibliotheksanalyse fertig':'Library analysis complete'),S.errors?`${S.done}/${S.total} · ${S.errors} ${currentLang==='de'?'Fehler':'errors'}`:`${S.done}/${S.total}`);
+  S.finishTimer=setTimeout(()=>{document.querySelectorAll('[data-v4215-analysis-progress]').forEach(p=>p.hidden=true);S.lastDone=null;v4215DecorateAnalysisRows()},3200);
+}
+// Keep analysis controls/progress attached after the frequently rebuilt playlist rows.
+const v4215BaseRenderBrowser=v38RenderBrowser;
+v38RenderBrowser=function(){const r=v4215BaseRenderBrowser();requestAnimationFrame(()=>{v4215InstallAnalysisControls();v4215DecorateAnalysisRows()});return r};
+const v4215BaseRenderLibrary=renderDjLibrary;
+renderDjLibrary=function(){const r=v4215BaseRenderLibrary();requestAnimationFrame(()=>{v4215InstallAnalysisControls();v4215DecorateAnalysisRows()});return r};
+// Old ALL ANALYZE handler is intentionally replaced by the visible serial runner.
+setTimeout(()=>{v4215InstallAnalysisControls();v4215UpdateAnalysisUi(false)},80);
+setTimeout(v4215InstallAnalysisControls,700);
+console.info('NÉVO v4.2.15: yellow library-analysis bolt, sequential visible analysis progress and per-track loading feedback active');
